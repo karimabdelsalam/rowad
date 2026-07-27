@@ -1,0 +1,18 @@
+# Dependencies (composer install regenerates)
+/include/lib/vendor/
+
+# Local configuration with secrets
+/include/config.local.php
+.env
+
+# Generated / runtime files
+/media/cache/
+/media/temp/
+/media/thumbcache/
+/error_log.log
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

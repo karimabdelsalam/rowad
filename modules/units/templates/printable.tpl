@@ -1,0 +1,1 @@
+{include file="core/templates/build_info.tpl"}

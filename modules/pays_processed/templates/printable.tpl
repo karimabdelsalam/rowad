@@ -1,0 +1,38 @@
+<table>
+  <tr>
+    <th>{"المبلغ"|gettext}</th>
+    <td>{$data.amount|clean}</td>
+  </tr>
+  <tr>
+    <th>{"تاريخ استلامه"|gettext}</th>
+    <td>{$data.paydate|ardate:false:false}</td>
+  </tr>
+  <tr>
+    <th>{"تاريخ تحويله"|gettext}</th>
+    <td>{$data.gone_date|ardate:false:false}</td>
+  </tr>
+  <tr>
+    <th>{"قيمة"|gettext}</th>
+    <td>{$data.paymenttype|gettext|clean}</td>
+  </tr>
+  <tr>
+    <th>{"العقار"|gettext}</th>
+    <td>{$data.build|clean}</td>
+  </tr>
+  <tr>
+    <th>{"المالك"|gettext}</th>
+    <td>
+      {section name=op loop=count($data.owner.id)}
+      <p>{$data.owner.name[op]}</p>
+      {/section}
+    </td>
+  </tr>
+  {if !empty($payment)}
+  <tr>
+    <th>{"طريقة الاستلام"|gettext}</th>
+    <td>
+      {$payment}
+    </td>
+  </tr>
+  {/if}
+</table>
