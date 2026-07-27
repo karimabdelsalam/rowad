@@ -26,10 +26,14 @@ class systemcore
   public function __construct($templatedir, $pathurl = '')
   {
     $this->templatedir = $templatedir;
+    require_once(LIB_DIR . '/vendor/autoload.php');
     require_once(LIB_DIR . '/db/ez_sql_core.php');
     require_once(LIB_DIR . '/db/ez_sql_mysqli.php');
-    require_once(LIB_DIR . '/Smarty/Smarty.class.php');
     require_once(LIB_DIR . '/HijriCalendar.class.php');
+
+    // Keep the legacy silent-error behaviour of ezSQL: since PHP 8.1
+    // mysqli throws exceptions by default instead of returning errors.
+    mysqli_report(MYSQLI_REPORT_OFF);
 
     global $db_config;
     $this->db = new ezSQL_mysqli();
@@ -123,6 +127,12 @@ class systemcore
     $this->Smarty = new Smarty();
     $this->Smarty->setTemplateDir($this->templatedir . '/');
     $this->Smarty->setCompileDir(ROOT_DIR . '/' . UPLOAD_DIR . '/cache');
+    $this->Smarty->addPluginsDir(INC_DIR . '/smarty_plugins/');
+    // PHP functions used as modifiers inside templates must be registered
+    // explicitly as of Smarty 4.
+    foreach(array('gettext', 'strtotime', 'json_decode', 'strval', 'count', 'nl2br', 'trim', 'ucfirst', 'urlencode', 'number_format', 'str_replace', 'implode', 'explode', 'substr', 'strip_tags', 'stripslashes', 'htmlspecialchars_decode', 'md5', 'date', 'time', 'round', 'floor', 'ceil', 'abs', 'is_array', 'in_array', 'array_sum', 'json_encode') as $phpModifier){
+      $this->Smarty->registerPlugin('modifier', $phpModifier, $phpModifier);
+    }
     if(DEBUG_MODE && DEBUG_MODE == 'localhost'){
       $this->Smarty->clearCompiledTemplate();
       $this->Smarty->clearAllCache();
@@ -613,8 +623,8 @@ class systemcore
   public function string_cut($string, $num)
   {
     $word = '';
-    $explode = preg_split(' ', $string);
-    for($i = 0; $i < $num; $i++){
+    $explode = preg_split('/\s+/', $string);
+    for($i = 0; $i < min($num, count($explode)); $i++){
       $word .= $explode[$i] . ' ';
     }
     return $word;
@@ -737,9 +747,9 @@ class systemcore
         }
       } elseif(!empty($params)){
         if(strpos($url, '?')){
-          $url .= '&' . http_build_execute($params);
+          $url .= '&' . http_build_query($params);
         } else{
-          $url .= '?' . http_build_execute($params);
+          $url .= '?' . http_build_query($params);
         }
       }
       curl_setopt($ch, CURLOPT_URL, $url);
@@ -957,40 +967,44 @@ class systemcore
 
   public function sendEmail($to, $subject, $message, $from = '', $attach = false)
   {
-    include_once(LIB_DIR . '/class.phpmailer.php');
-    $sname = "=?UTF-8?B?" . base64_encode($this->config['sitename']) . "?=\n";
     $smail = (empty($from)) ? $this->config['email'] : $from;
-    $rname = "=?UTF-8?B?" . base64_encode($to) . "?=\n";
-    $rmail = $to;
-    $subject = "=?UTF-8?B?" . base64_encode($subject) . "?=\n";
     $body = htmlspecialchars_decode($message);
-    $mail = new PHPMailer();
-    if($this->config['mail_sendtype'] == 'smtp'){
-      include_once(LIB_DIR . '/class.smtp.php');
-      $mail->IsSMTP();
-      $mail->Host = $this->config['smtp_server'];
-      $mail->SMTPAuth = true;
-      $mail->Port = $this->config['smtp_port'];
-      $mail->Username = $this->config['smtp_username'];
-      $mail->Password = $this->config['smtp_password'];
-    } else{
-      $mail->IsMail();
+    $mail = new PHPMailer\PHPMailer\PHPMailer();
+    $mail->CharSet = PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
+    try {
+      if($this->config['mail_sendtype'] == 'smtp'){
+        $mail->isSMTP();
+        $mail->Host = $this->config['smtp_server'];
+        $mail->SMTPAuth = true;
+        $mail->Port = $this->config['smtp_port'];
+        $mail->Username = $this->config['smtp_username'];
+        $mail->Password = $this->config['smtp_password'];
+        if((int) $this->config['smtp_port'] == 465){
+          $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+        } elseif((int) $this->config['smtp_port'] == 587){
+          $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        }
+      } else{
+        $mail->isMail();
+      }
+      $mail->addReplyTo($smail, $this->config['sitename']);
+      $mail->addAddress($to);
+      $mail->setFrom($smail, $this->config['sitename']);
+      $mail->Subject = $subject;
+      $mail->msgHTML($body);
+      if($attach !== false){
+        $mail->addAttachment($attach);
+      }
+      $mail->isHTML(true);
+      if(DEBUG_MODE == 'localhost'){
+        //$this->log($body);
+        return true;
+      }
+      return $mail->send();
+    } catch(PHPMailer\PHPMailer\Exception $e){
+      $this->log('sendEmail failed: ' . $e->getMessage());
+      return false;
     }
-    $mail->AddReplyTo($smail, $sname);
-    $mail->AddAddress($rmail, $rname);
-    $mail->From = $smail;
-    $mail->FromName = $sname;
-    $mail->Subject = $subject;
-    $mail->MsgHTML($body);
-    if($attach !== false){
-      $mail->AddAttachment($attach);
-    }
-    $mail->IsHTML(true);
-    if(DEBUG_MODE == 'localhost'){
-      //$this->log($body);
-      return true;
-    }
-    $mail->Send();
   }
 
   public function cleanArray($array, $checkindex = false)

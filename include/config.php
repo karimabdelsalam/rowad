@@ -7,7 +7,7 @@ define('INC_DIR', ROOT_DIR . '/include');
 define('LIB_DIR', ROOT_DIR . '/include/lib');
 define('UPLOAD_DIR', 'media');
 define('MEDIA_PATH', ROOT_DIR . '/' . UPLOAD_DIR . '/');
-define('SMARTY_DIR', LIB_DIR . '/Smarty/');
+define('SMARTY_DIR', LIB_DIR . '/vendor/smarty/smarty/libs/');
 define('CP_DIR_NAME', 'control');
 define('CP_DIR', ROOT_DIR);
 define('CP_DIR_MOD', ROOT_DIR . '/modules');

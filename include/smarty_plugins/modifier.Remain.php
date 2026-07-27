@@ -27,7 +27,7 @@
  */
 function smarty_modifier_Remain($time)
 {
-  if(is_numeric($time)) $time = date($time, 'Y-m-d H:i:s');
+  if(is_numeric($time)) $time = date('Y-m-d H:i:s', $time);
   $now = new DateTime();
   $future_date = new DateTime($time);
 
