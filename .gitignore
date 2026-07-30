@@ -16,3 +16,6 @@
 .idea/
 .vscode/
 .DS_Store
+
+# Clinic system local config (created by install.php)
+/clinic/inc/config.php

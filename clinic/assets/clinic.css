@@ -1,0 +1,252 @@
+/* نظام إدارة عيادة التغذية — واجهة عربية RTL */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --primary: #0f766e;
+    --primary-dark: #115e59;
+    --primary-light: #ccfbf1;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --danger: #b91c1c;
+    --radius: 12px;
+}
+
+body {
+    font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.muted { color: var(--muted); }
+small { font-size: 12px; }
+
+/* ---------- التخطيط العام ---------- */
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+    width: 232px;
+    flex-shrink: 0;
+    background: #0f172a;
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+.brand {
+    padding: 18px 16px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #5eead4;
+    border-bottom: 1px solid #1e293b;
+}
+.sidebar nav { display: flex; flex-direction: column; padding: 8px; gap: 2px; }
+.sidebar nav a {
+    color: #cbd5e1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sidebar nav a:hover { background: #1e293b; text-decoration: none; }
+.sidebar nav a.active { background: var(--primary); color: #fff; }
+.sidebar .ico { width: 22px; text-align: center; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.topbar h1 { font-size: 20px; }
+.userbox { display: flex; align-items: center; gap: 12px; }
+.content { padding: 24px; max-width: 1200px; width: 100%; }
+
+/* ---------- البطاقات ---------- */
+.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.card h2 { font-size: 17px; margin-bottom: 14px; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.card-head h2 { margin: 0; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+.stat .label { color: var(--muted); font-size: 13px; }
+.stat .value { font-size: 24px; font-weight: 700; margin-top: 2px; }
+.stat.accent { border-inline-start: 4px solid var(--primary); }
+
+/* ---------- الجداول ---------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-size: 12.5px; font-weight: 700; background: #f8fafc; white-space: nowrap; }
+tbody tr:hover { background: #f8fafc; }
+td.num, th.num { white-space: nowrap; }
+tfoot td { font-weight: 700; background: #f8fafc; }
+
+/* ---------- الشارات ---------- */
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.badge.ok    { background: #dcfce7; color: #15803d; }
+.badge.warn  { background: #fef3c7; color: #92400e; }
+.badge.bad   { background: #fee2e2; color: #b91c1c; }
+.badge.info  { background: #dbeafe; color: #1d4ed8; }
+.badge.muted { background: #e2e8f0; color: #475569; }
+
+/* ---------- النماذج ---------- */
+label { display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 12px; }
+input, select, textarea {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 9px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font: inherit;
+    background: #fff;
+    color: var(--ink);
+}
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--primary-light);
+    border-color: var(--primary);
+}
+textarea { min-height: 90px; resize: vertical; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 16px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 16px; }
+.form-section {
+    font-size: 14px;
+    color: var(--primary-dark);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+    margin: 14px 0 14px;
+}
+.inline-form { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+.inline-form label { margin-bottom: 0; }
+.inline-form input, .inline-form select { width: auto; min-width: 130px; }
+
+/* ---------- الأزرار ---------- */
+.btn {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+}
+.btn:hover { background: var(--primary-dark); text-decoration: none; color: #fff; }
+.btn-light { background: #e2e8f0; color: var(--ink); }
+.btn-light:hover { background: #cbd5e1; color: var(--ink); }
+.btn-danger { background: var(--danger); }
+.btn-danger:hover { background: #991b1b; }
+.btn-sm { padding: 4px 12px; font-size: 13px; font-weight: 400; }
+.btn-block { width: 100%; margin-top: 6px; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ---------- التنبيهات ---------- */
+.alert { padding: 11px 16px; border-radius: 8px; margin-bottom: 14px; font-weight: 700; }
+.alert-success { background: #dcfce7; color: #15803d; }
+.alert-danger  { background: #fee2e2; color: #b91c1c; }
+.alert-warning { background: #fef3c7; color: #92400e; }
+
+/* ---------- الرسم البياني ---------- */
+.chart-wrap svg { width: 100%; height: auto; display: block; }
+.chart-wrap circle:hover { r: 6; }
+
+/* ---------- التبويبات ---------- */
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin-bottom: 18px; flex-wrap: wrap; }
+.tabs a {
+    padding: 8px 16px;
+    border-radius: 8px 8px 0 0;
+    color: var(--muted);
+    font-weight: 700;
+}
+.tabs a:hover { background: #e2e8f0; text-decoration: none; }
+.tabs a.active { background: var(--primary); color: #fff; }
+
+/* ---------- صفحات الدخول والتثبيت ---------- */
+.auth-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: linear-gradient(135deg, #0f172a, #134e4a);
+}
+.auth-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.35);
+}
+.auth-title { font-size: 20px; text-align: center; margin-bottom: 6px; color: var(--primary-dark); }
+.auth-card form { margin-top: 18px; }
+
+/* ---------- شريط أيام الأسبوع ---------- */
+.week-strip { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 18px; }
+.week-strip a {
+    flex: 1;
+    min-width: 92px;
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 4px;
+    color: var(--ink);
+}
+.week-strip a:hover { text-decoration: none; border-color: var(--primary); }
+.week-strip a.today { border-color: var(--primary); border-width: 2px; }
+.week-strip a.selected { background: var(--primary); color: #fff; }
+.week-strip .d-name { font-size: 12px; }
+.week-strip .d-count { font-size: 12px; font-weight: 700; }
+
+/* ---------- الجوال ---------- */
+@media (max-width: 860px) {
+    .layout { flex-direction: column; }
+    .sidebar { width: 100%; }
+    .sidebar nav { flex-direction: row; overflow-x: auto; }
+    .sidebar nav a { white-space: nowrap; }
+    .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+    .content { padding: 14px; }
+}
+
+/* ---------- الطباعة ---------- */
+@media print {
+    .sidebar, .topbar, .no-print, .btn { display: none !important; }
+    body { background: #fff; }
+    .content { padding: 0; max-width: none; }
+    .card { border: none; padding: 0; }
+}
