@@ -8,22 +8,29 @@ if (user()) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
-    $username = trim($_POST['username'] ?? '');
-    $password = (string)($_POST['password'] ?? '');
 
-    $st = $pdo->prepare('SELECT * FROM users WHERE username = ? AND active = 1');
-    $st->execute([$username]);
-    $u = $st->fetch();
+    if ($wait = login_lockout($pdo)) {
+        // القفل يمنع المحاولة نفسها: كلمة المرور الصحيحة لا تُفحص أصلًا أثناءه
+        http_response_code(429);
+        $error = 'محاولات كثيرة فاشلة — حاول بعد ' . (int)ceil($wait / 60) . ' دقيقة.';
+    } else {
+        $username = trim($_POST['username'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
 
-    if ($u && password_verify($password, $u['password'])) {
-        session_regenerate_id(true);
-        $_SESSION['user'] = ['id' => (int)$u['id'], 'name' => $u['name'], 'role' => $u['role']];
-        activity($pdo, 'login', 'user', (int)$u['id'], 'تسجيل دخول ناجح');
-        redirect('index.php');
+        $st = $pdo->prepare('SELECT * FROM users WHERE username = ? AND active = 1');
+        $st->execute([$username]);
+        $u = $st->fetch();
+
+        if ($u && password_verify($password, $u['password'])) {
+            session_regenerate_id(true);
+            $_SESSION['user'] = ['id' => (int)$u['id'], 'name' => $u['name'], 'role' => $u['role']];
+            activity($pdo, 'login', 'user', (int)$u['id'], 'تسجيل دخول ناجح');
+            redirect('index.php');
+        }
+        activity($pdo, 'login_fail', 'user', null, 'محاولة دخول باسم: ' . mb_substr($username, 0, 60));
+        sleep(1); // إبطاء محاولات التخمين
+        $error = 'اسم الدخول أو كلمة المرور غير صحيحة.';
     }
-    activity($pdo, 'login_fail', 'user', null, 'محاولة دخول باسم: ' . mb_substr($username, 0, 60));
-    sleep(1); // إبطاء محاولات التخمين
-    $error = 'اسم الدخول أو كلمة المرور غير صحيحة.';
 }
 $clinic = setting('clinic_name', 'عيادة التغذية');
 ?>

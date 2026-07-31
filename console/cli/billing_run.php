@@ -22,6 +22,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require __DIR__ . '/../inc/functions.php';
+require __DIR__ . '/../inc/whatsapp.php';
 $configFile = __DIR__ . '/../inc/config.php';
 if (!is_file($configFile)) {
     fwrite(STDERR, "لا يوجد inc/config.php\n");
@@ -46,6 +47,23 @@ $today    = date('Y-m-d');
 $dueSoon  = date('Y-m-d', strtotime("+$leadDays days"));
 
 echo ($dry ? "[تجربة] " : '') . "دورة الفوترة — $today\n\n";
+
+/**
+ * إشعار واتساب للعميل — يُتخطى بصمت إن لم يكن مزوّد الإرسال مضبوطًا أو لا رقم.
+ */
+$notify = function (array $clinic, string $text, string $what) use ($pdo, $dry): void {
+    if ($dry || !wa_enabled() || trim((string)($clinic['phone'] ?? '')) === '') {
+        return;
+    }
+    $res = wa_send($clinic['phone'], $text);
+    $pdo->prepare('INSERT INTO console_log (user_id, action, entity, entity_id, summary, ip)
+                   VALUES (NULL, ?, ?, ?, ?, ?)')
+        ->execute([
+            $res['ok'] ? 'wa_sent' : 'wa_failed', 'clinic', (int)$clinic['id'],
+            $what . ' — ' . $clinic['name'] . ($res['ok'] ? '' : ' (' . $res['error'] . ')'), 'cron',
+        ]);
+    printf("      واتساب: %s\n", $res['ok'] ? 'أُرسل ✓' : 'فشل — ' . $res['error']);
+};
 
 /* ------------------------------------------ 1) فواتير التجديد */
 
@@ -83,17 +101,28 @@ foreach ($rows->fetchAll() as $c) {
 
     if (!$dry) {
         $number = next_invoice_number($pdo);
+        $payToken = bin2hex(random_bytes(24));
         $pdo->prepare('INSERT INTO invoices (clinic_id, number, issue_date, due_date, amount, months,
                        plan_name, notes, pay_token) VALUES (?,?,?,?,?,?,?,?,?)')
             ->execute([
                 $c['id'], $number, $today, $c['expires_at'],
                 $c['price'], (int)$c['months'], $c['plan_name'],
-                'تجديد تلقائي', bin2hex(random_bytes(24)),
+                'تجديد تلقائي', $payToken,
             ]);
         $pdo->prepare('INSERT INTO console_log (user_id, action, entity, entity_id, summary, ip)
                        VALUES (NULL, ?, ?, ?, ?, ?)')
             ->execute(['auto_invoice', 'invoice', (int)$pdo->lastInsertId(),
                        'فاتورة تجديد تلقائية ' . $number . ' — ' . $c['name'], 'cron']);
+
+        // رابط السداد يوصل للعميل فورًا بدل انتظارك تبعته يدويًا
+        $base = rtrim(setting('console_url', ''), '/');
+        $payUrl = $base !== '' ? $base . '/pay.php?t=' . $payToken : '';
+        $notify($c,
+            'مرحبًا ' . ($c['owner_name'] ?: $c['name']) . " 🌿\n"
+            . 'اشتراكك في ' . setting('brand_name', 'النظام') . ' ينتهي في ' . fmt_date($c['expires_at']) . ".\n"
+            . 'فاتورة التجديد ' . $number . ' بمبلغ ' . money($c['price'])
+            . ($payUrl !== '' ? "\nللسداد: " . $payUrl : ''),
+            'إرسال فاتورة التجديد ' . $number);
     }
     $issued++;
 }
@@ -102,7 +131,7 @@ foreach ($rows->fetchAll() as $c) {
 
 $cutoff = date('Y-m-d', strtotime("-$grace days"));
 $late = $pdo->prepare(
-    "SELECT id, name, expires_at FROM clinics
+    "SELECT id, name, owner_name, phone, expires_at FROM clinics
      WHERE status IN ('trial','active') AND expires_at IS NOT NULL AND expires_at < ?"
 );
 $late->execute([$cutoff]);
@@ -117,6 +146,21 @@ foreach ($late->fetchAll() as $c) {
                        VALUES (NULL, ?, ?, ?, ?, ?)')
             ->execute(['auto_suspend', 'clinic', (int)$c['id'],
                        'إيقاف تلقائي بعد تجاوز المهلة: ' . $c['name'], 'cron']);
+
+        // أحدث فاتورة غير مسددة ليصل رابط سدادها مع إشعار الإيقاف
+        $tok = $pdo->prepare("SELECT pay_token FROM invoices
+                              WHERE clinic_id = ? AND status IN ('unpaid','partial')
+                              ORDER BY id DESC LIMIT 1");
+        $tok->execute([$c['id']]);
+        $base = rtrim(setting('console_url', ''), '/');
+        $payUrl = ($t = $tok->fetchColumn()) && $base !== '' ? $base . '/pay.php?t=' . $t : '';
+        $notify($c,
+            'عزيزي عميل ' . setting('brand_name', 'النظام') . "،\n"
+            . 'تم إيقاف اشتراك «' . $c['name'] . '» لعدم التجديد. بياناتك محفوظة بالكامل، '
+            . 'ويعود كل شيء فور السداد.'
+            . ($payUrl !== '' ? "\nللسداد: " . $payUrl : '')
+            . (setting('support_phone') !== '' ? "\nللتواصل: " . setting('support_phone') : ''),
+            'إشعار إيقاف');
     }
     $suspended++;
 }

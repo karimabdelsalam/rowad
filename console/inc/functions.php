@@ -123,6 +123,28 @@ function days_until(?string $date): ?int
     return (int)$a->diff($b)->format('%r%a');
 }
 
+/**
+ * قفل محاولات الدخول: يعيد الثواني المتبقية إن كان هذا الـ IP محظورًا، أو null.
+ *
+ * 8 محاولات فاشلة خلال 10 دقائق تقفل الدخول 10 دقائق من آخر محاولة. القفل
+ * بالـ IP لا بالحساب حتى لا يستطيع غريب قفل حسابك عمدًا بمحاولات باسمك.
+ */
+function login_lockout(PDO $pdo, string $table, string $failAction): ?int
+{
+    $ip = substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
+    // الفرق يُحسب داخل MySQL: created_at بساعة القاعدة وخلطها بساعة PHP يضلّل
+    $st = $pdo->prepare(
+        "SELECT COUNT(*), COALESCE(TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()), 0) FROM `$table`
+         WHERE action = ? AND ip = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)"
+    );
+    $st->execute([$failAction, $ip]);
+    [$fails, $ago] = $st->fetch(PDO::FETCH_NUM);
+    if ((int)$fails < 8) {
+        return null;
+    }
+    return max(1, 600 - (int)$ago);
+}
+
 function log_action(PDO $pdo, string $action, string $entity, ?int $entityId, string $summary): void
 {
     $pdo->prepare('INSERT INTO console_log (user_id, action, entity, entity_id, summary, ip)
@@ -225,6 +247,7 @@ function page_header(string $title, string $active = ''): void
         ['payments.php', 'المدفوعات',         '💳'],
         ['plans.php',    'خطط الاشتراك',      '📦'],
         ['log.php',      'سجل النشاط',        '📜'],
+        ['users.php',    'المستخدمون',        '👤'],
         ['settings.php', 'الإعدادات',         '⚙️'],
     ];
     echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">';

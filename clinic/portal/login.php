@@ -11,24 +11,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals($_SESSION['csrf'] ?? '', (string)($_POST['csrf'] ?? ''))) {
         exit('انتهت صلاحية الجلسة — أعد المحاولة.');
     }
-    $login = trim($_POST['login'] ?? '');
-    $password = (string)($_POST['password'] ?? '');
+    if ($wait = login_lockout($pdo, 'portal_login_fail')) {
+        http_response_code(429);
+        $error = 'محاولات كثيرة فاشلة — حاول بعد ' . (int)ceil($wait / 60) . ' دقيقة.';
+    } else {
+        $login = trim($_POST['login'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
 
-    // الدخول بالكود (P-0001) أو برقم الهاتف
-    $st = $pdo->prepare(
-        'SELECT * FROM patients WHERE portal_enabled = 1 AND (code = ? OR REPLACE(phone, " ", "") = ?) LIMIT 1'
-    );
-    $st->execute([$login, str_replace(' ', '', $login)]);
-    $row = $st->fetch();
+        // الدخول بالكود (P-0001) أو برقم الهاتف
+        $st = $pdo->prepare(
+            'SELECT * FROM patients WHERE portal_enabled = 1 AND (code = ? OR REPLACE(phone, " ", "") = ?) LIMIT 1'
+        );
+        $st->execute([$login, str_replace(' ', '', $login)]);
+        $row = $st->fetch();
 
-    if ($row && $row['portal_password'] && password_verify($password, $row['portal_password'])) {
-        session_regenerate_id(true);
-        $_SESSION['patient'] = ['id' => (int)$row['id'], 'name' => $row['name']];
-        header('Location: index.php');
-        exit;
+        if ($row && $row['portal_password'] && password_verify($password, $row['portal_password'])) {
+            session_regenerate_id(true);
+            $_SESSION['patient'] = ['id' => (int)$row['id'], 'name' => $row['name']];
+            header('Location: index.php');
+            exit;
+        }
+        activity($pdo, 'portal_login_fail', 'patient', null, 'محاولة دخول بوابة باسم: ' . mb_substr($login, 0, 60));
+        sleep(1);
+        $error = 'بيانات الدخول غير صحيحة، أو لم تُفعَّل بوابتك بعد. تواصل مع العيادة.';
     }
-    sleep(1);
-    $error = 'بيانات الدخول غير صحيحة، أو لم تُفعَّل بوابتك بعد. تواصل مع العيادة.';
 }
 $clinic = setting('clinic_name', 'العيادة');
 ?>

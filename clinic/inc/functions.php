@@ -644,6 +644,33 @@ const MSG_CHANNELS = ['whatsapp' => 'واتساب', 'sms' => 'رسالة نصي�
  * يسجّل حدثًا في سجل النشاط. لا يوقف العملية أبدًا لو فشل التسجيل،
  * لأن السجل مساعد ولا يصح أن يمنع عمل العيادة.
  */
+/**
+ * قفل محاولات الدخول: يعيد الثواني المتبقية إن كان هذا الـ IP محظورًا، أو null.
+ *
+ * 8 محاولات فاشلة خلال 10 دقائق تقفل الدخول 10 دقائق من آخر محاولة. القفل
+ * بالـ IP لا بالحساب حتى لا يقفل غريبٌ حسابَ موظف عمدًا بمحاولات باسمه —
+ * وموظفو العيادة خلف راوتر واحد، فقفل الحساب كان سيقفلهم جميعًا.
+ */
+function login_lockout(PDO $pdo, string $failAction = 'login_fail'): ?int
+{
+    $ip = substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
+    try {
+        // الفرق يُحسب داخل MySQL: created_at بساعة القاعدة وخلطها بساعة PHP يضلّل
+        $st = $pdo->prepare(
+            'SELECT COUNT(*), COALESCE(TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()), 0) FROM activity_log
+             WHERE action = ? AND ip = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)'
+        );
+        $st->execute([$failAction, $ip]);
+        [$fails, $ago] = $st->fetch(PDO::FETCH_NUM);
+    } catch (PDOException) {
+        return null; // قبل اكتمال الترقية لا نمنع أحدًا من الدخول
+    }
+    if ((int)$fails < 8) {
+        return null;
+    }
+    return max(1, 600 - (int)$ago);
+}
+
 function activity(PDO $pdo, string $action, string $entity, ?int $entityId = null, string $summary = ''): void
 {
     try {

@@ -8,21 +8,29 @@ if (cuser()) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
-    $username = trim($_POST['username'] ?? '');
-    $password = (string)($_POST['password'] ?? '');
 
-    $st = $pdo->prepare('SELECT * FROM console_users WHERE username = ? AND active = 1');
-    $st->execute([$username]);
-    $u = $st->fetch();
+    if ($wait = login_lockout($pdo, 'console_log', 'login_failed')) {
+        // القفل يمنع المحاولة نفسها: كلمة المرور الصحيحة لا تُفحص أصلًا أثناءه
+        http_response_code(429);
+        $error = 'محاولات كثيرة فاشلة — حاول بعد ' . (int)ceil($wait / 60) . ' دقيقة.';
+    } else {
+        $username = trim($_POST['username'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
 
-    if ($u && password_verify($password, $u['password'])) {
-        session_regenerate_id(true);
-        $_SESSION['cuser'] = ['id' => (int)$u['id'], 'name' => $u['name']];
-        log_action($pdo, 'login', 'user', (int)$u['id'], 'دخول: ' . $u['name']);
-        redirect('index.php');
+        $st = $pdo->prepare('SELECT * FROM console_users WHERE username = ? AND active = 1');
+        $st->execute([$username]);
+        $u = $st->fetch();
+
+        if ($u && password_verify($password, $u['password'])) {
+            session_regenerate_id(true);
+            $_SESSION['cuser'] = ['id' => (int)$u['id'], 'name' => $u['name']];
+            log_action($pdo, 'login', 'user', (int)$u['id'], 'دخول: ' . $u['name']);
+            redirect('index.php');
+        }
+        $error = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+        log_action($pdo, 'login_failed', 'user', null, 'محاولة دخول فاشلة: ' . $username);
+        sleep(1);
     }
-    $error = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
-    log_action($pdo, 'login_failed', 'user', null, 'محاولة دخول فاشلة: ' . $username);
 }
 ?>
 <!DOCTYPE html>
