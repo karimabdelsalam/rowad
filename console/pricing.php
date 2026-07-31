@@ -6,7 +6,8 @@
  */
 require __DIR__ . '/inc/bootstrap.php';
 
-$brand = setting('brand_name', 'نظام إدارة العيادات');
+$brand = setting('brand_name', 'Planova بلانوفا');
+$product = PRODUCT_NAME;
 $open = setting('signup_open', '0') === '1' && setting('base_domain', '') !== '';
 $trialDays = max(0, (int)setting('trial_days', '14'));
 $plans = $pdo->query('SELECT * FROM plans WHERE active = 1 ORDER BY months')->fetchAll();
@@ -25,8 +26,8 @@ foreach ($plans as $p) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>الأسعار | <?= e($brand) ?></title>
-<meta name="description" content="نظام إدارة عيادات التغذية والتخسيس — مرضى ومواعيد وأنظمة غذائية وحقن وباقات وتقارير.">
+<title>الأسعار | <?= e($product) ?></title>
+<meta name="description" content="Pclinic بي كلينك — نظام إدارة عيادات التغذية والتخسيس: مرضى ومواعيد وأنظمة غذائية وحقن وباقات وتقارير.">
 <link rel="stylesheet" href="assets/console.css">
 <style>
 .marketing { max-width: 1040px; margin: 0 auto; padding: 34px 18px 60px; }
@@ -52,7 +53,8 @@ foreach ($plans as $p) {
 <div class="marketing">
 
     <div class="hero">
-        <h1>🍏 <?= e($brand) ?></h1>
+        <h1>🍏 <?= e($product) ?></h1>
+        <p class="muted" style="font-size:13px">من <?= e($brand) ?></p>
         <p>نظام كامل بالعربي لإدارة عيادات التغذية والتخسيس: المرضى والقياسات والمواعيد
             والأنظمة الغذائية وحقن التخسيس والباقات والتقارير — يشتغل من المتصفح بدون تركيب.</p>
     </div>

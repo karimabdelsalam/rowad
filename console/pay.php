@@ -51,7 +51,7 @@ if (!$notFound && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? 
     }
 }
 
-$brand = setting('brand_name', 'الاشتراكات');
+$brand = setting('brand_name', 'Planova بلانوفا');
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">

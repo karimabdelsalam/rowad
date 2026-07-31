@@ -127,7 +127,10 @@ page_header('فاتورة ' . $inv['number'], 'invoices.php');
     <div class="card-head">
         <h2>🧾 <span dir="ltr"><?= e($inv['number']) ?></span>
             <span class="badge <?= e(INV_STATUS_BADGE[$inv['status']]) ?>"><?= e(INV_STATUS[$inv['status']]) ?></span></h2>
-        <a class="btn btn-light" href="clinic.php?id=<?= (int)$inv['clinic_id'] ?>">ملف العيادة</a>
+        <div class="actions">
+            <a class="btn btn-light" href="invoice_print.php?id=<?= $id ?>">🖨️ طباعة / PDF</a>
+            <a class="btn btn-light" href="clinic.php?id=<?= (int)$inv['clinic_id'] ?>">ملف العيادة</a>
+        </div>
     </div>
     <div class="grid4">
         <div><span class="muted">العيادة</span><br><strong><?= e($inv['clinic_name']) ?></strong></div>

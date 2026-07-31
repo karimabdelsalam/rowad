@@ -156,7 +156,7 @@ if ($open && $base !== '' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$brand = setting('brand_name', 'نظام إدارة العيادات');
+$brand = PRODUCT_NAME;
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">

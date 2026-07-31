@@ -211,7 +211,7 @@ page_header('الإعدادات', 'settings.php');
 
 <div class="card">
     <h2>معلومات النظام</h2>
-    <p class="muted">نظام إدارة عيادة التغذية والتخسيس — إصدار 1.0</p>
+    <p class="muted">Pclinic بي كلينك — نظام إدارة عيادات التغذية والتخسيس · من Planova بلانوفا</p>
     <p class="muted">PHP: <?= e(PHP_VERSION) ?></p>
     <p class="muted">تذكير: احرص على أخذ نسخة احتياطية من قاعدة البيانات بشكل دوري من cPanel → phpMyAdmin → تصدير.</p>
 </div>

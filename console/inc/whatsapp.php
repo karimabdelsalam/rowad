@@ -128,7 +128,7 @@ function otp_send(string $phone): array
     }
 
     $code = (string)random_int(100000, 999999);
-    $brand = setting('brand_name', 'نظام العيادات');
+    $brand = setting('brand_name', 'Pclinic');
     $res = wa_send($phone, "رمز التحقق: $code\nصالح 5 دقائق — $brand");
     if (!$res['ok']) {
         return $res;

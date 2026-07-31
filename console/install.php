@@ -93,12 +93,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>تثبيت كونسول الاشتراكات</title>
+<title>تثبيت كونسول Planova</title>
 <link rel="stylesheet" href="assets/console.css">
 </head>
 <body class="auth-body">
 <div class="auth-card" style="max-width:640px">
-    <h1 class="auth-title">💼 تثبيت كونسول الاشتراكات</h1>
+    <h1 class="auth-title">💼 تثبيت كونسول Planova بلانوفا</h1>
 
     <?php if ($installed): ?>
         <div class="alert alert-success">الكونسول مثبت بالفعل ✔</div>
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
             <h3 class="form-section">نشاطك</h3>
             <label>اسم الشركة أو النشاط
                 <input name="brand_name" value="<?= htmlspecialchars($_POST['brand_name'] ?? '') ?>" required
-                       placeholder="مثال: رواد لأنظمة العيادات"></label>
+                       placeholder="Planova بلانوفا" value="Planova بلانوفا"></label>
             <h3 class="form-section">حسابك</h3>
             <div class="grid2">
                 <label>الاسم <input name="admin_name" value="<?= htmlspecialchars($_POST['admin_name'] ?? '') ?>" required></label>

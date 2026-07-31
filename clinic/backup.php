@@ -22,7 +22,7 @@ if (isset($_GET['download'])) {
     header('Content-Disposition: attachment; filename="clinic-backup-' . $stamp . '.sql"');
     header('Cache-Control: no-store');
 
-    echo "-- نسخة احتياطية لنظام إدارة عيادة التغذية\n";
+    echo "-- نسخة احتياطية من نظام Pclinic\n";
     echo '-- العيادة: ' . setting('clinic_name', '') . "\n";
     echo '-- التاريخ: ' . date('Y-m-d H:i:s') . "\n";
     echo '-- قاعدة البيانات: ' . current_db_name() . "\n\n";

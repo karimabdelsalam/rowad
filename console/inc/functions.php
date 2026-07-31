@@ -8,7 +8,10 @@ declare(strict_types=1);
  * بياناته تجارية (عملاء واشتراكات وتحصيل) ولا يصح أن تختلط ببيانات المرضى.
  */
 
-const CONSOLE_SCHEMA_VERSION = 2;
+const CONSOLE_SCHEMA_VERSION = 3;
+
+/** اسم المنتج — يظهر في صفحات البيع والفواتير؛ اسم شركتك يُضبط من الإعدادات */
+const PRODUCT_NAME = 'Pclinic بي كلينك';
 
 const CLINIC_STATUS = [
     'trial'     => 'تجريبي',
@@ -238,7 +241,7 @@ function next_invoice_number(PDO $pdo): string
 function page_header(string $title, string $active = ''): void
 {
     $u = cuser();
-    $brand = setting('brand_name', 'كونسول الاشتراكات');
+    $brand = setting('brand_name', 'Planova بلانوفا');
     $nav = [
         ['index.php',    'لوحة التحكم',      '📊'],
         ['clinics.php',  'العيادات',          '🏥'],
@@ -292,6 +295,7 @@ function console_schema(): array
             name VARCHAR(100) NOT NULL,
             username VARCHAR(50) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
+            totp_secret VARCHAR(32) NULL,
             active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) $opts",
@@ -431,6 +435,13 @@ function console_migrate(PDO $pdo): void
         $set = $pdo->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
         foreach ($defaults as $k => $v) {
             $set->execute([$k, $v]);
+        }
+    }
+
+    if ($current < 3) {
+        // التحقق بخطوتين TOTP لمستخدمي الكونسول
+        if (!$pdo->query("SHOW COLUMNS FROM console_users LIKE 'totp_secret'")->fetchAll()) {
+            $pdo->exec('ALTER TABLE console_users ADD COLUMN totp_secret VARCHAR(32) NULL');
         }
     }
 

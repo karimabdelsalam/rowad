@@ -77,12 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>تثبيت نظام إدارة عيادة التغذية</title>
+<title>تثبيت Pclinic — بي كلينك</title>
 <link rel="stylesheet" href="assets/clinic.css">
 </head>
 <body class="auth-body">
 <div class="auth-card" style="max-width:640px">
-    <h1 class="auth-title">🍏 تثبيت نظام إدارة عيادة التغذية</h1>
+    <h1 class="auth-title">🍏 تثبيت Pclinic — بي كلينك</h1>
 
     <?php if ($installed): ?>
         <div class="alert alert-success">النظام مثبت بالفعل ✔</div>

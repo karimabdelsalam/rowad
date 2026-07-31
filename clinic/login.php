@@ -45,7 +45,7 @@ $clinic = setting('clinic_name', 'عيادة التغذية');
 <body class="auth-body">
 <div class="auth-card">
     <h1 class="auth-title">🍏 <?= e($clinic) ?></h1>
-    <p class="muted" style="text-align:center">نظام إدارة عيادة التغذية والتخسيس</p>
+    <p class="muted" style="text-align:center">Pclinic بي كلينك — نظام إدارة عيادات التغذية والتخسيس</p>
     <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
     <form method="post">
         <?= csrf_field() ?>

@@ -109,7 +109,7 @@ td:last-child{color:#64748b;font-size:13px}
 <body>
 <div class="wrap">
     <h1>🍏 فحص جاهزية السيرفر</h1>
-    <div class="sub">نظام إدارة عيادة التغذية والتخسيس</div>
+    <div class="sub">Pclinic بي كلينك</div>
 
     <?php if ($failed): ?>
         <div class="banner bad">✘ السيرفر ينقصه <?= count($failed) ?> متطلب أساسي — راجع الجدول بالأسفل.</div>

@@ -1,6 +1,7 @@
 <?php
 /** مستخدمو الكونسول: إضافة مساعدين، تعطيل حسابات، وتغيير كلمات المرور. */
 require __DIR__ . '/inc/bootstrap.php';
+require_once __DIR__ . '/inc/totp.php';
 require_login();
 
 $myId = (int)cuser()['id'];
@@ -81,6 +82,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('users.php');
     }
 
+    if ($action === 'totp_start') {
+        // مفتاح جديد يُعرض للمستخدم ولا يُفعَّل إلا بعد إدخال رمز صحيح منه
+        $_SESSION['totp_setup'] = totp_new_secret();
+        redirect('users.php#totp');
+    }
+
+    if ($action === 'totp_enable') {
+        $secret = (string)($_SESSION['totp_setup'] ?? '');
+        if ($secret === '') {
+            redirect('users.php');
+        }
+        if (!totp_verify($secret, (string)($_POST['code'] ?? ''))) {
+            flash('الرمز غير صحيح — تأكد أن ساعة هاتفك مضبوطة وأعد المحاولة.', 'danger');
+            redirect('users.php#totp');
+        }
+        $pdo->prepare('UPDATE console_users SET totp_secret = ? WHERE id = ?')
+            ->execute([$secret, $myId]);
+        unset($_SESSION['totp_setup']);
+        log_action($pdo, 'update', 'console_user', $myId, 'فعّل التحقق بخطوتين');
+        flash('تم تفعيل التحقق بخطوتين على حسابك ✔');
+        redirect('users.php');
+    }
+
+    if ($action === 'totp_disable') {
+        // الإيقاف يحتاج كلمة المرور: جلسة مفتوحة لا تكفي لنزع الحماية
+        $st = $pdo->prepare('SELECT password FROM console_users WHERE id = ?');
+        $st->execute([$myId]);
+        if (!password_verify((string)($_POST['password'] ?? ''), (string)$st->fetchColumn())) {
+            flash('كلمة المرور غير صحيحة.', 'danger');
+            redirect('users.php');
+        }
+        $pdo->prepare('UPDATE console_users SET totp_secret = NULL WHERE id = ?')->execute([$myId]);
+        log_action($pdo, 'update', 'console_user', $myId, 'أوقف التحقق بخطوتين');
+        flash('أُوقف التحقق بخطوتين.', 'warning');
+        redirect('users.php');
+    }
+
     if ($action === 'my_pass') {
         $current = (string)($_POST['current'] ?? '');
         $new = (string)($_POST['new'] ?? '');
@@ -111,6 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $users = $pdo->query('SELECT u.*, (SELECT MAX(l.created_at) FROM console_log l
                         WHERE l.user_id = u.id AND l.action = "login") AS last_login
                       FROM console_users u ORDER BY u.id')->fetchAll();
+
+$my = $pdo->prepare('SELECT totp_secret FROM console_users WHERE id = ?');
+$my->execute([$myId]);
+$myTotpOn = (string)$my->fetchColumn() !== '';
+$setupSecret = $_SESSION['totp_setup'] ?? null;
 
 page_header('المستخدمون', 'users.php');
 ?>
@@ -162,6 +205,39 @@ page_header('المستخدمون', 'users.php');
             <label>كلمة المرور <input type="password" name="password" required minlength="8" dir="ltr"></label>
             <button class="btn" type="submit">إضافة</button>
         </form>
+    </div>
+
+    <div class="card" id="totp">
+        <h3>🛡️ التحقق بخطوتين (2FA)</h3>
+        <?php if ($myTotpOn): ?>
+            <div class="alert alert-success">مفعّل على حسابك ✔ — الدخول يحتاج كلمة المرور + رمزًا من تطبيق المصادقة.</div>
+            <form method="post">
+                <?= csrf_field() ?><input type="hidden" name="action" value="totp_disable">
+                <label>كلمة مرورك لتأكيد الإيقاف <input type="password" name="password" required dir="ltr"></label>
+                <button class="btn btn-danger btn-sm" type="submit">إيقاف التحقق بخطوتين</button>
+            </form>
+        <?php elseif ($setupSecret): ?>
+            <p class="muted">1) افتح تطبيق مصادقة (Google Authenticator أو مثله) واختر
+                «إدخال مفتاح يدويًا»، أو افتح الرابط من هاتفك مباشرة:</p>
+            <label>المفتاح <input value="<?= e($setupSecret) ?>" dir="ltr" readonly onclick="this.select()"
+                style="font-family:monospace;letter-spacing:2px"></label>
+            <label>أو الرابط <input value="<?= e(totp_uri($setupSecret, cuser()['name'], setting('brand_name', 'Planova'))) ?>"
+                dir="ltr" readonly onclick="this.select()"></label>
+            <form method="post">
+                <?= csrf_field() ?><input type="hidden" name="action" value="totp_enable">
+                <label>2) أدخل الرمز الظاهر في التطبيق لتأكيد التفعيل
+                    <input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" dir="ltr"
+                           style="text-align:center;font-size:20px;letter-spacing:6px"></label>
+                <button class="btn" type="submit">تفعيل</button>
+            </form>
+        <?php else: ?>
+            <p class="muted">طبقة حماية إضافية لحسابك: حتى لو تسربت كلمة مرورك، لا دخول
+                بدون رمز من هاتفك يتغير كل 30 ثانية.</p>
+            <form method="post">
+                <?= csrf_field() ?><input type="hidden" name="action" value="totp_start">
+                <button class="btn" type="submit">إعداد التحقق بخطوتين</button>
+            </form>
+        <?php endif; ?>
     </div>
 
     <div class="card">
