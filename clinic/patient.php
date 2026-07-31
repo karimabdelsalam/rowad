@@ -10,6 +10,10 @@ if (!$p) {
     flash('المريض غير موجود.', 'danger');
     redirect('patients.php');
 }
+if (!can_access_patient($p)) {
+    flash('هذا المريض تحت رعاية طبيب آخر.', 'danger');
+    redirect('patients.php');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
@@ -112,6 +116,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("patient.php?id=$id&tab=inj");
     }
 
+    /* ------------------------------------------- تفعيل بوابة المريض */
+    if ($action === 'portal' && has_role('admin', 'reception')) {
+        $mode = $_POST['mode'] ?? '';
+        if ($mode === 'disable') {
+            $pdo->prepare('UPDATE patients SET portal_enabled = 0 WHERE id = ?')->execute([$id]);
+            flash('تم إيقاف بوابة المريض.');
+        } else {
+            $pass = trim($_POST['portal_pass'] ?? '');
+            if ($pass === '') {
+                $pass = (string)random_int(100000, 999999);   // كلمة مرور رقمية سهلة النطق
+            }
+            if (mb_strlen($pass) < 6) {
+                flash('كلمة المرور يجب ألا تقل عن 6 خانات.', 'danger');
+                redirect("patient.php?id=$id&tab=portal");
+            }
+            $pdo->prepare('UPDATE patients SET portal_enabled = 1, portal_password = ? WHERE id = ?')
+                ->execute([password_hash($pass, PASSWORD_DEFAULT), $id]);
+            $_SESSION['portal_pass_shown'] = $pass;   // تُعرض مرة واحدة فقط
+            flash('تم تفعيل البوابة. كلمة المرور: ' . $pass . ' — سلّمها للمريض الآن، لن تظهر مرة أخرى.');
+        }
+        redirect("patient.php?id=$id&tab=portal");
+    }
+
+    if ($action === 'use_pkg') {
+        $ppId = (int)($_POST['pp_id'] ?? 0);
+        $st = $pdo->prepare('SELECT pp.*, (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) AS used
+                             FROM patient_packages pp WHERE pp.id = ? AND pp.patient_id = ?');
+        $st->execute([$ppId, $id]);
+        $pp = $st->fetch();
+        if ($pp && (int)$pp['used'] < (int)$pp['sessions_total']) {
+            $pdo->prepare('INSERT INTO package_uses (patient_package_id, use_date, notes, created_by) VALUES (?,?,?,?)')
+                ->execute([$ppId, date('Y-m-d'), trim($_POST['notes'] ?? ''), user()['id']]);
+            refresh_package_status($pdo);
+            flash('تم خصم جلسة من الباقة.');
+        } else {
+            flash('الباقة مستهلكة بالكامل.', 'danger');
+        }
+        redirect("patient.php?id=$id&tab=pkg");
+    }
+
+    if ($action === 'undo_pkg') {
+        $st = $pdo->prepare('SELECT u.id FROM package_uses u JOIN patient_packages pp ON pp.id = u.patient_package_id
+                             WHERE u.id = ? AND pp.patient_id = ?');
+        $st->execute([(int)($_POST['use_id'] ?? 0), $id]);
+        if ($useId = (int)$st->fetchColumn()) {
+            $pdo->prepare('DELETE FROM package_uses WHERE id = ?')->execute([$useId]);
+            $pdo->prepare("UPDATE patient_packages SET status='active' WHERE patient_id=? AND status='finished'")->execute([$id]);
+            flash('تم التراجع عن خصم الجلسة.');
+        }
+        redirect("patient.php?id=$id&tab=pkg");
+    }
+
+    if ($action === 'pay_pkg2' && has_role('admin', 'reception')) {
+        $ppId = (int)($_POST['pp_id'] ?? 0);
+        $pay = (float)($_POST['pay'] ?? 0);
+        $st = $pdo->prepare('SELECT * FROM patient_packages WHERE id = ? AND patient_id = ?');
+        $st->execute([$ppId, $id]);
+        $pp = $st->fetch();
+        if ($pp && $pay > 0) {
+            $pay = min($pay, (float)$pp['price'] - (float)$pp['paid']);
+            $pdo->beginTransaction();
+            try {
+                $pdo->prepare('UPDATE patient_packages SET paid = paid + ? WHERE id = ?')->execute([$pay, $ppId]);
+                $pdo->prepare('INSERT INTO payments (patient_id, pdate, amount, method, service, notes, created_by)
+                               VALUES (?,?,?,?,?,?,?)')
+                    ->execute([$id, date('Y-m-d'), $pay,
+                        array_key_exists($_POST['method'] ?? '', PAY_METHODS) ? $_POST['method'] : 'cash',
+                        'باقة', 'سداد باقة — ' . $pp['name'], user()['id']]);
+                $pdo->commit();
+                flash('تم سداد ' . money($pay) . '.');
+            } catch (PDOException) {
+                $pdo->rollBack();
+                flash('تعذر تسجيل السداد.', 'danger');
+            }
+        }
+        redirect("patient.php?id=$id&tab=pkg");
+    }
+
     if ($action === 'add_payment' && has_role('admin', 'reception')) {
         $amount = (float)($_POST['amount'] ?? 0);
         if ($amount <= 0) {
@@ -154,6 +236,8 @@ $tabs = [
     'measure'  => 'القياسات (' . count($measures) . ')',
     'plans'    => 'الأنظمة الغذائية',
     'inj'      => 'الحقن' . ($injBalance > 0.005 ? ' ⚠' : ''),
+    'pkg'      => 'الباقات',
+    'portal'   => 'بوابة المريض' . ($p['portal_enabled'] ? ' ✔' : ''),
     'appts'    => 'المواعيد',
 ];
 if (has_role('admin', 'reception')) {
@@ -184,6 +268,16 @@ if (has_role('admin', 'reception')) {
         <p><span class="muted">العمر:</span> <?= $age !== null ? $age . ' سنة' : '—' ?></p>
         <p><span class="muted">الطول:</span> <?= $p['height_cm'] ? e($p['height_cm']) . ' سم' : '—' ?></p>
     </div>
+    <?php
+    $docName = '';
+    if ($p['doctor_id']) {
+        $q = $pdo->prepare('SELECT name FROM users WHERE id = ?');
+        $q->execute([(int)$p['doctor_id']]);
+        $docName = (string)$q->fetchColumn();
+    }
+    ?>
+    <p><span class="muted">الطبيب المعالج:</span>
+        <?= $docName ? '<strong>' . e($docName) . '</strong>' : '<span class="badge warn">غير محدد</span>' ?></p>
     <?php if ($p['goal']): ?><p><span class="muted">الهدف:</span> <strong><?= e($p['goal']) ?></strong></p><?php endif; ?>
     <?php if ($p['medical_conditions']): ?><p><span class="muted">حالة طبية:</span> <span class="badge warn"><?= e($p['medical_conditions']) ?></span></p><?php endif; ?>
     <?php if ($p['allergies']): ?><p><span class="muted">حساسية:</span> <span class="badge bad"><?= e($p['allergies']) ?></span></p><?php endif; ?>
@@ -535,6 +629,176 @@ if (has_role('admin', 'reception')) {
         </table></div>
     </div>
     <?php endif; ?>
+
+<?php elseif ($tab === 'pkg'):
+    refresh_package_status($pdo);
+    $st = $pdo->prepare(
+        'SELECT pp.*, (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) AS used
+         FROM patient_packages pp WHERE pp.patient_id = ?
+         ORDER BY pp.status = "active" DESC, pp.id DESC'
+    );
+    $st->execute([$id]);
+    $pkgs = $st->fetchAll();
+
+    $st = $pdo->prepare(
+        'SELECT u.*, pp.name AS pkg_name, us.name AS uname FROM package_uses u
+         JOIN patient_packages pp ON pp.id = u.patient_package_id
+         LEFT JOIN users us ON us.id = u.created_by
+         WHERE pp.patient_id = ? ORDER BY u.use_date DESC, u.id DESC'
+    );
+    $st->execute([$id]);
+    $uses = $st->fetchAll();
+
+    $pkgOwed = array_sum(array_map(
+        fn($r) => $r['status'] !== 'cancelled' ? (float)$r['price'] - (float)$r['paid'] : 0, $pkgs));
+    $sessionsLeft = array_sum(array_map(
+        fn($r) => $r['status'] === 'active' ? max(0, (int)$r['sessions_total'] - (int)$r['used']) : 0, $pkgs));
+?>
+    <div class="stats">
+        <div class="stat accent"><div class="label">جلسات متبقية</div><div class="value"><?= $sessionsLeft ?></div></div>
+        <div class="stat"><div class="label">عدد الباقات</div><div class="value"><?= count($pkgs) ?></div></div>
+        <div class="stat"><div class="label">متأخرات الباقات</div>
+            <div class="value" style="color:<?= $pkgOwed > 0.005 ? '#b91c1c' : '#15803d' ?>"><?= e(money($pkgOwed)) ?></div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>🎟️ باقات المريض</h2>
+            <a class="btn" href="packages.php?tab=sell">+ بيع باقة</a>
+        </div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>الباقة</th><th>الجلسات</th><th>المتبقي</th><th>من</th><th>تنتهي</th>
+                <th>السعر</th><th>المدفوع</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+            <tbody>
+            <?php foreach ($pkgs as $r):
+                $left = (int)$r['sessions_total'] - (int)$r['used'];
+                $rest = (float)$r['price'] - (float)$r['paid'];
+            ?>
+                <tr>
+                    <td><strong><?= e($r['name']) ?></strong>
+                        <?php if ($r['notes']): ?><br><small class="muted"><?= e($r['notes']) ?></small><?php endif; ?></td>
+                    <td class="num"><?= (int)$r['used'] ?> / <?= (int)$r['sessions_total'] ?></td>
+                    <td class="num"><span class="badge <?= $left > 0 && $r['status'] === 'active' ? 'ok' : 'muted' ?>"><?= $left ?></span></td>
+                    <td class="num"><?= e(fmt_date($r['start_date'])) ?></td>
+                    <td class="num"><?= e(fmt_date($r['expiry_date'])) ?></td>
+                    <td class="num"><?= e(money($r['price'])) ?></td>
+                    <td class="num"><?= e(money($r['paid'])) ?></td>
+                    <td><span class="badge <?= e(PKG_BADGE[$r['status']]) ?>"><?= e(PKG_STATUS[$r['status']]) ?></span></td>
+                    <td><div class="actions">
+                        <?php if ($r['status'] === 'active' && $left > 0): ?>
+                        <form method="post">
+                            <?= csrf_field() ?><input type="hidden" name="action" value="use_pkg">
+                            <input type="hidden" name="id" value="<?= $id ?>">
+                            <input type="hidden" name="pp_id" value="<?= (int)$r['id'] ?>">
+                            <button class="btn btn-sm" type="submit">خصم جلسة</button>
+                        </form>
+                        <?php endif; ?>
+                        <?php if ($rest > 0.005 && has_role('admin', 'reception')): ?>
+                        <form method="post" class="inline-form" style="gap:4px">
+                            <?= csrf_field() ?><input type="hidden" name="action" value="pay_pkg2">
+                            <input type="hidden" name="id" value="<?= $id ?>">
+                            <input type="hidden" name="pp_id" value="<?= (int)$r['id'] ?>">
+                            <input type="number" step="0.01" min="0.01" max="<?= e(number_format($rest, 2, '.', '')) ?>"
+                                   name="pay" value="<?= e(number_format($rest, 2, '.', '')) ?>" style="width:90px;min-width:0">
+                            <button class="btn btn-sm" type="submit">سداد</button>
+                        </form>
+                        <?php endif; ?>
+                    </div></td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (!$pkgs): ?><tr><td colspan="9" class="muted">لا توجد باقات لهذا المريض.</td></tr><?php endif; ?>
+            </tbody>
+        </table></div>
+    </div>
+
+    <?php if ($uses): ?>
+    <div class="card">
+        <h2>📋 سجل استهلاك الجلسات</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>التاريخ</th><th>الباقة</th><th>ملاحظات</th><th>سجّلها</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($uses as $u): ?>
+                <tr>
+                    <td class="num"><?= e(fmt_date($u['use_date'])) ?></td>
+                    <td><?= e($u['pkg_name']) ?></td>
+                    <td><?= e($u['notes']) ?></td>
+                    <td><?= e($u['uname'] ?? '—') ?></td>
+                    <td>
+                        <form method="post" data-confirm="التراجع عن خصم هذه الجلسة؟">
+                            <?= csrf_field() ?><input type="hidden" name="action" value="undo_pkg">
+                            <input type="hidden" name="id" value="<?= $id ?>">
+                            <input type="hidden" name="use_id" value="<?= (int)$u['id'] ?>">
+                            <button class="btn btn-light btn-sm" type="submit">تراجع</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
+    </div>
+    <?php endif; ?>
+
+<?php elseif ($tab === 'portal'):
+    $portalUrl = rtrim((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
+        . '://' . ($_SERVER['HTTP_HOST'] ?? '')
+        . dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/') . '/portal/';
+    $wa = wa_phone($p['phone']);
+?>
+    <div class="card">
+        <div class="card-head">
+            <h2>📱 بوابة المريض</h2>
+            <span class="badge <?= $p['portal_enabled'] ? 'ok' : 'muted' ?>">
+                <?= $p['portal_enabled'] ? 'مفعّلة' : 'غير مفعّلة' ?></span>
+        </div>
+        <p class="muted">
+            بوابة يفتحها المريض من موبايله ليتابع وزنه ومنحنى تقدّمه ونظامه الغذائي
+            ومواعيده وحسابه — ويقدر يضيفها لشاشة الهاتف كتطبيق.
+        </p>
+        <p><span class="muted">رابط البوابة:</span> <a href="<?= e($portalUrl) ?>" target="_blank" dir="ltr"><?= e($portalUrl) ?></a></p>
+        <p><span class="muted">اسم الدخول:</span> <strong dir="ltr"><?= e($p['code']) ?></strong>
+           <span class="muted">أو رقم هاتفه</span></p>
+
+        <?php if (has_role('admin', 'reception')): ?>
+        <h3 class="form-section"><?= $p['portal_enabled'] ? 'إعادة تعيين كلمة المرور' : 'تفعيل البوابة' ?></h3>
+        <form method="post">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="portal">
+            <input type="hidden" name="id" value="<?= $id ?>">
+            <div class="grid2">
+                <label>كلمة المرور
+                    <input name="portal_pass" placeholder="اتركها فارغة لتوليد رقم سري تلقائي" dir="ltr">
+                </label>
+                <div style="align-self:end;margin-bottom:12px" class="actions">
+                    <button class="btn" type="submit"><?= $p['portal_enabled'] ? 'تعيين كلمة مرور جديدة' : 'تفعيل البوابة' ?></button>
+                    <?php if ($p['portal_enabled']): ?>
+                        <button class="btn btn-danger" type="submit" name="mode" value="disable">إيقاف البوابة</button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </form>
+        <?php endif; ?>
+
+        <?php if (!empty($_SESSION['portal_pass_shown'])):
+            $shown = $_SESSION['portal_pass_shown'];
+            unset($_SESSION['portal_pass_shown']);
+            $msg = "مرحبًا " . $p['name'] . " 🌿\n"
+                 . "تم تفعيل حسابك في بوابة " . setting('clinic_name', 'العيادة') . " لمتابعة وزنك ونظامك الغذائي:\n"
+                 . $portalUrl . "\n"
+                 . "اسم الدخول: " . $p['code'] . "\n"
+                 . "كلمة المرور: " . $shown;
+        ?>
+        <div class="alert alert-success" style="margin-top:14px">
+            كلمة المرور: <strong dir="ltr" style="font-size:18px"><?= e($shown) ?></strong>
+            — سلّمها للمريض الآن، لن تظهر مرة أخرى.
+        </div>
+        <div class="actions">
+            <?php if ($wa): ?>
+            <a class="btn btn-wa" target="_blank" rel="noopener" href="<?= e(wa_link($wa, $msg)) ?>">
+                💬 إرسال البيانات على واتساب</a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
 
 <?php elseif ($tab === 'appts'):
     $st = $pdo->prepare('SELECT * FROM appointments WHERE patient_id = ? ORDER BY adate DESC, atime DESC');

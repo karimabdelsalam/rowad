@@ -19,13 +19,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect($back);
         }
         $type = array_key_exists($_POST['type'] ?? '', APPT_TYPES) ? $_POST['type'] : 'followup';
-        $st = $pdo->prepare('INSERT INTO appointments (patient_id, adate, atime, type, notes, created_by) VALUES (?,?,?,?,?,?)');
+        $docId = ($_POST['doctor_id'] ?? '') !== '' ? (int)$_POST['doctor_id'] : null;
+        if (!$docId) {                       // افتراضيًا: طبيب المريض المعالج
+            $q = $pdo->prepare('SELECT doctor_id FROM patients WHERE id = ?');
+            $q->execute([$pid]);
+            $docId = $q->fetchColumn() ?: null;
+        }
+        $st = $pdo->prepare('INSERT INTO appointments (patient_id, adate, atime, type, notes, doctor_id, created_by) VALUES (?,?,?,?,?,?,?)');
         $st->execute([
             $pid,
             ($_POST['adate'] ?? '') ?: date('Y-m-d'),
             ($_POST['atime'] ?? '') ?: '12:00',
             $type,
             trim($_POST['notes'] ?? ''),
+            $docId,
             user()['id'],
         ]);
         flash('تم حجز الموعد.');
@@ -53,18 +60,22 @@ $weekDays = [];
 for ($i = 0; $i < 7; $i++) {
     $weekDays[] = date('Y-m-d', strtotime($weekStart . " +$i days"));
 }
+[$df, $dfArgs] = doctor_filter('p');
 $st = $pdo->prepare(
-    "SELECT adate, COUNT(*) c FROM appointments
-     WHERE adate BETWEEN ? AND ? AND status IN ('scheduled','done') GROUP BY adate"
+    "SELECT a.adate, COUNT(*) c FROM appointments a JOIN patients p ON p.id = a.patient_id
+     WHERE a.adate BETWEEN ? AND ? AND a.status IN ('scheduled','done') $df GROUP BY a.adate"
 );
-$st->execute([$weekDays[0], $weekDays[6]]);
+$st->execute([$weekDays[0], $weekDays[6], ...$dfArgs]);
 $counts = $st->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $st = $pdo->prepare(
-    'SELECT a.*, p.name AS pname, p.phone, p.code FROM appointments a
-     JOIN patients p ON p.id = a.patient_id WHERE a.adate = ? ORDER BY a.atime'
+    "SELECT a.*, p.name AS pname, p.phone, p.code, u.name AS doctor_name
+     FROM appointments a JOIN patients p ON p.id = a.patient_id
+     LEFT JOIN users u ON u.id = a.doctor_id
+     WHERE a.adate = ? $df ORDER BY a.atime"
 );
-$st->execute([$date]);
+$st->execute([$date, ...$dfArgs]);
+$doctors = doctors_list($pdo);
 $appts = $st->fetchAll();
 
 $prefPatient = isset($_GET['patient']) ? (int)$_GET['patient'] : null;
@@ -106,7 +117,19 @@ page_header('المواعيد', 'appointments.php');
                 </select>
             </label>
         </div>
-        <label>ملاحظات <input name="notes"></label>
+        <div class="grid2">
+            <label>الطبيب
+                <select name="doctor_id">
+                    <option value="">— طبيب المريض المعالج —</option>
+                    <?php foreach ($doctors as $doc): ?>
+                        <option value="<?= (int)$doc['id'] ?>" <?= has_role('doctor') && (int)$doc['id'] === (int)user()['id'] ? 'selected' : '' ?>>
+                            <?= e($doc['name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>ملاحظات <input name="notes"></label>
+        </div>
         <button class="btn" type="submit">حجز الموعد</button>
         <?php if (!patient_options($pdo)): ?>
             <p class="muted">لا يوجد مرضى مسجلون بعد — <a href="patients.php?new=1">سجّل مريضًا أولًا</a>.</p>
@@ -117,13 +140,14 @@ page_header('المواعيد', 'appointments.php');
 <div class="card">
     <h2>مواعيد <?= e(day_ar($date)) ?> <?= e(fmt_date($date)) ?> (<?= count($appts) ?>)</h2>
     <div class="table-wrap"><table>
-        <thead><tr><th>الوقت</th><th>المريض</th><th>الهاتف</th><th>النوع</th><th>الحالة</th><th>ملاحظات</th><th>إجراءات</th></tr></thead>
+        <thead><tr><th>الوقت</th><th>المريض</th><th>الطبيب</th><th>الهاتف</th><th>النوع</th><th>الحالة</th><th>ملاحظات</th><th>إجراءات</th></tr></thead>
         <tbody>
         <?php foreach ($appts as $a): ?>
             <tr>
                 <td class="num"><strong><?= e(fmt_time($a['atime'])) ?></strong></td>
                 <td><a href="patient.php?id=<?= (int)$a['patient_id'] ?>"><?= e($a['pname']) ?></a>
                     <small class="muted"><?= e($a['code']) ?></small></td>
+                <td><?= $a['doctor_name'] ? e($a['doctor_name']) : '<span class="muted">—</span>' ?></td>
                 <td class="num" dir="ltr"><?= e($a['phone']) ?></td>
                 <td><?= e(APPT_TYPES[$a['type']] ?? $a['type']) ?></td>
                 <td><span class="badge <?= e(APPT_BADGE[$a['status']]) ?>"><?= e(APPT_STATUS[$a['status']]) ?></span></td>
@@ -159,7 +183,7 @@ page_header('المواعيد', 'appointments.php');
                 </div></td>
             </tr>
         <?php endforeach; ?>
-        <?php if (!$appts): ?><tr><td colspan="7" class="muted">لا توجد مواعيد في هذا اليوم.</td></tr><?php endif; ?>
+        <?php if (!$appts): ?><tr><td colspan="8" class="muted">لا توجد مواعيد في هذا اليوم.</td></tr><?php endif; ?>
         </tbody>
     </table></div>
 </div>

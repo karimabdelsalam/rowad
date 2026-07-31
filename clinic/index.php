@@ -5,14 +5,19 @@ require_login();
 $today = date('Y-m-d');
 $monthStart = date('Y-m-01');
 
-$totalPatients = (int)$pdo->query('SELECT COUNT(*) FROM patients')->fetchColumn();
+[$df, $dfArgs] = doctor_filter('p');
 
-$st = $pdo->prepare('SELECT COUNT(*) FROM patients WHERE created_at >= ?');
-$st->execute([$monthStart]);
+$st = $pdo->prepare("SELECT COUNT(*) FROM patients p WHERE 1=1 $df");
+$st->execute($dfArgs);
+$totalPatients = (int)$st->fetchColumn();
+
+$st = $pdo->prepare("SELECT COUNT(*) FROM patients p WHERE p.created_at >= ? $df");
+$st->execute([$monthStart, ...$dfArgs]);
 $newPatients = (int)$st->fetchColumn();
 
-$st = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE adate = ? AND status IN ('scheduled','done')");
-$st->execute([$today]);
+$st = $pdo->prepare("SELECT COUNT(*) FROM appointments a JOIN patients p ON p.id = a.patient_id
+                     WHERE a.adate = ? AND a.status IN ('scheduled','done') $df");
+$st->execute([$today, ...$dfArgs]);
 $todayAppts = (int)$st->fetchColumn();
 
 $canSeeMoney = has_role('admin', 'reception');
@@ -28,22 +33,27 @@ if ($canSeeMoney) {
 }
 
 $st = $pdo->prepare(
-    'SELECT a.*, p.name AS pname, p.phone FROM appointments a
+    "SELECT a.*, p.name AS pname, p.phone FROM appointments a
      JOIN patients p ON p.id = a.patient_id
-     WHERE a.adate = ? ORDER BY a.atime'
+     WHERE a.adate = ? $df ORDER BY a.atime"
 );
-$st->execute([$today]);
+$st->execute([$today, ...$dfArgs]);
 $appts = $st->fetchAll();
 
-$recent = $pdo->query('SELECT id, code, name, phone, created_at FROM patients ORDER BY id DESC LIMIT 6')->fetchAll();
+$st = $pdo->prepare("SELECT p.id, p.code, p.name, p.phone, p.created_at FROM patients p
+                     WHERE 1=1 $df ORDER BY p.id DESC LIMIT 6");
+$st->execute($dfArgs);
+$recent = $st->fetchAll();
 
 /* ------------------------------------------------- تنبيهات ومتابعة الحقن */
-$injDue = $pdo->query(
+$st = $pdo->prepare(
     "SELECT pl.id, pl.patient_id, pl.weekly_units, pl.start_date, p.name AS pname, d.name AS drug_name,
         (SELECT MAX(dose_date) FROM injection_doses i WHERE i.plan_id = pl.id) AS last_dose
      FROM injection_plans pl JOIN patients p ON p.id = pl.patient_id JOIN drugs d ON d.id = pl.drug_id
-     WHERE pl.status = 'active'"
-)->fetchAll();
+     WHERE pl.status = 'active' $df"
+);
+$st->execute($dfArgs);
+$injDue = $st->fetchAll();
 $dueSoon = [];
 foreach ($injDue as $pl) {
     $next = $pl['last_dose'] ? date('Y-m-d', strtotime($pl['last_dose'] . ' +7 days')) : $pl['start_date'];
@@ -53,7 +63,10 @@ foreach ($injDue as $pl) {
 }
 usort($dueSoon, fn($a, $b) => strcmp($a['next_date'], $b['next_date']));
 
-$injDebt = (float)$pdo->query('SELECT COALESCE(SUM(amount - paid), 0) FROM injection_doses')->fetchColumn();
+$st = $pdo->prepare("SELECT COALESCE(SUM(i.amount - i.paid), 0) FROM injection_doses i
+                     JOIN patients p ON p.id = i.patient_id WHERE 1=1 $df");
+$st->execute($dfArgs);
+$injDebt = (float)$st->fetchColumn();
 
 $lowStock = has_role('admin', 'doctor') ? $pdo->query(
     'SELECT d.name, d.low_units,

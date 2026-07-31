@@ -41,6 +41,23 @@ $st = $q('SELECT category, SUM(amount) total FROM expenses WHERE edate BETWEEN ?
 $st->execute([$from, $to]);
 $expByCat = $st->fetchAll();
 
+$st = $q("SELECT u.name AS doctor,
+            (SELECT COUNT(*) FROM patients p WHERE p.doctor_id = u.id) AS patients_total,
+            (SELECT COUNT(*) FROM patients p WHERE p.doctor_id = u.id AND p.created_at BETWEEN ? AND ?) AS patients_new,
+            (SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = u.id AND a.adate BETWEEN ? AND ?) AS appts,
+            (SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = u.id AND a.adate BETWEEN ? AND ? AND a.status='done') AS appts_done,
+            (SELECT COALESCE(SUM(pay.amount),0) FROM payments pay JOIN patients p ON p.id = pay.patient_id
+             WHERE p.doctor_id = u.id AND pay.pdate BETWEEN ? AND ?) AS revenue
+          FROM users u WHERE u.role IN ('doctor','admin') AND u.active = 1
+          ORDER BY revenue DESC");
+$st->execute([$from, $to . ' 23:59:59', $from, $to, $from, $to, $from, $to]);
+$byDoctor = array_filter($st->fetchAll(), fn($r) => (int)$r['patients_total'] > 0 || (int)$r['appts'] > 0);
+
+$st = $q('SELECT COUNT(*) c, COALESCE(SUM(price),0) price, COALESCE(SUM(paid),0) paid
+          FROM patient_packages WHERE start_date BETWEEN ? AND ?');
+$st->execute([$from, $to]);
+$pkgStats = $st->fetch();
+
 $st = $q('SELECT d.name, COUNT(*) c, SUM(i.units) units, SUM(i.amount) amount, SUM(i.paid) paid,
                  SUM(i.units * (i.unit_price - i.unit_cost)) profit
           FROM injection_doses i JOIN drugs d ON d.id = i.drug_id
@@ -125,6 +142,48 @@ page_header('التقارير', 'reports.php');
         </table></div>
     </div>
 </div>
+
+<?php if ((int)$pkgStats['c'] > 0): ?>
+<div class="card">
+    <h2>🎟️ باقات الجلسات المُباعة هذا الشهر</h2>
+    <div class="grid3">
+        <p><span class="muted">عدد الباقات:</span> <strong><?= (int)$pkgStats['c'] ?></strong></p>
+        <p><span class="muted">قيمتها:</span> <strong><?= e(money($pkgStats['price'])) ?></strong></p>
+        <p><span class="muted">المحصَّل منها:</span> <strong><?= e(money($pkgStats['paid'])) ?></strong>
+           <?php if ((float)$pkgStats['price'] - (float)$pkgStats['paid'] > 0.005): ?>
+           <span class="badge bad">متبقٍ <?= e(money((float)$pkgStats['price'] - (float)$pkgStats['paid'])) ?></span>
+           <?php endif; ?></p>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (count($byDoctor) > 1): ?>
+<div class="card">
+    <div class="card-head">
+        <h2>👨‍⚕️ أداء الأطباء</h2>
+        <a class="btn btn-xls btn-sm no-print" href="export.php?type=packages">⬇ تصدير الباقات</a>
+    </div>
+    <div class="table-wrap"><table>
+        <thead><tr><th>الطبيب</th><th>إجمالي مرضاه</th><th>مرضى جدد</th><th>مواعيد</th>
+            <th>تمّت</th><th>نسبة الحضور</th><th>إيراد مرضاه</th></tr></thead>
+        <tbody>
+        <?php foreach ($byDoctor as $r): ?>
+            <tr>
+                <td><strong><?= e($r['doctor']) ?></strong></td>
+                <td class="num"><?= (int)$r['patients_total'] ?></td>
+                <td class="num"><?= (int)$r['patients_new'] ?></td>
+                <td class="num"><?= (int)$r['appts'] ?></td>
+                <td class="num"><?= (int)$r['appts_done'] ?></td>
+                <td class="num"><?= (int)$r['appts'] > 0
+                    ? round((int)$r['appts_done'] * 100 / (int)$r['appts']) . '%' : '—' ?></td>
+                <td class="num"><strong><?= e(money($r['revenue'])) ?></strong></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table></div>
+    <p class="muted">«إيراد مرضاه» = كل ما سدده المرضى المسنَدون لهذا الطبيب خلال الشهر.</p>
+</div>
+<?php endif; ?>
 
 <?php if ($injByDrug): ?>
 <div class="card">

@@ -341,6 +341,56 @@ switch ($type) {
         $x->download('كشف-حقن-' . $p['name']);
     }
 
+    /* ------------------------------------------------------ باقات الجلسات */
+    case 'packages': {
+        [$df, $dfArgs] = doctor_filter('p');
+        $st = $pdo->prepare(
+            "SELECT pp.*, p.name AS pname, p.code, u.name AS doctor_name,
+                (SELECT COUNT(*) FROM package_uses x WHERE x.patient_package_id = pp.id) AS used
+             FROM patient_packages pp
+             JOIN patients p ON p.id = pp.patient_id
+             LEFT JOIN users u ON u.id = p.doctor_id
+             WHERE 1=1 $df ORDER BY pp.id DESC"
+        );
+        $st->execute($dfArgs);
+        $rows = $st->fetchAll();
+
+        $totPrice = array_sum(array_map(fn($r) => (float)$r['price'], $rows));
+        $totPaid = array_sum(array_map(fn($r) => (float)$r['paid'], $rows));
+
+        $x = new XlsxWriter('باقات الجلسات');
+        $x->setTitle($clinic . ' — باقات الجلسات', 'عدد الباقات: ' . count($rows)
+            . ' — الإجمالي: ' . number_format($totPrice, 2) . ' ' . $cur);
+        $x->setColumns([
+            ['الكود', XlsxWriter::TEXT, 12],
+            ['المريض', XlsxWriter::TEXT, 24],
+            ['الطبيب', XlsxWriter::TEXT, 20],
+            ['الباقة', XlsxWriter::TEXT, 26],
+            ['الجلسات', XlsxWriter::NUM, 11],
+            ['المستهلكة', XlsxWriter::NUM, 11],
+            ['المتبقية', XlsxWriter::NUM, 11],
+            ['من', XlsxWriter::DATE, 13],
+            ['تنتهي', XlsxWriter::DATE, 13],
+            ['السعر', XlsxWriter::MONEY, 13],
+            ['المدفوع', XlsxWriter::MONEY, 13],
+            ['المتبقي', XlsxWriter::MONEY, 13],
+            ['الحالة', XlsxWriter::TEXT, 12],
+        ]);
+        foreach ($rows as $r) {
+            $x->addRow([
+                $r['code'], $r['pname'], $r['doctor_name'] ?? '—', $r['name'],
+                (int)$r['sessions_total'], (int)$r['used'],
+                (int)$r['sessions_total'] - (int)$r['used'],
+                $r['start_date'], $r['expiry_date'],
+                $r['price'], $r['paid'], (float)$r['price'] - (float)$r['paid'],
+                PKG_STATUS[$r['status']] ?? $r['status'],
+            ]);
+        }
+        $x->addTotalRow(['الإجمالي', count($rows) . ' باقة', null, null, null, null, null, null, null,
+                         $totPrice, $totPaid, $totPrice - $totPaid]);
+        $x->download('باقات-الجلسات-' . date('Y-m-d'));
+    }
+
     /* ---------------------------------------------------- التقرير الشهري */
     case 'report': {
         require_role('admin');

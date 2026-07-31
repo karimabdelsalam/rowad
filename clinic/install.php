@@ -135,6 +135,7 @@ function schema_statements(): array
             svalue TEXT NOT NULL
         ) $opts",
         ...injection_schema(),
+        ...packages_schema(),
     ];
 }
 
@@ -174,11 +175,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
                 $db->exec($sql);
             }
 
+            // أعمدة إضافية (تُنفَّذ مرة واحدة فقط)
+            $addCol = function (string $table, string $col, string $def) use ($db): void {
+                if (!$db->query("SHOW COLUMNS FROM `$table` LIKE " . $db->quote($col))->fetchAll()) {
+                    $db->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def");
+                }
+            };
+            $addCol('patients', 'doctor_id', 'INT UNSIGNED NULL');
+            $addCol('patients', 'portal_password', 'VARCHAR(255) NULL');
+            $addCol('patients', 'portal_enabled', 'TINYINT(1) NOT NULL DEFAULT 0');
+            $addCol('appointments', 'doctor_id', 'INT UNSIGNED NULL');
+            $addCol('appointments', 'patient_package_id', 'INT UNSIGNED NULL');
+
             // ربط المدفوعات بجرعات الحقن (يُنفَّذ مرة واحدة فقط)
             if (!$db->query("SHOW COLUMNS FROM payments LIKE 'dose_id'")->fetchAll()) {
                 $db->exec('ALTER TABLE payments ADD COLUMN dose_id INT UNSIGNED NULL');
                 $db->exec('ALTER TABLE payments ADD CONSTRAINT fk_pay_dose FOREIGN KEY (dose_id)
                            REFERENCES injection_doses(id) ON DELETE CASCADE');
+            }
+
+            if (!(int)$db->query('SELECT COUNT(*) FROM packages')->fetchColumn()) {
+                $pk = $db->prepare('INSERT INTO packages (name, sessions, price, validity_days, includes) VALUES (?,?,?,?,?)');
+                $pk->execute(['باقة 4 جلسات متابعة', 4, 500, 60, 'أربع جلسات متابعة مع قياسات وتعديل النظام الغذائي']);
+                $pk->execute(['باقة 8 جلسات متابعة', 8, 900, 120, 'ثماني جلسات متابعة — أوفر للمتابعة الشهرية']);
+                $pk->execute(['باقة 12 جلسة (3 شهور)', 12, 1200, 180, 'متابعة كاملة لمدة ثلاثة شهور']);
             }
 
             // أدوية شائعة كبداية — قابلة للتعديل والحذف من صفحة الأدوية
@@ -203,6 +223,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
                 'country_code'   => trim($_POST['country_code'] ?? '20') ?: '20',
                 'wa_template'    => wa_default_template(),
                 'schema_version' => (string)SCHEMA_VERSION,
+                'doctor_scope'   => 'own',
+                'notify_enabled' => '0',
+                'notify_channel' => 'whatsapp',
+                'notify_provider'=> 'webhook',
+                'notify_lead_days' => '1',
+                'cron_token'     => bin2hex(random_bytes(16)),
+                'portal_enabled' => '1',
             ];
             $st = $db->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
             foreach ($defaults as $k => $v) {

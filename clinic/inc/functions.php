@@ -321,7 +321,148 @@ function wa_link(string $phoneDigits, string $message): string
 
 /* ------------------------------------------------------------- الترقية */
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
+
+const PKG_STATUS = ['active' => 'سارية', 'finished' => 'مستهلكة', 'expired' => 'منتهية', 'cancelled' => 'ملغاة'];
+const PKG_BADGE  = ['active' => 'ok', 'finished' => 'muted', 'expired' => 'bad', 'cancelled' => 'muted'];
+const MSG_CHANNELS = ['whatsapp' => 'واتساب', 'sms' => 'رسالة نصية', 'email' => 'بريد إلكتروني'];
+
+/** جداول الباقات والرسائل — مشتركة بين التثبيت الجديد والترقية */
+function packages_schema(): array
+{
+    $opts = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+    return [
+        "CREATE TABLE IF NOT EXISTS packages (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(150) NOT NULL,
+            sessions INT NOT NULL DEFAULT 1,
+            price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            validity_days INT NOT NULL DEFAULT 90,
+            includes TEXT NULL,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS patient_packages (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            patient_id INT UNSIGNED NOT NULL,
+            package_id INT UNSIGNED NULL,
+            name VARCHAR(150) NOT NULL,
+            sessions_total INT NOT NULL,
+            price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            paid DECIMAL(10,2) NOT NULL DEFAULT 0,
+            start_date DATE NOT NULL,
+            expiry_date DATE NULL,
+            status ENUM('active','finished','expired','cancelled') NOT NULL DEFAULT 'active',
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            created_by INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+            FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE SET NULL,
+            INDEX idx_patient (patient_id, status)
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS package_uses (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            patient_package_id INT UNSIGNED NOT NULL,
+            use_date DATE NOT NULL,
+            appointment_id INT UNSIGNED NULL,
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            created_by INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_package_id) REFERENCES patient_packages(id) ON DELETE CASCADE,
+            FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE SET NULL,
+            INDEX idx_pkg (patient_package_id)
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS message_log (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            patient_id INT UNSIGNED NULL,
+            channel VARCHAR(20) NOT NULL DEFAULT 'whatsapp',
+            target VARCHAR(120) NOT NULL DEFAULT '',
+            body TEXT NULL,
+            status ENUM('sent','failed','skipped') NOT NULL DEFAULT 'sent',
+            error VARCHAR(255) NOT NULL DEFAULT '',
+            ref_type VARCHAR(30) NOT NULL DEFAULT '',
+            ref_id INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ref (ref_type, ref_id),
+            INDEX idx_created (created_at)
+        ) $opts",
+    ];
+}
+
+/* ------------------------------------------------- تعدد الأطباء والصلاحيات */
+
+/** قائمة الأطباء (تشمل المدير لأنه غالبًا الطبيب في العيادات الصغيرة) */
+function doctors_list(PDO $pdo): array
+{
+    return $pdo->query(
+        "SELECT id, name, role FROM users WHERE active = 1 AND role IN ('doctor','admin') ORDER BY role='doctor' DESC, name"
+    )->fetchAll();
+}
+
+/** هل يرى الطبيب الحالي مرضاه فقط؟ */
+function doctor_scoped(): bool
+{
+    return has_role('doctor') && setting('doctor_scope', 'own') === 'own';
+}
+
+/**
+ * شرط SQL لتقييد النتائج على مرضى الطبيب الحالي.
+ * @return array{0:string,1:array} [جزء الشرط, المعاملات]
+ */
+function doctor_filter(string $alias = 'p'): array
+{
+    if (!doctor_scoped()) {
+        return ['', []];
+    }
+    return [" AND $alias.doctor_id = ?", [user()['id']]];
+}
+
+/** هل يملك المستخدم الحالي صلاحية على ملف هذا المريض؟ */
+function can_access_patient(array $patient): bool
+{
+    if (!doctor_scoped()) {
+        return true;
+    }
+    return (int)($patient['doctor_id'] ?? 0) === (int)user()['id'];
+}
+
+/* --------------------------------------------------------- باقات الجلسات */
+
+/** عدد الجلسات المستهلكة من باقة */
+function package_used(PDO $pdo, int $patientPackageId): int
+{
+    $st = $pdo->prepare('SELECT COUNT(*) FROM package_uses WHERE patient_package_id = ?');
+    $st->execute([$patientPackageId]);
+    return (int)$st->fetchColumn();
+}
+
+/** الباقات السارية للمريض مع عدد الجلسات المتبقية */
+function patient_active_packages(PDO $pdo, int $patientId): array
+{
+    $st = $pdo->prepare(
+        "SELECT pp.*, (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) AS used
+         FROM patient_packages pp
+         WHERE pp.patient_id = ? AND pp.status = 'active'
+         ORDER BY pp.expiry_date IS NULL, pp.expiry_date, pp.id"
+    );
+    $st->execute([$patientId]);
+    return array_filter($st->fetchAll(), fn($p) => (int)$p['used'] < (int)$p['sessions_total']);
+}
+
+/** يُغلق الباقات المستهلكة أو المنتهية الصلاحية — يُستدعى من الكرون ومن صفحة الباقات */
+function refresh_package_status(PDO $pdo): int
+{
+    $n = $pdo->exec(
+        "UPDATE patient_packages pp SET pp.status = 'finished'
+         WHERE pp.status = 'active'
+           AND (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) >= pp.sessions_total"
+    );
+    $n += $pdo->exec(
+        "UPDATE patient_packages SET status = 'expired'
+         WHERE status = 'active' AND expiry_date IS NOT NULL AND expiry_date < CURDATE()"
+    );
+    return (int)$n;
+}
 
 /** جمل إنشاء جداول الحقن — مشتركة بين التثبيت الجديد والترقية */
 function injection_schema(): array
@@ -433,6 +574,38 @@ function db_migrate(PDO $pdo): void
         }
     }
 
+    if ($current < 4) {
+        foreach (packages_schema() as $sql) {
+            $pdo->exec($sql);
+        }
+        $addCol = function (string $table, string $col, string $def) use ($pdo): void {
+            if (!$pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col))->fetchAll()) {
+                $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def");
+            }
+        };
+        $addCol('patients', 'doctor_id', 'INT UNSIGNED NULL');
+        $addCol('patients', 'portal_password', 'VARCHAR(255) NULL');
+        $addCol('patients', 'portal_enabled', 'TINYINT(1) NOT NULL DEFAULT 0');
+        $addCol('appointments', 'doctor_id', 'INT UNSIGNED NULL');
+        $addCol('appointments', 'patient_package_id', 'INT UNSIGNED NULL');
+
+        $st = $pdo->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
+        foreach ([
+            'doctor_scope'     => 'own',
+            'notify_enabled'   => '0',
+            'notify_channel'   => 'whatsapp',
+            'notify_provider'  => 'webhook',
+            'notify_url'       => '',
+            'notify_token'     => '',
+            'notify_sender'    => '',
+            'notify_lead_days' => '1',
+            'cron_token'       => bin2hex(random_bytes(16)),
+            'portal_enabled'   => '1',
+        ] as $k => $v) {
+            $st->execute([$k, $v]);
+        }
+    }
+
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
         ->execute(['schema_version', (string)SCHEMA_VERSION]);
     setting_flush();
@@ -503,6 +676,7 @@ function page_header(string $title, string $active = ''): void
         ['plans.php',        'الأنظمة الغذائية',  '🥗', ['admin', 'doctor', 'reception']],
         ['injections.php',   'الحقن',             '💉', ['admin', 'doctor', 'reception']],
         ['drugs.php',        'الأدوية والمخزون',  '📦', ['admin', 'doctor']],
+        ['packages.php',     'باقات الجلسات',     '🎟️', ['admin', 'doctor', 'reception']],
         ['payments.php',     'المدفوعات',         '💰', ['admin', 'reception']],
         ['expenses.php',     'المصروفات',         '🧾', ['admin']],
         ['reports.php',      'التقارير',          '📈', ['admin']],
