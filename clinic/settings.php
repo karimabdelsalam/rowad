@@ -10,6 +10,7 @@ $keys = [
     'price_new'      => 'سعر الكشف الجديد',
     'price_followup' => 'سعر المتابعة',
     'print_note'     => 'عبارة أسفل النظام الغذائي المطبوع',
+    'country_code'   => 'كود الدولة لأرقام واتساب',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,6 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach (array_keys($keys) as $k) {
         $st->execute([$k, trim($_POST[$k] ?? '')]);
     }
+    $template = trim($_POST['wa_template'] ?? '');
+    $st->execute(['wa_template', $template !== '' ? $template : wa_default_template()]);
+
+    setting_flush();
     flash('تم حفظ الإعدادات.');
     redirect('settings.php');
 }
@@ -41,6 +46,19 @@ page_header('الإعدادات', 'settings.php');
                 </label>
             <?php endforeach; ?>
         </div>
+        <h3 class="form-section">💬 رسالة تذكير واتساب</h3>
+        <label>نص الرسالة المُرسلة للمرضى قبل الموعد
+            <textarea name="wa_template" rows="6"><?= e($current['wa_template'] ?? wa_default_template()) ?></textarea>
+        </label>
+        <p class="muted" style="margin-bottom:10px">الكلمات بين الأقواس تُستبدل تلقائيًا ببيانات كل مريض:</p>
+        <div class="table-wrap" style="margin-bottom:14px"><table>
+            <thead><tr><th>الكلمة</th><th>تُستبدل بـ</th></tr></thead>
+            <tbody>
+            <?php foreach (WA_PLACEHOLDERS as $ph => $desc): ?>
+                <tr><td><code><?= e($ph) ?></code></td><td class="muted"><?= e($desc) ?></td></tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
         <button class="btn" type="submit">حفظ الإعدادات</button>
     </form>
 </div>

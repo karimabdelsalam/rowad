@@ -72,9 +72,21 @@ function has_role(string ...$roles): bool
     return user() !== null && in_array(user()['role'], $roles, true);
 }
 
-function setting(string $key, string $default = ''): string
+function &setting_cache(): ?array
 {
     static $cache = null;
+    return $cache;
+}
+
+function setting_flush(): void
+{
+    $cache = &setting_cache();
+    $cache = null;
+}
+
+function setting(string $key, string $default = ''): string
+{
+    $cache = &setting_cache();
     if ($cache === null) {
         global $pdo;
         $cache = [];
@@ -109,6 +121,18 @@ function day_ar(string $date): string
     return AR_DAYS[date('l', strtotime($date))] ?? '';
 }
 
+const AR_MONTHS = [
+    '01' => 'يناير', '02' => 'فبراير', '03' => 'مارس', '04' => 'أبريل',
+    '05' => 'مايو', '06' => 'يونيو', '07' => 'يوليو', '08' => 'أغسطس',
+    '09' => 'سبتمبر', '10' => 'أكتوبر', '11' => 'نوفمبر', '12' => 'ديسمبر',
+];
+
+/** 2026-07 → «يوليو 2026» */
+function month_ar(string $ym): string
+{
+    return (AR_MONTHS[substr($ym, 5, 2)] ?? '') . ' ' . substr($ym, 0, 4);
+}
+
 function calc_age(?string $birth): ?int
 {
     if (!$birth || $birth === '0000-00-00') {
@@ -140,6 +164,102 @@ function bmi_label(float $bmi): array
     if ($bmi < 35)   return ['سمنة (درجة أولى)', 'bad'];
     if ($bmi < 40)   return ['سمنة (درجة ثانية)', 'bad'];
     return ['سمنة مفرطة', 'bad'];
+}
+
+/* ------------------------------------------------------------- واتساب */
+
+/** رقم العيادة الدولي بدون + أو أصفار بادئة، أو null لو الرقم غير صالح */
+function wa_phone(?string $phone, ?string $countryCode = null): ?string
+{
+    $cc = ltrim($countryCode ?? setting('country_code', '20'), '+0');
+    $digits = preg_replace('/\D+/', '', (string)$phone) ?? '';
+    if ($digits === '') {
+        return null;
+    }
+    if (str_starts_with($digits, '00')) {
+        $digits = substr($digits, 2);
+    }
+    if (str_starts_with($digits, '0')) {
+        $digits = $cc . ltrim($digits, '0');
+    } elseif ($cc !== '' && !str_starts_with($digits, $cc)) {
+        $digits = $cc . $digits;
+    }
+    return strlen($digits) >= 10 ? $digits : null;
+}
+
+const WA_PLACEHOLDERS = [
+    '{الاسم}'         => 'اسم المريض',
+    '{اليوم}'         => 'اسم اليوم (السبت، الأحد…)',
+    '{التاريخ}'       => 'تاريخ الموعد',
+    '{الوقت}'         => 'وقت الموعد',
+    '{النوع}'         => 'نوع الزيارة (كشف/متابعة)',
+    '{العيادة}'       => 'اسم العيادة',
+    '{هاتف_العيادة}' => 'هاتف العيادة',
+    '{عنوان_العيادة}' => 'عنوان العيادة',
+];
+
+function wa_default_template(): string
+{
+    return "مرحبًا {الاسم} 🌿\n"
+        . "نذكّركم بموعدكم في {العيادة} يوم {اليوم} الموافق {التاريخ} الساعة {الوقت}.\n"
+        . "برجاء الحضور قبل الموعد بـ 10 دقائق.\n"
+        . "لتأكيد أو تعديل الموعد: {هاتف_العيادة}";
+}
+
+/** يبني نص رسالة التذكير من القالب المحفوظ في الإعدادات */
+function wa_message(array $appt, ?string $template = null): string
+{
+    $template = $template ?? setting('wa_template', wa_default_template());
+    return strtr($template, [
+        '{الاسم}'         => (string)($appt['pname'] ?? ''),
+        '{اليوم}'         => day_ar((string)$appt['adate']),
+        '{التاريخ}'       => fmt_date((string)$appt['adate']),
+        '{الوقت}'         => fmt_time((string)$appt['atime']),
+        '{النوع}'         => APPT_TYPES[$appt['type'] ?? ''] ?? '',
+        '{العيادة}'       => setting('clinic_name', 'العيادة'),
+        '{هاتف_العيادة}' => setting('clinic_phone'),
+        '{عنوان_العيادة}' => setting('clinic_address'),
+    ]);
+}
+
+/** رابط wa.me جاهز للفتح — يعمل مع واتساب على الموبايل والويب */
+function wa_link(string $phoneDigits, string $message): string
+{
+    return 'https://wa.me/' . $phoneDigits . '?text=' . rawurlencode($message);
+}
+
+/* ------------------------------------------------------------- الترقية */
+
+const SCHEMA_VERSION = 2;
+
+/**
+ * ترقية بنية قاعدة البيانات للتركيبات القديمة — تعمل مرة واحدة فقط
+ * لأن الفحص يقرأ من الإعدادات المُحمّلة أصلًا في الذاكرة.
+ */
+function db_migrate(PDO $pdo): void
+{
+    try {
+        $current = (int)setting('schema_version', '1');
+    } catch (PDOException) {
+        return; // النظام غير مثبت بعد
+    }
+    if ($current >= SCHEMA_VERSION) {
+        return;
+    }
+
+    if ($current < 2) {
+        $cols = $pdo->query("SHOW COLUMNS FROM appointments LIKE 'reminder_sent'")->fetchAll();
+        if (!$cols) {
+            $pdo->exec('ALTER TABLE appointments ADD COLUMN reminder_sent DATETIME NULL');
+        }
+        $st = $pdo->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
+        $st->execute(['country_code', '20']);
+        $st->execute(['wa_template', wa_default_template()]);
+    }
+
+    $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
+        ->execute(['schema_version', (string)SCHEMA_VERSION]);
+    setting_flush();
 }
 
 function patient_options(PDO $pdo): array
@@ -202,6 +322,7 @@ function page_header(string $title, string $active = ''): void
     $nav = [
         ['index.php',        'لوحة التحكم',      '🏠', ['admin', 'doctor', 'reception']],
         ['appointments.php', 'المواعيد',          '📅', ['admin', 'doctor', 'reception']],
+        ['reminders.php',    'تذكير واتساب',      '💬', ['admin', 'doctor', 'reception']],
         ['patients.php',     'المرضى',            '👥', ['admin', 'doctor', 'reception']],
         ['plans.php',        'الأنظمة الغذائية',  '🥗', ['admin', 'doctor', 'reception']],
         ['payments.php',     'المدفوعات',         '💰', ['admin', 'reception']],

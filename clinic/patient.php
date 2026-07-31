@@ -95,6 +95,10 @@ if (has_role('admin', 'reception')) {
     <div class="card-head">
         <h2><?= e($p['name']) ?> <small class="muted">(<?= e($p['code']) ?>)</small></h2>
         <div class="actions">
+            <?php $waPhone = wa_phone($p['phone']); if ($waPhone): ?>
+                <a class="btn btn-sm btn-wa" target="_blank" rel="noopener"
+                   href="<?= e('https://wa.me/' . $waPhone) ?>" title="فتح محادثة واتساب">💬 واتساب</a>
+            <?php endif; ?>
             <a class="btn btn-light btn-sm" href="patients.php?edit=<?= $id ?>">تعديل البيانات</a>
             <a class="btn btn-sm" href="plan_edit.php?patient=<?= $id ?>">+ نظام غذائي</a>
             <?php if (has_role('admin')): ?>
@@ -171,7 +175,12 @@ if (has_role('admin', 'reception')) {
         </form>
     </div>
     <div class="card">
-        <h2>سجل القياسات</h2>
+        <div class="card-head">
+            <h2>سجل القياسات</h2>
+            <?php if ($measures): ?>
+            <a class="btn btn-xls btn-sm" href="export.php?type=measurements&patient=<?= $id ?>">⬇ تصدير Excel</a>
+            <?php endif; ?>
+        </div>
         <div class="table-wrap"><table>
             <thead><tr><th>التاريخ</th><th>الوزن</th><th>BMI</th><th>دهون %</th><th>عضلات</th><th>وسط</th><th>أرداف</th><th>ذراع</th><th>فخذ</th><th>ملاحظات</th><th></th></tr></thead>
             <tbody>

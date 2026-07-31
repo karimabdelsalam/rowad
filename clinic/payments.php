@@ -89,6 +89,7 @@ page_header('المدفوعات', 'payments.php');
             <label>من <input type="date" name="from" value="<?= e($from) ?>"></label>
             <label>إلى <input type="date" name="to" value="<?= e($to) ?>"></label>
             <button class="btn btn-light btn-sm" type="submit">عرض</button>
+            <a class="btn btn-xls btn-sm" href="export.php?type=payments&from=<?= e($from) ?>&to=<?= e($to) ?>">⬇ تصدير Excel</a>
         </form>
     </div>
     <div class="table-wrap"><table>

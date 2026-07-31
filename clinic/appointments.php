@@ -88,6 +88,8 @@ page_header('المواعيد', 'appointments.php');
         <form class="inline-form" method="get">
             <input type="date" name="date" value="<?= e($date) ?>">
             <button class="btn btn-light btn-sm" type="submit">عرض يوم آخر</button>
+            <a class="btn btn-sm btn-wa" href="reminders.php?date=<?= e($date) ?>">💬 تذكيرات واتساب</a>
+            <a class="btn btn-xls btn-sm" href="export.php?type=appointments&from=<?= e($weekDays[0]) ?>&to=<?= e($weekDays[6]) ?>">⬇ تصدير الأسبوع</a>
         </form>
     </div>
     <form method="post">
@@ -127,6 +129,10 @@ page_header('المواعيد', 'appointments.php');
                 <td><span class="badge <?= e(APPT_BADGE[$a['status']]) ?>"><?= e(APPT_STATUS[$a['status']]) ?></span></td>
                 <td><?= e($a['notes']) ?></td>
                 <td><div class="actions">
+                    <?php $wa = wa_phone($a['phone']); if ($wa && $a['status'] === 'scheduled'): ?>
+                        <a class="btn btn-sm btn-wa" href="<?= e(wa_link($wa, wa_message($a))) ?>"
+                           target="_blank" rel="noopener" title="إرسال تذكير واتساب">💬</a>
+                    <?php endif; ?>
                     <?php
                     $btns = $a['status'] === 'scheduled'
                         ? ['done' => '✔ تم', 'no_show' => 'لم يحضر', 'cancelled' => 'إلغاء']

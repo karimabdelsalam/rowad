@@ -139,7 +139,10 @@ if ($showForm): ?>
             <button class="btn btn-sm" type="submit">بحث</button>
             <?php if ($q !== ''): ?><a class="btn btn-light btn-sm" href="patients.php">إلغاء البحث</a><?php endif; ?>
         </form>
-        <a class="btn" href="patients.php?new=1">+ مريض جديد</a>
+        <div class="actions">
+            <a class="btn btn-xls" href="export.php?type=patients&q=<?= urlencode($q) ?>">⬇ تصدير Excel</a>
+            <a class="btn" href="patients.php?new=1">+ مريض جديد</a>
+        </div>
     </div>
     <p class="muted">إجمالي النتائج: <?= $total ?></p>
     <div class="table-wrap"><table>

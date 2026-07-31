@@ -171,6 +171,10 @@ textarea { min-height: 90px; resize: vertical; }
 .btn-danger { background: var(--danger); }
 .btn-danger:hover { background: #991b1b; }
 .btn-sm { padding: 4px 12px; font-size: 13px; font-weight: 400; }
+.btn-wa { background: #25d366; color: #06371a; font-weight: 700; }
+.btn-wa:hover { background: #1ebe5a; color: #06371a; }
+.btn-xls { background: #1d6f42; }
+.btn-xls:hover { background: #14532d; }
 .btn-block { width: 100%; margin-top: 6px; }
 .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 

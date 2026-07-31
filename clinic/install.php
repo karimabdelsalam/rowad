@@ -2,6 +2,8 @@
 declare(strict_types=1);
 mb_internal_encoding('UTF-8');
 
+require_once __DIR__ . '/inc/functions.php';
+
 $configFile = __DIR__ . '/inc/config.php';
 $installed = false;
 if (is_file($configFile)) {
@@ -70,6 +72,7 @@ function schema_statements(): array
             type ENUM('new','followup','consult') NOT NULL DEFAULT 'followup',
             status ENUM('scheduled','done','cancelled','no_show') NOT NULL DEFAULT 'scheduled',
             notes VARCHAR(255) NOT NULL DEFAULT '',
+            reminder_sent DATETIME NULL,
             created_by INT UNSIGNED NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
@@ -181,6 +184,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
                 'price_new'      => '300',
                 'price_followup' => '150',
                 'print_note'     => 'نتمنى لكم دوام الصحة والعافية 🌿',
+                'country_code'   => trim($_POST['country_code'] ?? '20') ?: '20',
+                'wa_template'    => wa_default_template(),
+                'schema_version' => (string)SCHEMA_VERSION,
             ];
             $st = $db->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
             foreach ($defaults as $k => $v) {
@@ -264,6 +270,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
             </div>
             <h3 class="form-section">بيانات العيادة</h3>
             <label>اسم العيادة <input name="clinic_name" value="<?= htmlspecialchars($_POST['clinic_name'] ?? '') ?>" required placeholder="مثال: عيادة د. أحمد للتغذية العلاجية"></label>
+            <label>كود الدولة لأرقام واتساب (مصر 20، السعودية 966، الإمارات 971)
+                <input name="country_code" value="<?= htmlspecialchars($_POST['country_code'] ?? '20') ?>" dir="ltr"></label>
             <h3 class="form-section">حساب المدير</h3>
             <div class="grid2">
                 <label>الاسم <input name="admin_name" value="<?= htmlspecialchars($_POST['admin_name'] ?? '') ?>" required></label>
