@@ -18,8 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($u && password_verify($password, $u['password'])) {
         session_regenerate_id(true);
         $_SESSION['user'] = ['id' => (int)$u['id'], 'name' => $u['name'], 'role' => $u['role']];
+        activity($pdo, 'login', 'user', (int)$u['id'], 'تسجيل دخول ناجح');
         redirect('index.php');
     }
+    activity($pdo, 'login_fail', 'user', null, 'محاولة دخول باسم: ' . mb_substr($username, 0, 60));
     sleep(1); // إبطاء محاولات التخمين
     $error = 'اسم الدخول أو كلمة المرور غير صحيحة.';
 }

@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $docId,
             user()['id'],
         ]);
+        activity($pdo, 'create', 'appointment', $pid, 'حجز موعد ' . fmt_date($_POST['adate'] ?: $date));
         flash('تم حجز الموعد.');
         redirect('appointments.php?date=' . urlencode($_POST['adate'] ?: $date));
     }
@@ -52,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         deny_unless('appt.delete', $back);
         $pdo->prepare('DELETE FROM appointments WHERE id = ?')->execute([(int)$_POST['aid']]);
+        activity($pdo, 'delete', 'appointment', null, 'حذف موعد رقم ' . (int)$_POST['aid']);
         flash('تم حذف الموعد.');
         redirect($back);
     }

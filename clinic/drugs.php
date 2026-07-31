@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     user()['id'],
                 ]);
         }
+        activity($pdo, 'stock', 'drug', $drugId, 'استلام ' . num_fmt($pens) . ' قلم (' . units_fmt($unitsTotal) . ') — ' . $drug['name']);
         flash('تم استلام ' . num_fmt($pens) . ' قلم (' . units_fmt($unitsTotal) . ') في المخزن.');
         redirect('drugs.php?stock=1');
     }

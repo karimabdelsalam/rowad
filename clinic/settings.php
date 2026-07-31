@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $st->execute(['wa_template', $template !== '' ? $template : wa_default_template()]);
 
     foreach (['doctor_scope', 'notify_channel', 'notify_provider', 'notify_url',
-              'notify_sender', 'notify_lead_days'] as $k) {
+              'notify_sender', 'notify_lead_days', 'max_upload_mb', 'inactive_days'] as $k) {
         $st->execute([$k, trim($_POST[$k] ?? '')]);
     }
     $st->execute(['notify_enabled', isset($_POST['notify_enabled']) ? '1' : '0']);
@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     setting_flush();
+    activity($pdo, 'settings', 'system', null, 'تحديث إعدادات النظام');
     flash('تم حفظ الإعدادات.');
     redirect('settings.php');
 }
@@ -129,6 +130,14 @@ page_header('الإعدادات', 'settings.php');
             <label style="display:flex;align-items:center;gap:8px;font-weight:400">
                 <input type="checkbox" name="regen_cron" style="width:auto"> توليد رمز كرون جديد (يُبطل الرابط القديم)
             </label>
+        </div>
+
+        <h3 class="form-section">📎 المرفقات والمتابعة</h3>
+        <div class="grid2">
+            <label>أقصى حجم للملف المرفوع (ميجابايت)
+                <input type="number" min="1" max="64" name="max_upload_mb" value="<?= e($current['max_upload_mb'] ?? '8') ?>"></label>
+            <label>يُعتبر المريض متوقفًا بعد (يوم)
+                <input type="number" min="7" max="365" name="inactive_days" value="<?= e($current['inactive_days'] ?? '45') ?>"></label>
         </div>
 
         <h3 class="form-section">📱 بوابة المرضى</h3>

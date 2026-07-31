@@ -142,11 +142,22 @@ const PERM_GROUPS = [
         'report.view' => 'عرض التقارير الشهرية',
         'profit.view' => 'عرض التكاليف وهوامش الربح',
     ],
+    'الدور والانتظار' => [
+        'queue.view'   => 'عرض دور اليوم وشاشة الانتظار',
+        'queue.manage' => 'إضافة ونداء وإنهاء الدور',
+    ],
+    'المرفقات' => [
+        'files.view'   => 'عرض مرفقات المريض (تحاليل وصور)',
+        'files.upload' => 'رفع مرفقات',
+        'files.delete' => 'حذف مرفقات',
+    ],
     'أدوات' => [
-        'calc.use'    => 'حاسبة السعرات والاحتياج اليومي',
+        'calc.use'      => 'حاسبة السعرات والاحتياج اليومي',
         'receipt.print' => 'طباعة إيصالات الدفع',
+        'inactive.view' => 'تقرير المرضى المتوقفين عن المتابعة',
     ],
     'النظام' => [
+        'activity.view'   => 'عرض سجل نشاط المستخدمين',
         'backup.run'      => 'أخذ نسخة احتياطية من قاعدة البيانات',
         'portal.manage'   => 'تفعيل بوابة المرضى',
         'export.data'     => 'تصدير ملفات Excel',
@@ -191,7 +202,9 @@ function role_perms(string $role): array
             'inj.view', 'inj.plan', 'inj.give',
             'drug.view',
             'pkg.view', 'pkg.use',
-            'calc.use', 'receipt.print',
+            'calc.use', 'receipt.print', 'inactive.view',
+            'queue.view', 'queue.manage',
+            'files.view', 'files.upload', 'files.delete',
             'export.data',
         ],
         'reception' => [
@@ -202,7 +215,9 @@ function role_perms(string $role): array
             'inj.view', 'inj.give',
             'pkg.view', 'pkg.sell', 'pkg.use',
             'pay.view', 'pay.create',
-            'calc.use', 'receipt.print',
+            'calc.use', 'receipt.print', 'inactive.view',
+            'queue.view', 'queue.manage',
+            'files.view', 'files.upload',
             'portal.manage', 'export.data',
         ],
         default => [],
@@ -504,10 +519,35 @@ function wa_link(string $phoneDigits, string $message): string
 
 /* ------------------------------------------------------------- الترقية */
 
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 const PKG_STATUS = ['active' => 'سارية', 'finished' => 'مستهلكة', 'expired' => 'منتهية', 'cancelled' => 'ملغاة'];
 const PKG_BADGE  = ['active' => 'ok', 'finished' => 'muted', 'expired' => 'bad', 'cancelled' => 'muted'];
+const QUEUE_STATUS = ['waiting' => 'في الانتظار', 'in_room' => 'بالداخل', 'done' => 'انتهى', 'skipped' => 'تخطّى'];
+const QUEUE_BADGE  = ['waiting' => 'warn', 'in_room' => 'info', 'done' => 'ok', 'skipped' => 'muted'];
+
+const FILE_CATS = ['lab' => 'تحاليل', 'photo' => 'صور قبل/بعد', 'report' => 'تقارير وأشعة', 'other' => 'أخرى'];
+
+/** الامتدادات المسموح برفعها ونوع المحتوى المقابل لها */
+const FILE_TYPES = [
+    'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+    'webp' => 'image/webp', 'pdf' => 'application/pdf',
+];
+
+const ACT_LABELS = [
+    'login' => 'تسجيل دخول', 'login_fail' => 'محاولة دخول فاشلة', 'logout' => 'تسجيل خروج',
+    'create' => 'إضافة', 'update' => 'تعديل', 'delete' => 'حذف',
+    'pay' => 'تحصيل', 'dose' => 'جرعة حقن', 'session' => 'خصم جلسة',
+    'stock' => 'حركة مخزون', 'portal' => 'بوابة المريض', 'backup' => 'نسخة احتياطية',
+    'settings' => 'إعدادات', 'queue' => 'الدور',
+];
+const ACT_ENTITIES = [
+    'patient' => 'مريض', 'measurement' => 'قياس', 'appointment' => 'موعد',
+    'plan' => 'نظام غذائي', 'injection' => 'حقن', 'drug' => 'دواء',
+    'package' => 'باقة', 'payment' => 'دفعة', 'expense' => 'مصروف',
+    'user' => 'مستخدم', 'system' => 'النظام', 'queue' => 'الدور', 'file' => 'مرفق',
+];
+
 const MSG_CHANNELS = ['whatsapp' => 'واتساب', 'sms' => 'رسالة نصية', 'email' => 'بريد إلكتروني'];
 
 /** جداول الباقات والرسائل — مشتركة بين التثبيت الجديد والترقية */
@@ -570,6 +610,192 @@ function packages_schema(): array
             INDEX idx_created (created_at)
         ) $opts",
     ];
+}
+
+/** جداول سجل النشاط والدور والمرفقات */
+function ops_schema(): array
+{
+    $opts = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+    return [
+        "CREATE TABLE IF NOT EXISTS activity_log (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NULL,
+            user_name VARCHAR(100) NOT NULL DEFAULT '',
+            action VARCHAR(30) NOT NULL,
+            entity VARCHAR(30) NOT NULL DEFAULT '',
+            entity_id INT UNSIGNED NULL,
+            summary VARCHAR(255) NOT NULL DEFAULT '',
+            ip VARCHAR(45) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_created (created_at),
+            INDEX idx_user (user_id, created_at),
+            INDEX idx_entity (entity, entity_id)
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS queue (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            qdate DATE NOT NULL,
+            number INT UNSIGNED NOT NULL,
+            patient_id INT UNSIGNED NOT NULL,
+            doctor_id INT UNSIGNED NULL,
+            appointment_id INT UNSIGNED NULL,
+            status ENUM('waiting','in_room','done','skipped') NOT NULL DEFAULT 'waiting',
+            arrived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            called_at DATETIME NULL,
+            done_at DATETIME NULL,
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            created_by INT UNSIGNED NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+            UNIQUE KEY uq_day_number (qdate, number),
+            INDEX idx_day (qdate, status)
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS attachments (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            patient_id INT UNSIGNED NOT NULL,
+            stored_name VARCHAR(80) NOT NULL,
+            original_name VARCHAR(180) NOT NULL DEFAULT '',
+            mime VARCHAR(100) NOT NULL DEFAULT '',
+            size_bytes INT UNSIGNED NOT NULL DEFAULT 0,
+            category ENUM('lab','photo','report','other') NOT NULL DEFAULT 'other',
+            taken_date DATE NULL,
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            uploaded_by INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+            INDEX idx_patient (patient_id, category, taken_date)
+        ) $opts",
+    ];
+}
+
+/* ------------------------------------------------------- سجل النشاط */
+
+/**
+ * يسجّل حدثًا في سجل النشاط. لا يوقف العملية أبدًا لو فشل التسجيل،
+ * لأن السجل مساعد ولا يصح أن يمنع عمل العيادة.
+ */
+function activity(PDO $pdo, string $action, string $entity, ?int $entityId = null, string $summary = ''): void
+{
+    try {
+        $u = user();
+        $pdo->prepare(
+            'INSERT INTO activity_log (user_id, user_name, action, entity, entity_id, summary, ip)
+             VALUES (?,?,?,?,?,?,?)'
+        )->execute([
+            $u['id'] ?? null,
+            $u['name'] ?? 'زائر',
+            $action,
+            $entity,
+            $entityId,
+            mb_substr($summary, 0, 250),
+            mb_substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
+        ]);
+    } catch (PDOException) {
+        // تجاهل — التسجيل لا يعطّل العملية الأصلية
+    }
+}
+
+/* ------------------------------------------------------------ الدور */
+
+/** الرقم التالي في دور اليوم */
+function queue_next_number(PDO $pdo, string $date): int
+{
+    $st = $pdo->prepare('SELECT COALESCE(MAX(number), 0) + 1 FROM queue WHERE qdate = ?');
+    $st->execute([$date]);
+    return (int)$st->fetchColumn();
+}
+
+/** الحالة اللحظية للدور: مَن بالداخل وكم ينتظر */
+function queue_snapshot(PDO $pdo, string $date): array
+{
+    $st = $pdo->prepare(
+        "SELECT q.*, p.name AS pname, p.code, p.phone, u.name AS doctor_name
+         FROM queue q JOIN patients p ON p.id = q.patient_id
+         LEFT JOIN users u ON u.id = q.doctor_id
+         WHERE q.qdate = ? ORDER BY FIELD(q.status,'in_room','waiting','skipped','done'), q.number"
+    );
+    $st->execute([$date]);
+    return $st->fetchAll();
+}
+
+/* --------------------------------------------------------- المرفقات */
+
+function uploads_dir(): string
+{
+    return dirname(__DIR__) . '/uploads';
+}
+
+function max_upload_mb(): float
+{
+    return max(1.0, (float)setting('max_upload_mb', '8'));
+}
+
+function human_size(int $bytes): string
+{
+    if ($bytes >= 1048576) {
+        return num_fmt($bytes / 1048576, 1) . ' م.ب';
+    }
+    if ($bytes >= 1024) {
+        return num_fmt($bytes / 1024, 0) . ' ك.ب';
+    }
+    return $bytes . ' بايت';
+}
+
+/**
+ * يستقبل ملفًا مرفوعًا ويحفظه باسم عشوائي داخل uploads/.
+ * @return array{0:bool,1:string} [نجح, رسالة أو اسم الملف المخزَّن]
+ */
+function store_upload(array $file): array
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        return [false, match ($file['error'] ?? -1) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'حجم الملف أكبر من المسموح على السيرفر.',
+            UPLOAD_ERR_NO_FILE => 'لم تختر ملفًا.',
+            default => 'تعذر رفع الملف.',
+        }];
+    }
+    if (!is_uploaded_file($file['tmp_name'])) {
+        return [false, 'ملف غير صالح.'];
+    }
+    if ($file['size'] > max_upload_mb() * 1048576) {
+        return [false, 'الحجم أكبر من ' . num_fmt(max_upload_mb()) . ' ميجابايت.'];
+    }
+
+    $ext = strtolower(pathinfo((string)$file['name'], PATHINFO_EXTENSION));
+    if (!isset(FILE_TYPES[$ext])) {
+        return [false, 'الامتدادات المسموحة: ' . implode('، ', array_unique(array_keys(FILE_TYPES))) . '.'];
+    }
+
+    // تحقّق فعلي من المحتوى وليس من الامتداد وحده
+    $mime = FILE_TYPES[$ext];
+    if (str_starts_with($mime, 'image/')) {
+        $info = @getimagesize($file['tmp_name']);
+        if ($info === false) {
+            return [false, 'الملف ليس صورة صالحة.'];
+        }
+        $mime = $info['mime'];
+    } else {
+        $head = (string)@file_get_contents($file['tmp_name'], false, null, 0, 5);
+        if ($head !== '%PDF-') {
+            return [false, 'الملف ليس PDF صالحًا.'];
+        }
+    }
+
+    $dir = uploads_dir();
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+        return [false, 'تعذر إنشاء مجلد الرفع — تأكد من صلاحيات الكتابة.'];
+    }
+    // حماية المجلد حتى لو رُفع بدون .htaccess
+    $ht = $dir . '/.htaccess';
+    if (!is_file($ht)) {
+        @file_put_contents($ht, "Require all denied
+");
+    }
+
+    $stored = bin2hex(random_bytes(16)) . '.' . $ext;
+    if (!@move_uploaded_file($file['tmp_name'], $dir . '/' . $stored)) {
+        return [false, 'تعذر حفظ الملف على السيرفر.'];
+    }
+    @chmod($dir . '/' . $stored, 0644);
+    return [true, $stored . '|' . $mime];
 }
 
 /* ------------------------------------------------- تعدد الأطباء والصلاحيات */
@@ -808,6 +1034,15 @@ function db_migrate(PDO $pdo): void
         $addIndex('injection_doses', 'idx_patient_date', 'patient_id, dose_date');
     }
 
+    if ($current < 7) {
+        foreach (ops_schema() as $sql) {
+            $pdo->exec($sql);
+        }
+        $st = $pdo->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
+        $st->execute(['max_upload_mb', '8']);
+        $st->execute(['inactive_days', '45']);
+    }
+
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
         ->execute(['schema_version', (string)SCHEMA_VERSION]);
     setting_flush();
@@ -878,6 +1113,7 @@ function page_header(string $title, string $active = ''): void
     $clinic = setting('clinic_name', 'عيادة التغذية');
     $nav = [
         ['index.php',        'لوحة التحكم',      '🏠', ''],
+        ['queue.php',        'الدور والانتظار',   '🔢', 'queue.view'],
         ['appointments.php', 'المواعيد',          '📅', 'appt.view'],
         ['reminders.php',    'تذكير واتساب',      '💬', 'appt.remind'],
         ['patients.php',     'المرضى',            '👥', 'patients.view'],
@@ -888,7 +1124,9 @@ function page_header(string $title, string $active = ''): void
         ['payments.php',     'المدفوعات',         '💰', 'pay.view'],
         ['expenses.php',     'المصروفات',         '🧾', 'exp.view'],
         ['calculator.php',   'حاسبة السعرات',     '🧮', 'calc.use'],
+        ['inactive.php',     'متوقفون عن المتابعة','😴', 'inactive.view'],
         ['reports.php',      'التقارير',          '📈', 'report.view'],
+        ['activity.php',     'سجل النشاط',        '📜', 'activity.view'],
         ['backup.php',       'نسخة احتياطية',     '💾', 'backup.run'],
         ['users.php',        'المستخدمون',        '👤', 'users.manage'],
         ['settings.php',     'الإعدادات',         '⚙️', 'settings.manage'],

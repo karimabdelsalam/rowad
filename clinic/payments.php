@@ -24,13 +24,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             trim($_POST['notes'] ?? ''),
             user()['id'],
         ]);
+        activity($pdo, 'pay', 'payment', (int)$pdo->lastInsertId(), 'تحصيل ' . money($amount) . ' — ' . trim($_POST['service'] ?? ''));
         flash('تم تسجيل الدفعة.');
         redirect('payments.php');
     }
 
     if ($action === 'delete') {
         deny_unless('pay.delete', 'payments.php');
+        $q = $pdo->prepare('SELECT amount FROM payments WHERE id = ?');
+        $q->execute([(int)$_POST['payid']]);
+        $delAmt = (float)$q->fetchColumn();
         $pdo->prepare('DELETE FROM payments WHERE id = ?')->execute([(int)$_POST['payid']]);
+        activity($pdo, 'delete', 'payment', (int)$_POST['payid'], 'حذف دفعة ' . money($delAmt));
         flash('تم حذف الدفعة.');
         redirect('payments.php?from=' . urlencode($_POST['from'] ?? '') . '&to=' . urlencode($_POST['to'] ?? ''));
     }

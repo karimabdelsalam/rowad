@@ -137,6 +137,7 @@ function schema_statements(): array
         ) $opts",
         ...injection_schema(),
         ...packages_schema(),
+        ...ops_schema(),
     ];
 }
 
@@ -231,6 +232,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
                 'notify_lead_days' => '1',
                 'cron_token'     => bin2hex(random_bytes(16)),
                 'portal_enabled' => '1',
+                'max_upload_mb'  => '8',
+                'inactive_days'  => '45',
             ];
             $st = $db->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
             foreach ($defaults as $k => $v) {

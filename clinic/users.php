@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare('UPDATE users SET password=? WHERE id=?')
                     ->execute([password_hash($password, PASSWORD_DEFAULT), $uid]);
             }
+            activity($pdo, 'update', 'user', $uid, 'تعديل حساب: ' . $name);
             flash('تم تحديث المستخدم.');
         } else {
             if (mb_strlen($password) < 8) {
@@ -56,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $pdo->prepare('INSERT INTO users (name, username, password, role, active, perms) VALUES (?,?,?,?,?,?)')
                 ->execute([$name, $username, password_hash($password, PASSWORD_DEFAULT), $role, $active, $permsJson]);
+            activity($pdo, 'create', 'user', (int)$pdo->lastInsertId(), 'إنشاء حساب: ' . $name . ' (' . (ROLES[$role] ?? $role) . ')');
             flash('تم إنشاء المستخدم.');
         }
         redirect('users.php');
@@ -67,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('لا يمكنك حذف حسابك الحالي.', 'danger');
         } else {
             $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
+            activity($pdo, 'delete', 'user', $uid, 'حذف حساب مستخدم');
             flash('تم حذف المستخدم.');
         }
         redirect('users.php');

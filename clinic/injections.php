@@ -99,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('injections.php');
         }
 
+        activity($pdo, 'dose', 'injection', $pid, units_fmt($units) . ' من ' . $drug['name'] . ' بمبلغ ' . money($amount));
         $rest = $amount - $paidNow;
         flash('تم تسجيل ' . units_fmt($units) . ' بمبلغ ' . money($amount)
             . ($rest > 0 ? ' — متبقٍ على المريض ' . money($rest) : ' — مدفوع بالكامل ✔'));
@@ -160,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // المدفوعات المرتبطة تُحذف تلقائيًا عبر ON DELETE CASCADE
                 $pdo->prepare('DELETE FROM injection_doses WHERE id = ?')->execute([$doseId]);
                 $pdo->commit();
+                activity($pdo, 'delete', 'injection', (int)$dose['patient_id'], 'حذف جرعة ' . units_fmt($dose['units']));
                 flash('تم حذف الجرعة وإرجاع الوحدات للمخزن.');
             } catch (PDOException) {
                 $pdo->rollBack();

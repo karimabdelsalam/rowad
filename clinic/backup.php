@@ -59,6 +59,7 @@ if (isset($_GET['download'])) {
         flush();
     }
     echo "\nSET FOREIGN_KEY_CHECKS=1;\n-- انتهت النسخة الاحتياطية\n";
+    activity($pdo, 'backup', 'system', null, 'تنزيل نسخة احتياطية');
     exit;
 }
 

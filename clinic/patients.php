@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  address=?, medical_conditions=?, allergies=?, goal=?, notes=?, doctor_id=? WHERE id=?'
             );
             $st->execute([...$data, $id]);
+            activity($pdo, 'update', 'patient', $id, 'تعديل بيانات: ' . $name);
             flash('تم تحديث بيانات المريض.');
         } else {
             $st = $pdo->prepare(
@@ -43,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $st->execute($data);
             $id = (int)$pdo->lastInsertId();
             $pdo->prepare("UPDATE patients SET code = CONCAT('P-', LPAD(id, 4, '0')) WHERE id = ?")->execute([$id]);
+            activity($pdo, 'create', 'patient', $id, 'تسجيل مريض جديد: ' . $name);
             flash('تم تسجيل المريض بنجاح.');
         }
         redirect('patient.php?id=' . $id);
@@ -51,7 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         deny_unless('patients.delete', 'patients.php');
         $id = (int)($_POST['id'] ?? 0);
+        $q = $pdo->prepare('SELECT name FROM patients WHERE id = ?');
+        $q->execute([$id]);
+        $delName = (string)$q->fetchColumn();
         $pdo->prepare('DELETE FROM patients WHERE id = ?')->execute([$id]);
+        activity($pdo, 'delete', 'patient', $id, 'حذف مريض: ' . $delName);
         flash('تم حذف المريض وكل بياناته.');
         redirect('patients.php');
     }

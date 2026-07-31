@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             trim($_POST['m_notes'] ?? ''),
             user()['id'],
         ]);
+        activity($pdo, 'create', 'measurement', $id, 'قياس ' . num_fmt($weight) . ' كجم — ' . $p['name']);
         flash('تم تسجيل القياس.');
         redirect("patient.php?id=$id&tab=measure");
     }
@@ -49,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         deny_unless('measure.delete', "patient.php?id=$id&tab=measure");
         $pdo->prepare('DELETE FROM measurements WHERE id = ? AND patient_id = ?')
             ->execute([(int)$_POST['mid'], $id]);
+        activity($pdo, 'delete', 'measurement', $id, 'حذف قياس — ' . $p['name']);
         flash('تم حذف القياس.');
         redirect("patient.php?id=$id&tab=measure");
     }
@@ -86,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare('INSERT INTO injection_plans (patient_id, drug_id, start_date, end_date, weekly_units,
                            unit_price, status, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?)')
                 ->execute([$id, ...$data, user()['id']]);
+            activity($pdo, 'create', 'injection', $id, 'بروتوكول حقن ' . num_fmt($weekly) . ' وحدة — ' . $p['name']);
             flash('تم إنشاء بروتوكول الحقن.');
         }
         redirect("patient.php?id=$id&tab=inj");
@@ -143,6 +146,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('تم تفعيل البوابة. كلمة المرور: ' . $pass . ' — سلّمها للمريض الآن، لن تظهر مرة أخرى.');
         }
         redirect("patient.php?id=$id&tab=portal");
+    }
+
+    /* ------------------------------------------------- المرفقات */
+    if ($action === 'upload') {
+        deny_unless('files.upload', "patient.php?id=$id&tab=files");
+        [$ok, $res] = store_upload($_FILES['file'] ?? []);
+        if (!$ok) {
+            flash($res, 'danger');
+            redirect("patient.php?id=$id&tab=files");
+        }
+        [$stored, $mime] = explode('|', $res, 2);
+        $cat = array_key_exists($_POST['category'] ?? '', FILE_CATS) ? $_POST['category'] : 'other';
+        $pdo->prepare(
+            'INSERT INTO attachments (patient_id, stored_name, original_name, mime, size_bytes,
+             category, taken_date, notes, uploaded_by) VALUES (?,?,?,?,?,?,?,?,?)'
+        )->execute([
+            $id, $stored,
+            mb_substr((string)($_FILES['file']['name'] ?? ''), 0, 180),
+            $mime,
+            (int)($_FILES['file']['size'] ?? 0),
+            $cat,
+            ($_POST['taken_date'] ?? '') ?: date('Y-m-d'),
+            trim($_POST['file_notes'] ?? ''),
+            user()['id'],
+        ]);
+        activity($pdo, 'create', 'file', $id, 'رفع مرفق (' . (FILE_CATS[$cat] ?? $cat) . ') — ' . $p['name']);
+        flash('تم رفع الملف.');
+        redirect("patient.php?id=$id&tab=files");
+    }
+
+    if ($action === 'del_file') {
+        deny_unless('files.delete', "patient.php?id=$id&tab=files");
+        $st = $pdo->prepare('SELECT * FROM attachments WHERE id = ? AND patient_id = ?');
+        $st->execute([(int)($_POST['fid'] ?? 0), $id]);
+        if ($f = $st->fetch()) {
+            @unlink(uploads_dir() . '/' . basename((string)$f['stored_name']));
+            $pdo->prepare('DELETE FROM attachments WHERE id = ?')->execute([(int)$f['id']]);
+            activity($pdo, 'delete', 'file', $id, 'حذف مرفق — ' . $p['name']);
+            flash('تم حذف الملف.');
+        }
+        redirect("patient.php?id=$id&tab=files");
     }
 
     if ($action === 'use_pkg') {
@@ -255,6 +299,7 @@ $tabs = [
     'plans'    => 'الأنظمة الغذائية',
     'inj'      => 'الحقن' . ($injBalance > 0.005 ? ' ⚠' : ''),
     'pkg'      => 'الباقات',
+    'files'    => 'المرفقات',
     'portal'   => 'بوابة المريض' . ($p['portal_enabled'] ? ' ✔' : ''),
     'appts'    => 'المواعيد',
 ];
@@ -758,6 +803,122 @@ if (can('pay.view')) {
         </table></div>
     </div>
     <?php endif; ?>
+
+<?php elseif ($tab === 'files'):
+    require_perm('files.view');
+    $st = $pdo->prepare(
+        'SELECT a.*, u.name AS uname FROM attachments a LEFT JOIN users u ON u.id = a.uploaded_by
+         WHERE a.patient_id = ? ORDER BY a.taken_date DESC, a.id DESC'
+    );
+    $st->execute([$id]);
+    $files = $st->fetchAll();
+
+    $photos = array_values(array_filter($files, fn($f) => $f['category'] === 'photo' && str_starts_with($f['mime'], 'image/')));
+    $totalSize = array_sum(array_map(fn($f) => (int)$f['size_bytes'], $files));
+?>
+    <?php if (can('files.upload')): ?>
+    <div class="card">
+        <h2>📎 رفع مرفق</h2>
+        <form method="post" enctype="multipart/form-data">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="upload">
+            <input type="hidden" name="id" value="<?= $id ?>">
+            <div class="grid4">
+                <label>الملف * <input type="file" name="file" required
+                    accept=".jpg,.jpeg,.png,.webp,.pdf"></label>
+                <label>النوع
+                    <select name="category">
+                        <?php foreach (FILE_CATS as $k => $v): ?><option value="<?= e($k) ?>"><?= e($v) ?></option><?php endforeach; ?>
+                    </select>
+                </label>
+                <label>تاريخ الملف <input type="date" name="taken_date" value="<?= date('Y-m-d') ?>"></label>
+                <label>ملاحظات <input name="file_notes"></label>
+            </div>
+            <button class="btn" type="submit">رفع الملف</button>
+            <p class="muted">المسموح: صور (jpg, png, webp) وملفات PDF — بحد أقصى
+               <?= e(num_fmt(max_upload_mb())) ?> ميجابايت للملف.</p>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <?php if (count($photos) >= 2):
+        $before = end($photos);   // الأقدم
+        $after = $photos[0];      // الأحدث
+    ?>
+    <div class="card">
+        <h2>🪞 مقارنة قبل وبعد</h2>
+        <div class="ba-wrap">
+            <figure class="ba">
+                <img src="file.php?id=<?= (int)$before['id'] ?>" alt="قبل">
+                <figcaption><strong>قبل</strong> — <?= e(fmt_date($before['taken_date'])) ?></figcaption>
+            </figure>
+            <figure class="ba">
+                <img src="file.php?id=<?= (int)$after['id'] ?>" alt="بعد">
+                <figcaption><strong>بعد</strong> — <?= e(fmt_date($after['taken_date'])) ?></figcaption>
+            </figure>
+        </div>
+        <?php
+        $st = $pdo->prepare('SELECT mdate, weight FROM measurements WHERE patient_id = ? ORDER BY mdate');
+        $st->execute([$id]);
+        $ms = $st->fetchAll();
+        $wBefore = null; $wAfter = null;
+        foreach ($ms as $m) {
+            if ($m['mdate'] <= $before['taken_date']) { $wBefore = (float)$m['weight']; }
+            if ($m['mdate'] <= $after['taken_date'])  { $wAfter = (float)$m['weight']; }
+        }
+        if ($wBefore !== null && $wAfter !== null && $wBefore != $wAfter):
+            $diff = round($wAfter - $wBefore, 1); ?>
+            <p style="text-align:center;font-size:17px;margin-top:10px">
+                <?= e(num_fmt($wBefore)) ?> كجم ←
+                <strong style="color:<?= $diff <= 0 ? '#15803d' : '#b91c1c' ?>"><?= e(num_fmt($wAfter)) ?> كجم</strong>
+                <span class="badge <?= $diff <= 0 ? 'ok' : 'bad' ?>">
+                    <?= $diff <= 0 ? '▼ ' : '▲ ' ?><?= e(num_fmt(abs($diff))) ?> كجم</span>
+            </p>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>📁 كل المرفقات (<?= count($files) ?>)</h2>
+            <?php if ($files): ?><span class="muted">الحجم الإجمالي: <?= e(human_size($totalSize)) ?></span><?php endif; ?>
+        </div>
+        <?php if (!$files): ?>
+            <p class="muted">لا توجد مرفقات لهذا المريض.
+               ارفع صور «قبل/بعد» أو نتائج التحاليل لتظهر هنا.</p>
+        <?php else: ?>
+        <div class="file-grid">
+            <?php foreach ($files as $f): $isImg = str_starts_with($f['mime'], 'image/'); ?>
+                <div class="file-card">
+                    <a href="file.php?id=<?= (int)$f['id'] ?>" target="_blank" class="file-thumb">
+                        <?php if ($isImg): ?>
+                            <img src="file.php?id=<?= (int)$f['id'] ?>" alt="<?= e($f['original_name']) ?>" loading="lazy">
+                        <?php else: ?>
+                            <span class="file-icon">📄</span>
+                        <?php endif; ?>
+                    </a>
+                    <div class="file-meta">
+                        <span class="badge info"><?= e(FILE_CATS[$f['category']] ?? $f['category']) ?></span>
+                        <strong><?= e(fmt_date($f['taken_date'])) ?></strong>
+                        <small class="muted"><?= e(human_size((int)$f['size_bytes'])) ?> · <?= e($f['uname'] ?? '—') ?></small>
+                        <?php if ($f['notes']): ?><small><?= e($f['notes']) ?></small><?php endif; ?>
+                        <div class="actions">
+                            <a class="btn btn-light btn-sm" href="file.php?id=<?= (int)$f['id'] ?>&download=1">⬇ تنزيل</a>
+                            <?php if (can('files.delete')): ?>
+                            <form method="post" data-confirm="حذف هذا الملف نهائيًا؟">
+                                <?= csrf_field() ?><input type="hidden" name="action" value="del_file">
+                                <input type="hidden" name="id" value="<?= $id ?>">
+                                <input type="hidden" name="fid" value="<?= (int)$f['id'] ?>">
+                                <button class="btn btn-danger btn-sm" type="submit">حذف</button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
 
 <?php elseif ($tab === 'portal'):
     $portalUrl = rtrim((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')

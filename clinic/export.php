@@ -392,6 +392,61 @@ switch ($type) {
         $x->download('باقات-الجلسات-' . date('Y-m-d'));
     }
 
+    /* -------------------------------------- المرضى المتوقفون عن المتابعة */
+    case 'inactive': {
+        require_perm('inactive.view');
+        $days = max(7, min(365, (int)($_GET['days'] ?? setting('inactive_days', '45'))));
+        $cutoff = date('Y-m-d', strtotime("-$days days"));
+        [$df, $dfArgs] = doctor_filter('p');
+
+        $st = $pdo->prepare("
+            SELECT p.id, p.code, p.name, p.phone, p.goal, p.created_at, u.name AS doctor_name,
+                (SELECT MAX(a.adate) FROM appointments a WHERE a.patient_id = p.id AND a.status='done') last_visit,
+                (SELECT MAX(m.mdate) FROM measurements m WHERE m.patient_id = p.id) last_measure,
+                (SELECT MAX(i.dose_date) FROM injection_doses i WHERE i.patient_id = p.id) last_dose,
+                (SELECT MAX(pay.pdate) FROM payments pay WHERE pay.patient_id = p.id) last_pay,
+                (SELECT m2.weight FROM measurements m2 WHERE m2.patient_id = p.id ORDER BY m2.mdate DESC, m2.id DESC LIMIT 1) last_weight,
+                (SELECT COUNT(*) FROM appointments a2 WHERE a2.patient_id = p.id AND a2.status='scheduled' AND a2.adate >= CURDATE()) upcoming
+            FROM patients p LEFT JOIN users u ON u.id = p.doctor_id WHERE 1=1 $df");
+        $st->execute($dfArgs);
+
+        $rows = [];
+        foreach ($st->fetchAll() as $r) {
+            if ((int)$r['upcoming'] > 0) {
+                continue;
+            }
+            $dates = array_filter([$r['last_visit'], $r['last_measure'], $r['last_dose'],
+                                   $r['last_pay'], substr((string)$r['created_at'], 0, 10)]);
+            $last = $dates ? max($dates) : null;
+            if ($last === null || $last > $cutoff) {
+                continue;
+            }
+            $rows[] = $r + ['last_activity' => $last,
+                'days_since' => (int)floor((strtotime(date('Y-m-d')) - strtotime($last)) / 86400)];
+        }
+        usort($rows, fn($a, $b) => $b['days_since'] <=> $a['days_since']);
+
+        $x = new XlsxWriter('متوقفون عن المتابعة');
+        $x->setTitle($clinic . ' — المرضى المتوقفون عن المتابعة',
+            'لم يزوروا العيادة منذ ' . $days . ' يومًا — العدد: ' . count($rows));
+        $x->setColumns([
+            ['الكود', XlsxWriter::TEXT, 12],
+            ['المريض', XlsxWriter::TEXT, 26],
+            ['الطبيب', XlsxWriter::TEXT, 20],
+            ['الهاتف', XlsxWriter::TEXT, 16],
+            ['آخر نشاط', XlsxWriter::DATE, 13],
+            ['عدد الأيام', XlsxWriter::NUM, 12],
+            ['آخر وزن', XlsxWriter::NUM, 11],
+            ['الهدف', XlsxWriter::TEXT, 30],
+        ]);
+        foreach ($rows as $r) {
+            $x->addRow([$r['code'], $r['name'], $r['doctor_name'] ?? '—', $r['phone'],
+                        $r['last_activity'], $r['days_since'], $r['last_weight'], $r['goal']]);
+        }
+        $x->addTotalRow(['الإجمالي', count($rows) . ' مريض']);
+        $x->download('متوقفون-عن-المتابعة-' . date('Y-m-d'));
+    }
+
     /* ---------------------------------------------------- التقرير الشهري */
     case 'report': {
         require_perm('report.view');

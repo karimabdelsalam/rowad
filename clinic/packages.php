@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('تعذر تسجيل الباقة.', 'danger');
             redirect('packages.php?tab=sell');
         }
+        activity($pdo, 'create', 'package', $patientId, 'بيع باقة ' . $pkg['name'] . ' (' . $sessions . ' جلسة) بـ ' . money($price));
         flash('تم بيع الباقة (' . $sessions . ' جلسة)' . ($price - $paid > 0 ? ' — متبقٍ ' . money($price - $paid) : ''));
         redirect('patient.php?id=' . $patientId . '&tab=pkg');
     }
@@ -122,6 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->execute([$ppId, ($_POST['use_date'] ?? '') ?: date('Y-m-d'), trim($_POST['notes'] ?? ''), user()['id']]);
                 $pdo->commit();
                 refresh_package_status($pdo);
+                activity($pdo, 'session', 'package', (int)$pp['patient_id'], 'خصم جلسة من ' . $pp['name']);
                 flash('تم خصم جلسة — المتبقي ' . ((int)$pp['sessions_total'] - $used - 1) . ' جلسة.');
             }
         } catch (PDOException) {

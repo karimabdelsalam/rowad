@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             trim($_POST['notes'] ?? ''),
             user()['id'],
         ]);
+        activity($pdo, 'create', 'expense', null, 'مصروف ' . money($amount) . ' — ' . (EXPENSE_CATS[$cat] ?? $cat));
         flash('تم تسجيل المصروف.');
         redirect('expenses.php');
     }
@@ -29,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         deny_unless('exp.manage', 'expenses.php');
         $pdo->prepare('DELETE FROM expenses WHERE id = ?')->execute([(int)$_POST['eid']]);
+        activity($pdo, 'delete', 'expense', (int)$_POST['eid'], 'حذف مصروف');
         flash('تم حذف المصروف.');
         redirect('expenses.php');
     }
