@@ -2,6 +2,7 @@
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
 require_perm('inj.view');
+require_module('injections');
 
 $tab = $_GET['tab'] ?? 'give';
 

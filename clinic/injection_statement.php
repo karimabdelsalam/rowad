@@ -2,6 +2,7 @@
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
 require_perm('inj.view');
+require_module('injections');
 
 $id = (int)($_GET['id'] ?? 0);
 $st = $pdo->prepare('SELECT * FROM patients WHERE id = ?');

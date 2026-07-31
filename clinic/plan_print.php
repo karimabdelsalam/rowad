@@ -2,6 +2,7 @@
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
 require_perm('plan.view');
+require_module('plans');
 
 $id = (int)($_GET['id'] ?? 0);
 $st = $pdo->prepare(

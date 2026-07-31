@@ -296,15 +296,24 @@ $injBalance = injection_balance($pdo, $id);
 $tabs = [
     'overview' => 'نظرة عامة',
     'measure'  => 'القياسات (' . count($measures) . ')',
-    'plans'    => 'الأنظمة الغذائية',
-    'inj'      => 'الحقن' . ($injBalance > 0.005 ? ' ⚠' : ''),
-    'pkg'      => 'الباقات',
-    'files'    => 'المرفقات',
-    'portal'   => 'بوابة المريض' . ($p['portal_enabled'] ? ' ✔' : ''),
-    'appts'    => 'المواعيد',
 ];
+if (module_on('plans')) {
+    $tabs['plans'] = 'الأنظمة الغذائية';
+}
+if (module_on('injections')) {
+    $tabs['inj'] = 'الحقن' . ($injBalance > 0.005 ? ' ⚠' : '');
+}
+if (module_on('packages')) {
+    $tabs['pkg'] = 'الباقات';
+}
+$tabs['files']  = 'المرفقات';
+$tabs['portal'] = 'بوابة المريض' . ($p['portal_enabled'] ? ' ✔' : '');
+$tabs['appts']  = 'المواعيد';
 if (can('pay.view')) {
     $tabs['pay'] = 'المدفوعات';
+}
+if (!isset($tabs[$tab])) {
+    $tab = 'overview';
 }
 ?>
 <div class="card">

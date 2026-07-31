@@ -65,36 +65,39 @@ $st->execute($dfArgs);
 $recent = $st->fetchAll();
 
 /* ------------------------------------------------- تنبيهات ومتابعة الحقن */
-$st = $pdo->prepare(
-    "SELECT pl.id, pl.patient_id, pl.weekly_units, pl.start_date, p.name AS pname, d.name AS drug_name,
-        (SELECT MAX(dose_date) FROM injection_doses i WHERE i.plan_id = pl.id) AS last_dose
-     FROM injection_plans pl JOIN patients p ON p.id = pl.patient_id JOIN drugs d ON d.id = pl.drug_id
-     WHERE pl.status = 'active' $df"
-);
-$st->execute($dfArgs);
-$injDue = $st->fetchAll();
+$hasInj = module_on('injections');
 $dueSoon = [];
-foreach ($injDue as $pl) {
-    $next = $pl['last_dose'] ? date('Y-m-d', strtotime($pl['last_dose'] . ' +7 days')) : $pl['start_date'];
-    if ($next <= date('Y-m-d', strtotime('+2 days'))) {
-        $dueSoon[] = $pl + ['next_date' => $next];
+$injDebt = 0.0;
+if ($hasInj) {
+    $st = $pdo->prepare(
+        "SELECT pl.id, pl.patient_id, pl.weekly_units, pl.start_date, p.name AS pname, d.name AS drug_name,
+            (SELECT MAX(dose_date) FROM injection_doses i WHERE i.plan_id = pl.id) AS last_dose
+         FROM injection_plans pl JOIN patients p ON p.id = pl.patient_id JOIN drugs d ON d.id = pl.drug_id
+         WHERE pl.status = 'active' $df"
+    );
+    $st->execute($dfArgs);
+    foreach ($st->fetchAll() as $pl) {
+        $next = $pl['last_dose'] ? date('Y-m-d', strtotime($pl['last_dose'] . ' +7 days')) : $pl['start_date'];
+        if ($next <= date('Y-m-d', strtotime('+2 days'))) {
+            $dueSoon[] = $pl + ['next_date' => $next];
+        }
     }
+    usort($dueSoon, fn($a, $b) => strcmp($a['next_date'], $b['next_date']));
+
+    $st = $pdo->prepare("SELECT COALESCE(SUM(i.amount - i.paid), 0) FROM injection_doses i
+                         JOIN patients p ON p.id = i.patient_id WHERE 1=1 $df");
+    $st->execute($dfArgs);
+    $injDebt = (float)$st->fetchColumn();
 }
-usort($dueSoon, fn($a, $b) => strcmp($a['next_date'], $b['next_date']));
 
-$st = $pdo->prepare("SELECT COALESCE(SUM(i.amount - i.paid), 0) FROM injection_doses i
-                     JOIN patients p ON p.id = i.patient_id WHERE 1=1 $df");
-$st->execute($dfArgs);
-$injDebt = (float)$st->fetchColumn();
-
-$lowStock = can('drug.view') ? $pdo->query(
+$lowStock = ($hasInj && can('drug.view')) ? $pdo->query(
     'SELECT d.name, d.low_units,
         COALESCE((SELECT SUM(units_total - units_used) FROM drug_batches b WHERE b.drug_id = d.id), 0) AS units_left
      FROM drugs d WHERE d.active = 1
      HAVING units_left <= d.low_units ORDER BY units_left'
 )->fetchAll() : [];
 
-$expiring = can('drug.view') ? $pdo->query(
+$expiring = ($hasInj && can('drug.view')) ? $pdo->query(
     "SELECT b.*, d.name AS drug_name FROM drug_batches b JOIN drugs d ON d.id = b.drug_id
      WHERE b.units_total > b.units_used AND b.expiry_date IS NOT NULL
        AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 60 DAY)
@@ -103,6 +106,22 @@ $expiring = can('drug.view') ? $pdo->query(
 
 page_header('لوحة التحكم', 'index.php');
 ?>
+<?php if (setting('setup_done', '0') !== '1' && can('settings.manage')): ?>
+<div class="card" style="border-color:#0f766e">
+    <h2>👋 خطوة أخيرة قبل ما تبدأ</h2>
+    <p>العيادة لسه على الإعدادات الافتراضية. معالج التهيئة هيمشي معك في 4 خطوات سريعة:
+        بيانات العيادة، الوحدات اللي تحتاجها، فريق العمل، والأسعار والباقات.</p>
+    <div class="actions">
+        <a class="btn" href="setup.php">ابدأ التهيئة (دقيقتين)</a>
+        <form method="post" action="setup.php">
+            <?= csrf_field() ?><input type="hidden" name="step" value="5">
+            <input type="hidden" name="skip" value="1">
+            <button class="btn btn-light" type="submit">اتخطاها — هظبطها بنفسي</button>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="stats">
     <div class="stat accent"><div class="label">مواعيد اليوم</div><div class="value"><?= $todayAppts ?></div></div>
     <div class="stat"><div class="label">إجمالي المرضى</div><div class="value"><?= $totalPatients ?></div></div>

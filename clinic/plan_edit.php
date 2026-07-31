@@ -2,6 +2,7 @@
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
 require_perm('plan.manage');
+require_module('plans');
 
 $planId = (int)($_GET['id'] ?? 0);
 $plan = null;

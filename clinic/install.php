@@ -243,7 +243,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
                 'portal_enabled' => '1',
                 'max_upload_mb'  => '8',
                 'inactive_days'  => '45',
+                'setup_done'     => '0',
             ];
+            foreach (array_keys(CLINIC_MODULES) as $mod) {
+                $defaults['mod_' . $mod] = '1';
+            }
             $st = $db->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
             foreach ($defaults as $k => $v) {
                 $st->execute([$k, $v]);
@@ -290,6 +294,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
             <pre dir="ltr" style="background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto"><?= htmlspecialchars($configContent) ?></pre>
         <?php endif; ?>
         <p><strong>مهم:</strong> احذف ملف <code>install.php</code> من السيرفر الآن.</p>
+        <p>بعد تسجيل الدخول هيستقبلك <strong>معالج التهيئة</strong> ويمشي معك خطوة بخطوة
+            لضبط بيانات العيادة والأسعار وفريق العمل.</p>
         <a class="btn" href="login.php">الذهاب لتسجيل الدخول</a>
 
     <?php else: ?>

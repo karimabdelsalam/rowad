@@ -322,6 +322,42 @@ textarea { min-height: 90px; resize: vertical; }
 .week-strip .d-name { font-size: 12px; }
 .week-strip .d-count { font-size: 12px; font-weight: 700; }
 
+/* ---------- معالج التهيئة ---------- */
+.setup-steps { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.setup-step {
+    flex: 1 1 130px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 13.5px;
+}
+.setup-step .ico { font-size: 16px; }
+.setup-step.now { border-color: var(--primary); color: var(--text); font-weight: 700; background: #f0fdfa; }
+.setup-step.done { color: var(--primary); border-color: var(--primary); }
+
+.setup-mods { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.setup-mod {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    margin: 0;
+}
+.setup-mod:has(input:checked) { border-color: var(--primary); background: #f0fdfa; }
+.setup-mod input { margin-top: 3px; width: auto; }
+.setup-mod span { display: flex; flex-direction: column; gap: 2px; }
+.setup-mod small { font-weight: 400; line-height: 1.5; }
+
+.checklist { margin: 0; padding-inline-start: 20px; line-height: 1.9; }
+.checklist li { margin-bottom: 6px; }
+
 /* ---------- الجوال ---------- */
 @media (max-width: 860px) {
     .layout { flex-direction: column; }

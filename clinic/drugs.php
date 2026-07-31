@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_perm('drug.view');
+require_module('injections');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();

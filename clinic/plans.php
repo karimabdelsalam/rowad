@@ -2,6 +2,7 @@
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
 require_perm('plan.view');
+require_module('plans');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();

@@ -28,6 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $st->execute(['notify_enabled', isset($_POST['notify_enabled']) ? '1' : '0']);
     $st->execute(['portal_enabled', isset($_POST['portal_enabled']) ? '1' : '0']);
+    foreach (array_keys(CLINIC_MODULES) as $mod) {
+        $st->execute(['mod_' . $mod, isset($_POST['mod'][$mod]) ? '1' : '0']);
+    }
 
     // لا تمسح الرمز المحفوظ لو تُرك الحقل فارغًا
     if (trim($_POST['notify_token'] ?? '') !== '') {
@@ -75,6 +78,23 @@ page_header('الإعدادات', 'settings.php');
             <?php endforeach; ?>
             </tbody>
         </table></div>
+        <h3 class="form-section">🧩 وحدات النظام</h3>
+        <p class="muted" style="margin-bottom:10px">
+            الوحدة الموقوفة تختفي من القائمة الجانبية وتُرفض صفحاتها — البيانات المسجَّلة فيها تبقى كما هي وتعود بتفعيلها.
+        </p>
+        <div class="setup-mods">
+            <?php foreach (CLINIC_MODULES as $modKey => [$modLabel, $modIcon, $modDesc]): ?>
+                <label class="setup-mod">
+                    <input type="checkbox" name="mod[<?= e($modKey) ?>]" value="1"
+                        <?= ($current['mod_' . $modKey] ?? '1') === '1' ? 'checked' : '' ?>>
+                    <span>
+                        <strong><?= $modIcon ?> <?= e($modLabel) ?></strong>
+                        <small class="muted"><?= e($modDesc) ?></small>
+                    </span>
+                </label>
+            <?php endforeach; ?>
+        </div>
+
         <h3 class="form-section">👨‍⚕️ الأطباء</h3>
         <label>ما الذي يراه الأخصائي؟
             <select name="doctor_scope">
@@ -148,6 +168,13 @@ page_header('الإعدادات', 'settings.php');
 
         <button class="btn" type="submit">حفظ الإعدادات</button>
     </form>
+</div>
+
+<div class="card">
+    <h2>🧭 معالج التهيئة</h2>
+    <p class="muted">يمشي معك خطوة بخطوة في بيانات العيادة والوحدات وفريق العمل والأسعار والباقات —
+        مفيد عند ضبط عيادة جديدة أو مراجعة الإعدادات كلها مرة واحدة.</p>
+    <a class="btn btn-light" href="setup.php">فتح معالج التهيئة</a>
 </div>
 
 <div class="card">

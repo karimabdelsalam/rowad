@@ -522,7 +522,42 @@ function wa_link(string $phoneDigits, string $message): string
 
 require_once __DIR__ . '/diet_library.php';
 
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 10;
+
+/**
+ * وحدات النظام القابلة للتشغيل والإيقاف.
+ *
+ * العيادة تشغّل ما تستخدمه فقط: عيادة لا تتعامل بالحقن تُطفئ وحدة الحقن فتختفي
+ * من القائمة وتُرفض صفحاتها. المفتاح يُحفظ في الإعدادات باسم mod_<الوحدة>.
+ */
+const CLINIC_MODULES = [
+    'plans'      => ['الأنظمة الغذائية', '🥗', 'إنشاء أنظمة غذائية للمرضى ومكتبة البرامج الجاهزة'],
+    'injections' => ['الحقن والأدوية', '💉', 'حقن التخسيس والمحاسبة بالوحدات ومخزون الأدوية'],
+    'packages'   => ['باقات الجلسات', '🎟️', 'بيع باقات جلسات وخصمها ومتابعة المتبقي'],
+    'queue'      => ['الدور والانتظار', '🔢', 'أرقام الدور وشاشة صالة الانتظار'],
+];
+
+/** هل الوحدة مفعّلة؟ (الافتراضي: مفعّلة) */
+function module_on(string $module): bool
+{
+    return setting('mod_' . $module, '1') === '1';
+}
+
+/** يمنع فتح صفحة تتبع وحدة موقوفة */
+function require_module(string $module): void
+{
+    if (module_on($module)) {
+        return;
+    }
+    $label = CLINIC_MODULES[$module][0] ?? $module;
+    page_header('وحدة موقوفة');
+    echo '<div class="card"><h2>هذه الوحدة موقوفة</h2>'
+       . '<p class="muted">وحدة «' . e($label) . '» غير مفعّلة في هذه العيادة.'
+       . ' يمكن لمدير النظام تفعيلها من الإعدادات.</p>'
+       . '<a class="btn" href="index.php">العودة للوحة التحكم</a></div>';
+    page_footer();
+    exit;
+}
 
 const PKG_STATUS = ['active' => 'سارية', 'finished' => 'مستهلكة', 'expired' => 'منتهية', 'cancelled' => 'ملغاة'];
 const PKG_BADGE  = ['active' => 'ok', 'finished' => 'muted', 'expired' => 'bad', 'cancelled' => 'muted'];
@@ -1140,6 +1175,15 @@ function db_migrate(PDO $pdo): void
         seed_diet_library($pdo);
     }
 
+    if ($current < 10) {
+        // تركيب قائم بالفعل: كل الوحدات مفعّلة، ولا يُعرض عليه معالج التهيئة
+        $set = $pdo->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
+        foreach (array_keys(CLINIC_MODULES) as $m) {
+            $set->execute(['mod_' . $m, '1']);
+        }
+        $set->execute(['setup_done', '1']);
+    }
+
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
         ->execute(['schema_version', (string)SCHEMA_VERSION]);
     setting_flush();
@@ -1208,25 +1252,26 @@ function page_header(string $title, string $active = ''): void
 {
     $u = user();
     $clinic = setting('clinic_name', 'عيادة التغذية');
+    // [الرابط، الاسم، الأيقونة، الصلاحية، الوحدة (فارغ = دائمًا ظاهر)]
     $nav = [
-        ['index.php',        'لوحة التحكم',      '🏠', ''],
-        ['queue.php',        'الدور والانتظار',   '🔢', 'queue.view'],
-        ['appointments.php', 'المواعيد',          '📅', 'appt.view'],
-        ['reminders.php',    'تأكيد المواعيد',    '📞', 'appt.remind'],
-        ['patients.php',     'المرضى',            '👥', 'patients.view'],
-        ['plans.php',        'الأنظمة الغذائية',  '🥗', 'plan.view'],
-        ['injections.php',   'الحقن',             '💉', 'inj.view'],
-        ['drugs.php',        'الأدوية والمخزون',  '📦', 'drug.view'],
-        ['packages.php',     'باقات الجلسات',     '🎟️', 'pkg.view'],
-        ['payments.php',     'المدفوعات',         '💰', 'pay.view'],
-        ['expenses.php',     'المصروفات',         '🧾', 'exp.view'],
-        ['calculator.php',   'حاسبة السعرات',     '🧮', 'calc.use'],
-        ['inactive.php',     'متوقفون عن المتابعة','😴', 'inactive.view'],
-        ['reports.php',      'التقارير',          '📈', 'report.view'],
-        ['activity.php',     'سجل النشاط',        '📜', 'activity.view'],
-        ['backup.php',       'نسخة احتياطية',     '💾', 'backup.run'],
-        ['users.php',        'المستخدمون',        '👤', 'users.manage'],
-        ['settings.php',     'الإعدادات',         '⚙️', 'settings.manage'],
+        ['index.php',        'لوحة التحكم',      '🏠', '', ''],
+        ['queue.php',        'الدور والانتظار',   '🔢', 'queue.view', 'queue'],
+        ['appointments.php', 'المواعيد',          '📅', 'appt.view', ''],
+        ['reminders.php',    'تأكيد المواعيد',    '📞', 'appt.remind', ''],
+        ['patients.php',     'المرضى',            '👥', 'patients.view', ''],
+        ['plans.php',        'الأنظمة الغذائية',  '🥗', 'plan.view', 'plans'],
+        ['injections.php',   'الحقن',             '💉', 'inj.view', 'injections'],
+        ['drugs.php',        'الأدوية والمخزون',  '📦', 'drug.view', 'injections'],
+        ['packages.php',     'باقات الجلسات',     '🎟️', 'pkg.view', 'packages'],
+        ['payments.php',     'المدفوعات',         '💰', 'pay.view', ''],
+        ['expenses.php',     'المصروفات',         '🧾', 'exp.view', ''],
+        ['calculator.php',   'حاسبة السعرات',     '🧮', 'calc.use', ''],
+        ['inactive.php',     'متوقفون عن المتابعة','😴', 'inactive.view', ''],
+        ['reports.php',      'التقارير',          '📈', 'report.view', ''],
+        ['activity.php',     'سجل النشاط',        '📜', 'activity.view', ''],
+        ['backup.php',       'نسخة احتياطية',     '💾', 'backup.run', ''],
+        ['users.php',        'المستخدمون',        '👤', 'users.manage', ''],
+        ['settings.php',     'الإعدادات',         '⚙️', 'settings.manage', ''],
     ];
     echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
@@ -1235,8 +1280,11 @@ function page_header(string $title, string $active = ''): void
     echo '</head><body><div class="layout">';
 
     echo '<aside class="sidebar"><div class="brand">🍏 ' . e($clinic) . '</div><nav>';
-    foreach ($nav as [$href, $label, $icon, $perm]) {
+    foreach ($nav as [$href, $label, $icon, $perm, $module]) {
         if ($perm !== '' && !can($perm)) {
+            continue;
+        }
+        if ($module !== '' && !module_on($module)) {
             continue;
         }
         $cls = $active === $href ? ' class="active"' : '';

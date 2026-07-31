@@ -2,6 +2,7 @@
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
 require_perm('pkg.view');
+require_module('packages');
 
 refresh_package_status($pdo);
 
