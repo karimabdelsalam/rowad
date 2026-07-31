@@ -949,6 +949,7 @@ function page_header(string $title, string $active = ''): void
         ['drugs.php',        'الأدوية والمخزون',  '📦', 'drug.view', 'injections'],
         ['packages.php',     'باقات الجلسات',     '🎟️', 'pkg.view', 'packages'],
         ['payments.php',     'المدفوعات',         '💰', 'pay.view', ''],
+        ['collect.php',      'التحصيل الأونلاين',  '💳', 'pay.view', ''],
         ['expenses.php',     'المصروفات',         '🧾', 'exp.view', ''],
         ['calculator.php',   'حاسبة السعرات',     '🧮', 'calc.use', ''],
         ['inactive.php',     'متوقفون عن المتابعة','😴', 'inactive.view', ''],

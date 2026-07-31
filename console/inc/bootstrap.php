@@ -37,6 +37,17 @@ try {
     exit('تعذر الاتصال بقاعدة البيانات — راجع إعدادات ملف inc/config.php');
 }
 
+/*
+ * توحيد ساعة MySQL مع ساعة PHP: بدونه يكتب NOW() بتوقيت السيرفر بينما يفلتر
+ * PHP بتوقيت التطبيق، فتختفي سجلات «اليوم» من تقارير «اليوم».
+ */
+try {
+    $tzOffset = (new DateTime('now', new DateTimeZone(date_default_timezone_get())))->format('P');
+    $pdo->exec("SET time_zone = '$tzOffset'");
+} catch (PDOException) {
+    // بعض الاستضافات تمنع تغيير المنطقة الزمنية للجلسة
+}
+
 if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(16));
 }

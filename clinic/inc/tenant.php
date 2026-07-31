@@ -43,6 +43,7 @@ function control_pdo(): PDO
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]
     );
+    db_sync_timezone($pdo);
     return $pdo;
 }
 
@@ -85,10 +86,27 @@ function resolve_tenant(): ?array
     return $st->fetch() ?: null;
 }
 
+/**
+ * يوحّد ساعة MySQL مع ساعة PHP على الاتصال.
+ *
+ * بدون هذا يكتب `NOW()` بتوقيت السيرفر بينما يفلتر PHP بتوقيت التطبيق، فيختفي
+ * سجل أُنشئ «اليوم» من تقرير «اليوم» كلما اختلف التوقيتان — وهو ما يحدث فعلًا
+ * على أي سيرفر يعمل بـ UTC وتطبيق يعمل بتوقيت القاهرة.
+ */
+function db_sync_timezone(PDO $pdo): void
+{
+    $offset = (new DateTime('now', new DateTimeZone(date_default_timezone_get())))->format('P');
+    try {
+        $pdo->exec("SET time_zone = '$offset'");
+    } catch (PDOException) {
+        // بعض الاستضافات تمنع تغيير المنطقة الزمنية للجلسة — نكمل بالسلوك الافتراضي
+    }
+}
+
 /** اتصال بقاعدة عيادة بعينها عبر مستخدم التطبيق الموحّد */
 function tenant_pdo(string $dbName): PDO
 {
-    return new PDO(
+    $pdo = new PDO(
         'mysql:host=' . SAAS_DB_HOST . ';dbname=' . $dbName . ';charset=utf8mb4',
         SAAS_DB_USER,
         SAAS_DB_PASS,
@@ -98,6 +116,8 @@ function tenant_pdo(string $dbName): PDO
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]
     );
+    db_sync_timezone($pdo);
+    return $pdo;
 }
 
 /** اسم قاعدة البيانات العاملة حاليًا، في الوضعين */
@@ -120,7 +140,7 @@ function app_pdo(?string $dbName = null): PDO
     if (saas_mode()) {
         return tenant_pdo($dbName ?? current_db_name());
     }
-    return new PDO(
+    $pdo = new PDO(
         'mysql:host=' . DB_HOST . ';dbname=' . ($dbName ?? DB_NAME) . ';charset=utf8mb4',
         DB_USER,
         DB_PASS,
@@ -130,6 +150,8 @@ function app_pdo(?string $dbName = null): PDO
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]
     );
+    db_sync_timezone($pdo);
+    return $pdo;
 }
 
 /**

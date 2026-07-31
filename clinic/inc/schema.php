@@ -19,7 +19,7 @@ function wa_default_template(): string
         . "لتأكيد أو تعديل الموعد: {هاتف_العيادة}";
 }
 
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 
 /**
  * وحدات النظام القابلة للتشغيل والإيقاف.
@@ -101,6 +101,26 @@ function ops_schema(): array
 {
     $opts = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
     return [
+        "CREATE TABLE IF NOT EXISTS payment_requests (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            patient_id INT UNSIGNED NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            description VARCHAR(150) NOT NULL DEFAULT '',
+            token VARCHAR(64) NOT NULL,
+            status ENUM('pending','paid','cancelled','failed') NOT NULL DEFAULT 'pending',
+            method ENUM('paymob','instapay','cash') NULL,
+            gateway_order_id VARCHAR(60) NOT NULL DEFAULT '',
+            gateway_txn_id VARCHAR(60) NOT NULL DEFAULT '',
+            payment_id INT UNSIGNED NULL,
+            expires_at DATETIME NULL,
+            paid_at DATETIME NULL,
+            created_by INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+            UNIQUE KEY uq_token (token),
+            INDEX idx_status (status, created_at),
+            INDEX idx_gw (gateway_order_id)
+        ) $opts",
         "CREATE TABLE IF NOT EXISTS activity_log (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             user_id INT UNSIGNED NULL,
@@ -351,6 +371,15 @@ function db_migrate(PDO $pdo): void
         $addCol('diet_templates', 'forbidden', 'TEXT NULL');
         $addCol('diet_plans', 'warnings', 'TEXT NULL');
         seed_diet_library($pdo);
+    }
+
+    if ($current < 11) {
+        // طلبات الدفع الأونلاين للمرضى — تُنشأ هنا للتركيبات القائمة
+        foreach (ops_schema() as $sql) {
+            if (str_contains($sql, 'payment_requests')) {
+                $pdo->exec($sql);
+            }
+        }
     }
 
     if ($current < 10) {

@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_perm('settings.manage');
+require_once __DIR__ . '/inc/paymob.php';
 
 $keys = [
     'clinic_name'    => 'اسم العيادة',
@@ -23,13 +24,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $st->execute(['wa_template', $template !== '' ? $template : wa_default_template()]);
 
     foreach (['doctor_scope', 'notify_channel', 'notify_provider', 'notify_url',
-              'notify_sender', 'notify_lead_days', 'max_upload_mb', 'inactive_days'] as $k) {
+              'notify_sender', 'notify_lead_days', 'max_upload_mb', 'inactive_days',
+              'clinic_instapay', 'clinic_instapay_note', 'pm_integration_id', 'pm_iframe_id',
+              'pm_currency'] as $k) {
         $st->execute([$k, trim($_POST[$k] ?? '')]);
     }
     $st->execute(['notify_enabled', isset($_POST['notify_enabled']) ? '1' : '0']);
     $st->execute(['portal_enabled', isset($_POST['portal_enabled']) ? '1' : '0']);
     foreach (array_keys(CLINIC_MODULES) as $mod) {
         $st->execute(['mod_' . $mod, isset($_POST['mod'][$mod]) ? '1' : '0']);
+    }
+
+    // المفاتيح السرية لا تُمسح لو تُرك الحقل فارغًا
+    foreach (['pm_api_key', 'pm_hmac'] as $k) {
+        if (trim($_POST[$k] ?? '') !== '') {
+            $st->execute([$k, trim($_POST[$k])]);
+        }
     }
 
     // لا تمسح الرمز المحفوظ لو تُرك الحقل فارغًا
@@ -158,6 +168,53 @@ page_header('الإعدادات', 'settings.php');
                 <input type="number" min="1" max="64" name="max_upload_mb" value="<?= e($current['max_upload_mb'] ?? '8') ?>"></label>
             <label>يُعتبر المريض متوقفًا بعد (يوم)
                 <input type="number" min="7" max="365" name="inactive_days" value="<?= e($current['inactive_days'] ?? '45') ?>"></label>
+        </div>
+
+        <h3 class="form-section">💳 التحصيل الأونلاين من المرضى</h3>
+        <div class="alert alert-warning" style="font-weight:400">
+            <strong>الفلوس تدخل حسابك أنت مباشرةً.</strong> نحن لا نستقبل مدفوعات مرضاك ولا
+            نحتفظ بها — تربط هنا حساباتك الخاصة، فلا تسوية ولا وسيط.
+        </div>
+
+        <label>عنوان إنستا باي الخاص بالعيادة
+            <input name="clinic_instapay" value="<?= e($current['clinic_instapay'] ?? '') ?>" dir="ltr"
+                   placeholder="yourname@instapay">
+            <small class="muted">يظهر للمريض في صفحة الدفع ليحوّل إليه مباشرة.</small></label>
+        <label>تعليمات تظهر مع عنوان إنستا باي
+            <input name="clinic_instapay_note" value="<?= e($current['clinic_instapay_note'] ?? '') ?>"
+                   placeholder="حوّل المبلغ ثم أبلغنا برقم العملية"></label>
+
+        <h4 style="margin:14px 0 6px">بطاقات الفيزا عبر باي موب (اختياري)</h4>
+        <?php if (clinic_paymob_ready()): ?>
+            <div class="alert alert-success">البوابة مضبوطة ✔ — جرّب عملية بمبلغ صغير قبل استخدامها مع المرضى.</div>
+        <?php else: ?>
+            <p class="muted">افتح حساب تاجر لدى باي موب باسم عيادتك، ثم انسخ مفاتيحك من
+                <span dir="ltr">Settings → Account Info</span>. بدون ذلك يظهر للمريض
+                إنستا باي والكاش فقط.</p>
+        <?php endif; ?>
+        <div class="grid2">
+            <label>API Key
+                <input name="pm_api_key" type="password" dir="ltr"
+                       placeholder="<?= ($current['pm_api_key'] ?? '') !== '' ? '•••• محفوظ' : 'غير مضبوط' ?>"></label>
+            <label>HMAC Secret
+                <input name="pm_hmac" type="password" dir="ltr"
+                       placeholder="<?= ($current['pm_hmac'] ?? '') !== '' ? '•••• محفوظ' : 'غير مضبوط' ?>"></label>
+            <label>Integration ID
+                <input name="pm_integration_id" value="<?= e($current['pm_integration_id'] ?? '') ?>" dir="ltr"></label>
+            <label>iFrame ID
+                <input name="pm_iframe_id" value="<?= e($current['pm_iframe_id'] ?? '') ?>" dir="ltr"></label>
+        </div>
+        <label>العملة <input name="pm_currency" value="<?= e($current['pm_currency'] ?? 'EGP') ?>" dir="ltr"></label>
+        <?php
+        $sch = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $base = $sch . '://' . e((string)($_SERVER['HTTP_HOST'] ?? '')) . rtrim(dirname((string)$_SERVER['SCRIPT_NAME']), '/\\');
+        ?>
+        <p class="muted">في لوحة باي موب — <span dir="ltr">Developers → Payment Integrations</span> — اضبط:</p>
+        <div class="grid2">
+            <label>Transaction Processed Callback
+                <input value="<?= $base ?>/paymob_callback.php" dir="ltr" readonly onclick="this.select()"></label>
+            <label>Transaction Response Callback
+                <input value="<?= $base ?>/paymob_return.php" dir="ltr" readonly onclick="this.select()"></label>
         </div>
 
         <h3 class="form-section">📱 بوابة المرضى</h3>

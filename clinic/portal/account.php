@@ -30,6 +30,29 @@ $pkgOwed = array_sum(array_map(
 $totalDue = round($injBalance + $pkgOwed, 2);
 $totalPaid = array_sum(array_map(fn($r) => (float)$r['amount'], $pays));
 
+/*
+ * زر الدفع يفتح مطالبة قائمة إن وُجدت، وإلا ينشئ واحدة بقيمة المستحق. لا
+ * تُنشأ مطالبة جديدة مع كل فتح للصفحة حتى لا تتكدس مطالبات لنفس المبلغ.
+ */
+require_once dirname(__DIR__) . '/inc/paymob.php';
+$payUrl = '';
+if ($totalDue > 0.005 && (clinic_paymob_ready() || setting('clinic_instapay') !== '')) {
+    $st = $pdo->prepare("SELECT token FROM payment_requests
+                         WHERE patient_id = ? AND status = 'pending' AND amount = ?
+                           AND (expires_at IS NULL OR expires_at > NOW())
+                         ORDER BY id DESC LIMIT 1");
+    $st->execute([$id, $totalDue]);
+    if ($tok = $st->fetchColumn()) {
+        $payUrl = '../paylink.php?t=' . $tok;
+    } else {
+        $tok = bin2hex(random_bytes(24));
+        $pdo->prepare('INSERT INTO payment_requests (patient_id, amount, description, token, expires_at)
+                       VALUES (?,?,?,?,DATE_ADD(NOW(), INTERVAL 7 DAY))')
+            ->execute([$id, $totalDue, 'مستحقات العيادة', $tok]);
+        $payUrl = '../paylink.php?t=' . $tok;
+    }
+}
+
 portal_header('حسابي', 'account.php');
 ?>
 <div class="pgrid">
@@ -37,6 +60,10 @@ portal_header('حسابي', 'account.php');
         <div class="plabel">المستحق عليك</div>
         <div class="pvalue" style="color:<?= $totalDue > 0.005 ? '#b91c1c' : '#15803d' ?>">
             <?= $totalDue > 0.005 ? e(money($totalDue)) : 'لا مستحقات ✔' ?></div>
+        <?php if ($payUrl): ?>
+            <a class="pbtn" href="<?= e($payUrl) ?>" style="margin-top:10px;display:block;text-align:center">
+                💳 ادفع الآن</a>
+        <?php endif; ?>
     </div>
     <div class="pstat">
         <div class="plabel">إجمالي ما سددته</div>

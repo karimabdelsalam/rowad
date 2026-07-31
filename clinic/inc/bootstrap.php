@@ -62,6 +62,7 @@ if (saas_mode()) {
         http_response_code(500);
         exit('تعذر الاتصال بقاعدة البيانات — راجع إعدادات ملف inc/config.php');
     }
+    db_sync_timezone($pdo);
 }
 
 if (empty($_SESSION['csrf'])) {
