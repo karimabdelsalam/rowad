@@ -40,6 +40,25 @@ $st = $pdo->prepare(
 $st->execute([$today, ...$dfArgs]);
 $appts = $st->fetchAll();
 
+/* ------------------------------------- تأكيد حضور مواعيد اليوم وبكرة */
+$tomorrow = date('Y-m-d', strtotime('+1 day'));
+$st = $pdo->prepare(
+    "SELECT a.adate, a.confirm_status, COUNT(*) c
+     FROM appointments a JOIN patients p ON p.id = a.patient_id
+     WHERE a.adate IN (?, ?) AND a.status = 'scheduled' $df
+     GROUP BY a.adate, a.confirm_status"
+);
+$st->execute([$today, $tomorrow, ...$dfArgs]);
+$confirmStats = ['today' => [], 'tomorrow' => []];
+foreach ($st->fetchAll() as $r) {
+    $key = $r['adate'] === $today ? 'today' : 'tomorrow';
+    $confirmStats[$key][$r['confirm_status']] = (int)$r['c'];
+}
+$pendingToday    = (int)($confirmStats['today']['pending'] ?? 0) + (int)($confirmStats['today']['no_answer'] ?? 0);
+$pendingTomorrow = (int)($confirmStats['tomorrow']['pending'] ?? 0) + (int)($confirmStats['tomorrow']['no_answer'] ?? 0);
+$confirmedToday  = (int)($confirmStats['today']['confirmed'] ?? 0);
+$tomorrowTotal   = array_sum($confirmStats['tomorrow']);
+
 $st = $pdo->prepare("SELECT p.id, p.code, p.name, p.phone, p.created_at FROM patients p
                      WHERE 1=1 $df ORDER BY p.id DESC LIMIT 6");
 $st->execute($dfArgs);
@@ -94,6 +113,21 @@ page_header('لوحة التحكم', 'index.php');
     <?php endif; ?>
 </div>
 
+<?php if (can('appt.remind') && ($pendingToday > 0 || $pendingTomorrow > 0)): ?>
+    <?php if ($pendingToday > 0): ?>
+    <div class="alert alert-danger">
+        📞 <strong><?= $pendingToday ?></strong> من مواعيد <strong>اليوم</strong> لم يتأكد حضورهم بعد —
+        <a href="reminders.php?date=<?= $today ?>">اتصل بهم الآن</a>
+    </div>
+    <?php endif; ?>
+    <?php if ($pendingTomorrow > 0): ?>
+    <div class="alert alert-warning">
+        📅 <strong><?= $pendingTomorrow ?></strong> من مواعيد <strong>الغد</strong> (<?= e(day_ar($tomorrow)) ?>)
+        تحتاج اتصال تأكيد — <a href="reminders.php?date=<?= $tomorrow ?>">افتح قائمة الاتصال</a>
+    </div>
+    <?php endif; ?>
+<?php endif; ?>
+
 <?php foreach ($lowStock as $s): ?>
     <div class="alert alert-warning">📦 مخزون منخفض: <strong><?= e($s['name']) ?></strong> —
         متبقٍ <?= e(num_fmt($s['units_left'])) ?> وحدة فقط.
@@ -146,14 +180,21 @@ page_header('لوحة التحكم', 'index.php');
 
 <div class="card">
     <div class="card-head">
-        <h2>📅 مواعيد اليوم — <?= e(day_ar($today)) ?> <?= e(fmt_date($today)) ?></h2>
-        <a class="btn btn-sm" href="appointments.php">إدارة المواعيد</a>
+        <h2>📅 مواعيد اليوم — <?= e(day_ar($today)) ?> <?= e(fmt_date($today)) ?>
+            <?php if ($appts): ?><small class="muted">(<?= $confirmedToday ?> مؤكد من <?= count($appts) ?>)</small><?php endif; ?>
+        </h2>
+        <div class="actions">
+            <?php if (can('appt.remind')): ?>
+                <a class="btn btn-sm" href="reminders.php?date=<?= $today ?>">📞 قائمة الاتصال</a>
+            <?php endif; ?>
+            <a class="btn btn-light btn-sm" href="appointments.php">إدارة المواعيد</a>
+        </div>
     </div>
     <?php if (!$appts): ?>
         <p class="muted">لا توجد مواعيد اليوم.</p>
     <?php else: ?>
     <div class="table-wrap"><table>
-        <thead><tr><th>الوقت</th><th>المريض</th><th>الهاتف</th><th>النوع</th><th>الحالة</th><th></th></tr></thead>
+        <thead><tr><th>الوقت</th><th>المريض</th><th>الهاتف</th><th>النوع</th><th>الحالة</th><th>تأكيد الحضور</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($appts as $a): ?>
             <tr>
@@ -162,7 +203,14 @@ page_header('لوحة التحكم', 'index.php');
                 <td class="num" dir="ltr"><?= e($a['phone']) ?></td>
                 <td><?= e(APPT_TYPES[$a['type']] ?? $a['type']) ?></td>
                 <td><span class="badge <?= e(APPT_BADGE[$a['status']]) ?>"><?= e(APPT_STATUS[$a['status']]) ?></span></td>
-                <td><a class="btn btn-light btn-sm" href="patient.php?id=<?= (int)$a['patient_id'] ?>">الملف</a></td>
+                <td><span class="badge <?= e(CONFIRM_BADGE[$a['confirm_status'] ?? 'pending']) ?>">
+                    <?= e(CONFIRM_STATUS[$a['confirm_status'] ?? 'pending']) ?></span></td>
+                <td><div class="actions">
+                    <?php $tel = tel_link($a['phone']); if ($tel && ($a['confirm_status'] ?? 'pending') !== 'confirmed'): ?>
+                        <a class="btn btn-sm" href="<?= e($tel) ?>" title="اتصال">📞</a>
+                    <?php endif; ?>
+                    <a class="btn btn-light btn-sm" href="patient.php?id=<?= (int)$a['patient_id'] ?>">الملف</a>
+                </div></td>
             </tr>
         <?php endforeach; ?>
         </tbody>

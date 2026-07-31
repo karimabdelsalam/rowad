@@ -141,6 +141,7 @@ switch ($type) {
             ['النوع', XlsxWriter::TEXT, 13],
             ['الحالة', XlsxWriter::TEXT, 12],
             ['تذكير واتساب', XlsxWriter::TEXT, 14],
+            ['تأكيد الحضور', XlsxWriter::TEXT, 14],
             ['ملاحظات', XlsxWriter::TEXT, 28],
         ]);
         foreach ($rows as $a) {
@@ -150,6 +151,7 @@ switch ($type) {
                 APPT_TYPES[$a['type']] ?? $a['type'],
                 APPT_STATUS[$a['status']] ?? $a['status'],
                 $a['reminder_sent'] ? 'أُرسل' : 'لم يُرسل',
+                CONFIRM_STATUS[$a['confirm_status'] ?? 'pending'] ?? '',
                 $a['notes'],
             ]);
         }

@@ -110,6 +110,7 @@ const PERM_GROUPS = [
         'appt.manage' => 'حجز المواعيد وتغيير حالتها',
         'appt.delete' => 'حذف موعد',
         'appt.remind' => 'إرسال تذكيرات واتساب',
+        'appt.confirm' => 'الاتصال وتأكيد حضور المواعيد',
     ],
     'الأنظمة الغذائية' => [
         'plan.view'   => 'عرض الأنظمة والقوالب',
@@ -197,7 +198,7 @@ function role_perms(string $role): array
         'doctor' => [
             'patients.view', 'patients.create', 'patients.edit',
             'measure.add', 'measure.delete',
-            'appt.view', 'appt.manage', 'appt.remind',
+            'appt.view', 'appt.manage', 'appt.remind', 'appt.confirm',
             'plan.view', 'plan.manage', 'plan.delete',
             'inj.view', 'inj.plan', 'inj.give',
             'drug.view',
@@ -210,7 +211,7 @@ function role_perms(string $role): array
         'reception' => [
             'patients.view', 'patients.create', 'patients.edit',
             'measure.add',
-            'appt.view', 'appt.manage', 'appt.delete', 'appt.remind',
+            'appt.view', 'appt.manage', 'appt.delete', 'appt.remind', 'appt.confirm',
             'plan.view',
             'inj.view', 'inj.give',
             'pkg.view', 'pkg.sell', 'pkg.use',
@@ -519,10 +520,29 @@ function wa_link(string $phoneDigits, string $message): string
 
 /* ------------------------------------------------------------- الترقية */
 
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 const PKG_STATUS = ['active' => 'سارية', 'finished' => 'مستهلكة', 'expired' => 'منتهية', 'cancelled' => 'ملغاة'];
 const PKG_BADGE  = ['active' => 'ok', 'finished' => 'muted', 'expired' => 'bad', 'cancelled' => 'muted'];
+const CONFIRM_STATUS = [
+    'pending'   => 'لم يتم التواصل',
+    'confirmed' => 'أكّد الحضور',
+    'no_answer' => 'لم يرد',
+    'declined'  => 'اعتذر',
+];
+const CONFIRM_BADGE = ['pending' => 'muted', 'confirmed' => 'ok', 'no_answer' => 'warn', 'declined' => 'bad'];
+
+/** رابط اتصال مباشر — يفتح تطبيق الهاتف على الموبايل وبرامج الاتصال على الكمبيوتر */
+function tel_link(?string $phone): ?string
+{
+    $intl = wa_phone($phone);
+    if ($intl) {
+        return 'tel:+' . $intl;
+    }
+    $digits = preg_replace('/[^\d+]/', '', (string)$phone) ?? '';
+    return $digits !== '' ? 'tel:' . $digits : null;
+}
+
 const QUEUE_STATUS = ['waiting' => 'في الانتظار', 'in_room' => 'بالداخل', 'done' => 'انتهى', 'skipped' => 'تخطّى'];
 const QUEUE_BADGE  = ['waiting' => 'warn', 'in_room' => 'info', 'done' => 'ok', 'skipped' => 'muted'];
 
@@ -1043,6 +1063,18 @@ function db_migrate(PDO $pdo): void
         $st->execute(['inactive_days', '45']);
     }
 
+    if ($current < 8) {
+        $addCol = function (string $table, string $col, string $def) use ($pdo): void {
+            if (!$pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col))->fetchAll()) {
+                $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def");
+            }
+        };
+        $addCol('appointments', 'confirm_status',
+            "ENUM('pending','confirmed','no_answer','declined') NOT NULL DEFAULT 'pending'");
+        $addCol('appointments', 'confirmed_at', 'DATETIME NULL');
+        $addCol('appointments', 'confirmed_by', 'INT UNSIGNED NULL');
+    }
+
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
         ->execute(['schema_version', (string)SCHEMA_VERSION]);
     setting_flush();
@@ -1115,7 +1147,7 @@ function page_header(string $title, string $active = ''): void
         ['index.php',        'لوحة التحكم',      '🏠', ''],
         ['queue.php',        'الدور والانتظار',   '🔢', 'queue.view'],
         ['appointments.php', 'المواعيد',          '📅', 'appt.view'],
-        ['reminders.php',    'تذكير واتساب',      '💬', 'appt.remind'],
+        ['reminders.php',    'تأكيد المواعيد',    '📞', 'appt.remind'],
         ['patients.php',     'المرضى',            '👥', 'patients.view'],
         ['plans.php',        'الأنظمة الغذائية',  '🥗', 'plan.view'],
         ['injections.php',   'الحقن',             '💉', 'inj.view'],

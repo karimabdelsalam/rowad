@@ -146,7 +146,7 @@ page_header('المواعيد', 'appointments.php');
 <div class="card">
     <h2>مواعيد <?= e(day_ar($date)) ?> <?= e(fmt_date($date)) ?> (<?= count($appts) ?>)</h2>
     <div class="table-wrap"><table>
-        <thead><tr><th>الوقت</th><th>المريض</th><th>الطبيب</th><th>الهاتف</th><th>النوع</th><th>الحالة</th><th>ملاحظات</th><th>إجراءات</th></tr></thead>
+        <thead><tr><th>الوقت</th><th>المريض</th><th>الطبيب</th><th>الهاتف</th><th>النوع</th><th>الحالة</th><th>التأكيد</th><th>ملاحظات</th><th>إجراءات</th></tr></thead>
         <tbody>
         <?php foreach ($appts as $a): ?>
             <tr>
@@ -157,6 +157,8 @@ page_header('المواعيد', 'appointments.php');
                 <td class="num" dir="ltr"><?= e($a['phone']) ?></td>
                 <td><?= e(APPT_TYPES[$a['type']] ?? $a['type']) ?></td>
                 <td><span class="badge <?= e(APPT_BADGE[$a['status']]) ?>"><?= e(APPT_STATUS[$a['status']]) ?></span></td>
+                <td><span class="badge <?= e(CONFIRM_BADGE[$a['confirm_status'] ?? 'pending']) ?>">
+                    <?= e(CONFIRM_STATUS[$a['confirm_status'] ?? 'pending']) ?></span></td>
                 <td><?= e($a['notes']) ?></td>
                 <td><div class="actions">
                     <?php $wa = wa_phone($a['phone']); if ($wa && $a['status'] === 'scheduled'): ?>
@@ -189,7 +191,7 @@ page_header('المواعيد', 'appointments.php');
                 </div></td>
             </tr>
         <?php endforeach; ?>
-        <?php if (!$appts): ?><tr><td colspan="8" class="muted">لا توجد مواعيد في هذا اليوم.</td></tr><?php endif; ?>
+        <?php if (!$appts): ?><tr><td colspan="9" class="muted">لا توجد مواعيد في هذا اليوم.</td></tr><?php endif; ?>
         </tbody>
     </table></div>
 </div>
