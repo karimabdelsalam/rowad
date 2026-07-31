@@ -521,6 +521,7 @@ function wa_link(string $phoneDigits, string $message): string
 /* ------------------------------------------------------------- الترقية */
 
 require_once __DIR__ . '/diet_library.php';
+require_once __DIR__ . '/license.php';
 
 const SCHEMA_VERSION = 10;
 
@@ -1303,6 +1304,12 @@ function page_header(string $title, string $active = ''): void
         echo '<div class="alert alert-' . e($f['t']) . '">' . e($f['m']) . '</div>';
     }
     unset($_SESSION['flash']);
+
+    // تنبيه الاشتراك (للنسخ المرتبطة بكونسول مزوّد فقط)
+    if ($u && can('settings.manage')) {
+        global $pdo;
+        license_banner($pdo);
+    }
 }
 
 function page_footer(): void

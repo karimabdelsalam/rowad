@@ -34,4 +34,20 @@ deployment:
     # حماية ملف الإعدادات من القراءة الخارجية
     - /bin/chmod 600 $DEPLOYPATH/inc/config.php 2>/dev/null || true
 
+    # ----------------------------------------------------------------------
+    #  كونسول إدارة الاشتراكات (اختياري — للمزوّد وحده لا للعيادات)
+    #  انشره على حسابك أنت فقط. لو لا تستخدمه احذف هذا القسم.
+    # ----------------------------------------------------------------------
+    - export CONSOLEPATH=/home/$USERNAME/public_html/console
+    - /bin/mkdir -p $CONSOLEPATH
+    - >
+      /usr/bin/rsync -a --delete
+      --exclude 'inc/config.php'
+      --exclude '.git'
+      --exclude '*.md'
+      console/ $CONSOLEPATH/
+    - /bin/find $CONSOLEPATH -type d -exec /bin/chmod 755 {} \;
+    - /bin/find $CONSOLEPATH -type f -exec /bin/chmod 644 {} \;
+    - /bin/chmod 600 $CONSOLEPATH/inc/config.php 2>/dev/null || true
+
     - /bin/echo "تم النشر بنجاح في $DEPLOYPATH — $(date)"

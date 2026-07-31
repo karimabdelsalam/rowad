@@ -12,7 +12,8 @@ require $configFile;
 
 date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'Africa/Cairo');
 
-session_name('clinic_session');
+// جلسة مستقلة عن نظام العيادة حتى لا يمنح دخولٌ في أحدهما دخولًا في الآخر
+session_name('console_session');
 session_start([
     'cookie_httponly' => true,
     'cookie_samesite' => 'Lax',
@@ -31,7 +32,7 @@ try {
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]
     );
-} catch (PDOException $e) {
+} catch (PDOException) {
     http_response_code(500);
     exit('تعذر الاتصال بقاعدة البيانات — راجع إعدادات ملف inc/config.php');
 }
@@ -40,28 +41,17 @@ if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(16));
 }
 
-db_migrate($pdo);
+console_migrate($pdo);
 
-/*
- * تحديث بيانات المستخدم من قاعدة البيانات في كل طلب، حتى يسري أي تغيير في
- * الصلاحيات أو الدور فورًا، ويُطرد المستخدم المعطَّل بدل انتظار انتهاء جلسته.
- */
-if (!empty($_SESSION['user']['id'])) {
-    $st = $pdo->prepare('SELECT id, name, role, perms, active FROM users WHERE id = ?');
-    $st->execute([(int)$_SESSION['user']['id']]);
+// إعادة قراءة المستخدم كل طلب، فيُطرد الحساب المعطَّل فورًا
+if (!empty($_SESSION['cuser']['id'])) {
+    $st = $pdo->prepare('SELECT id, name, active FROM console_users WHERE id = ?');
+    $st->execute([(int)$_SESSION['cuser']['id']]);
     $fresh = $st->fetch();
     if (!$fresh || !$fresh['active']) {
         $_SESSION = [];
         session_destroy();
         redirect('login.php');
     }
-    $_SESSION['user'] = [
-        'id'    => (int)$fresh['id'],
-        'name'  => $fresh['name'],
-        'role'  => $fresh['role'],
-        'perms' => $fresh['perms'],
-    ];
-
-    // فحص الاشتراك مرة يوميًا، ولا يتم إلا للنسخ المرتبطة بكونسول مزوّد
-    license_refresh($pdo);
+    $_SESSION['cuser'] = ['id' => (int)$fresh['id'], 'name' => $fresh['name']];
 }

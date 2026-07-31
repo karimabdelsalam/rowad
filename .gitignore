@@ -19,3 +19,4 @@
 
 # Clinic system local config (created by install.php)
 /clinic/inc/config.php
+/console/inc/config.php
