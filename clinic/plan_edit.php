@@ -34,18 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         trim($_POST['dinner'] ?? ''),
         trim($_POST['forbidden'] ?? ''),
         trim($_POST['notes'] ?? ''),
+        trim($_POST['warnings'] ?? '') ?: null,
     ];
     if ($plan) {
         $st = $pdo->prepare(
             'UPDATE diet_plans SET title=?, start_date=?, end_date=?, calories=?, breakfast=?, snack1=?,
-             lunch=?, snack2=?, dinner=?, forbidden=?, notes=? WHERE id=?'
+             lunch=?, snack2=?, dinner=?, forbidden=?, notes=?, warnings=? WHERE id=?'
         );
         $st->execute([...$data, $planId]);
         flash('تم تحديث النظام الغذائي.');
     } else {
         $st = $pdo->prepare(
             'INSERT INTO diet_plans (patient_id, title, start_date, end_date, calories, breakfast, snack1,
-             lunch, snack2, dinner, forbidden, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)'
+             lunch, snack2, dinner, forbidden, notes, warnings, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         );
         $st->execute([$pid, ...$data, user()['id']]);
         $planId = (int)$pdo->lastInsertId();
@@ -63,8 +64,22 @@ if (!$plan && isset($_GET['tpl'])) {
 }
 $src = $plan ?: $tpl ?: [];
 $val = fn(string $k) => e($src[$k] ?? '');
+$DIET_CAT_ICONS = DIET_CAT_ICONS;
 $prefPatient = $plan ? (int)$plan['patient_id'] : (isset($_GET['patient']) ? (int)$_GET['patient'] : null);
-$templates = $pdo->query('SELECT id, title FROM diet_templates ORDER BY title')->fetchAll();
+$templates = $pdo->query('SELECT id, title, category, tag, description FROM diet_templates ORDER BY title')->fetchAll();
+
+// اقتراح البرامج المناسبة لحالة المريض الطبية
+$suggested = [];
+if ($prefPatientForSuggest = ($plan ? (int)$plan['patient_id'] : (int)($_GET['patient'] ?? 0))) {
+    $q = $pdo->prepare('SELECT medical_conditions, goal FROM patients WHERE id = ?');
+    $q->execute([$prefPatientForSuggest]);
+    if ($row = $q->fetch()) {
+        $tags = suggest_diet_tags(($row['medical_conditions'] ?? '') . ' ' . ($row['goal'] ?? ''));
+        if ($tags) {
+            $suggested = array_values(array_filter($templates, fn($t) => in_array($t['tag'], $tags, true)));
+        }
+    }
+}
 
 $patientName = '';
 if ($plan) {
@@ -75,15 +90,35 @@ if ($plan) {
 
 page_header($plan ? 'تعديل نظام غذائي' : 'نظام غذائي جديد', 'plans.php');
 ?>
+<?php if ($suggested): ?>
+<div class="card" style="border-color:#0f766e">
+    <h2>💡 برامج مقترحة لحالة هذا المريض</h2>
+    <p class="muted">بناءً على الحالة الطبية والهدف المسجَّلين في ملفه:</p>
+    <div class="actions">
+        <?php foreach ($suggested as $sg): ?>
+            <a class="btn" href="plan_edit.php?patient=<?= (int)$prefPatientForSuggest ?>&tpl=<?= (int)$sg['id'] ?>">
+                <?= e($sg['title']) ?></a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if (!$plan && $templates): ?>
 <div class="card">
     <form class="inline-form" method="get">
         <?php if ($prefPatient): ?><input type="hidden" name="patient" value="<?= $prefPatient ?>"><?php endif; ?>
         <label>ابدأ من قالب جاهز
-            <select name="tpl">
+            <select name="tpl" style="min-width:320px">
                 <option value="">— بدون قالب —</option>
-                <?php foreach ($templates as $t): ?>
-                    <option value="<?= (int)$t['id'] ?>" <?= $tpl && (int)$tpl['id'] === (int)$t['id'] ? 'selected' : '' ?>><?= e($t['title']) ?></option>
+                <?php foreach (DIET_CATS as $ck => $cl):
+                    $inCat = array_filter($templates, fn($t) => ($t['category'] ?? 'weight') === $ck);
+                    if (!$inCat) continue; ?>
+                    <optgroup label="<?= e(($DIET_CAT_ICONS[$ck] ?? '') . ' ' . $cl) ?>">
+                    <?php foreach ($inCat as $t): ?>
+                        <option value="<?= (int)$t['id'] ?>" <?= $tpl && (int)$tpl['id'] === (int)$t['id'] ? 'selected' : '' ?>>
+                            <?= e($t['title']) ?></option>
+                    <?php endforeach; ?>
+                    </optgroup>
                 <?php endforeach; ?>
             </select>
         </label>
@@ -121,9 +156,15 @@ page_header($plan ? 'تعديل نظام غذائي' : 'نظام غذائي جد
             <label>🍗 الغداء <textarea name="lunch"><?= $val('lunch') ?></textarea></label>
             <label>🥜 سناك مسائي <textarea name="snack2"><?= $val('snack2') ?></textarea></label>
             <label>🥗 العشاء <textarea name="dinner"><?= $val('dinner') ?></textarea></label>
-            <label>🚫 الممنوعات <textarea name="forbidden"><?= e($plan['forbidden'] ?? '') ?></textarea></label>
+            <label>🚫 الممنوعات <textarea name="forbidden"><?= $val('forbidden') ?></textarea></label>
         </div>
         <label>تعليمات عامة (ماء، رياضة، مواعيد الوجبات…) <textarea name="notes"><?= $val('notes') ?></textarea></label>
+        <?php $warnVal = $plan ? ($plan['warnings'] ?? '') : ($tpl['warnings'] ?? ''); ?>
+        <?php if ($warnVal): ?>
+        <div class="alert alert-warning" style="font-weight:400;white-space:pre-line"><?= e($warnVal) ?></div>
+        <?php endif; ?>
+        <label>⚠ تحذيرات طبية (تُطبع مع النظام للمريض)
+            <textarea name="warnings" rows="3"><?= e($warnVal) ?></textarea></label>
         <div class="actions">
             <button class="btn" type="submit">حفظ والانتقال للطباعة</button>
             <a class="btn btn-light" href="plans.php">إلغاء</a>

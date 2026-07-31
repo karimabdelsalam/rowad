@@ -520,10 +520,60 @@ function wa_link(string $phoneDigits, string $message): string
 
 /* ------------------------------------------------------------- الترقية */
 
-const SCHEMA_VERSION = 8;
+require_once __DIR__ . '/diet_library.php';
+
+const SCHEMA_VERSION = 9;
 
 const PKG_STATUS = ['active' => 'سارية', 'finished' => 'مستهلكة', 'expired' => 'منتهية', 'cancelled' => 'ملغاة'];
 const PKG_BADGE  = ['active' => 'ok', 'finished' => 'muted', 'expired' => 'bad', 'cancelled' => 'muted'];
+/** تصنيفات برامج التغذية */
+const DIET_CATS = [
+    'weight'      => 'إنقاص الوزن',
+    'therapeutic' => 'تغذية علاجية',
+    'sports'      => 'تغذية رياضية',
+    'general'     => 'برامج عامة',
+];
+const DIET_CAT_ICONS = ['weight' => '⚖️', 'therapeutic' => '🩺', 'sports' => '🏋️', 'general' => '🥗'];
+
+/** الحالة أو الهدف الذي يخدمه البرنامج، مع الكلمات التي تُطابَق بها حالة المريض */
+const DIET_TAGS = [
+    'diabetes'     => ['السكري', ['سكر', 'سكري', 'diabet', 'gluco']],
+    'hypertension' => ['الضغط والقلب', ['ضغط', 'قلب', 'شرايين', 'كوليسترول', 'كولسترول']],
+    'kidney'       => ['الكلى', ['كلى', 'كلي', 'فشل كلوي', 'غسيل']],
+    'liver'        => ['الكبد', ['كبد', 'دهون الكبد', 'كبدي']],
+    'thyroid'      => ['الغدة الدرقية', ['غدة', 'درقية', 'ثيرويد']],
+    'muscle'       => ['زيادة كتلة عضلية', ['تضخيم', 'كتلة عضلية', 'بناء عضل']],
+    'cutting'      => ['حرق دهون وتنشيف', ['تنشيف', 'حرق دهون']],
+    'workout'      => ['ما قبل وبعد التمرين', ['تمرين', 'رياضة', 'جيم']],
+];
+
+function diet_tag_label(string $tag): string
+{
+    return DIET_TAGS[$tag][0] ?? '';
+}
+
+/**
+ * يقترح وسوم البرامج المناسبة لحالة المريض الطبية المكتوبة نصًا.
+ * @return string[] مفاتيح الوسوم المطابقة
+ */
+function suggest_diet_tags(?string $conditions): array
+{
+    $text = mb_strtolower((string)$conditions);
+    if (trim($text) === '') {
+        return [];
+    }
+    $hits = [];
+    foreach (DIET_TAGS as $tag => [$label, $words]) {
+        foreach ($words as $w) {
+            if (mb_strpos($text, mb_strtolower($w)) !== false) {
+                $hits[] = $tag;
+                break;
+            }
+        }
+    }
+    return $hits;
+}
+
 const CONFIRM_STATUS = [
     'pending'   => 'لم يتم التواصل',
     'confirmed' => 'أكّد الحضور',
@@ -1073,6 +1123,21 @@ function db_migrate(PDO $pdo): void
             "ENUM('pending','confirmed','no_answer','declined') NOT NULL DEFAULT 'pending'");
         $addCol('appointments', 'confirmed_at', 'DATETIME NULL');
         $addCol('appointments', 'confirmed_by', 'INT UNSIGNED NULL');
+    }
+
+    if ($current < 9) {
+        $addCol = function (string $table, string $col, string $def) use ($pdo): void {
+            if (!$pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col))->fetchAll()) {
+                $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def");
+            }
+        };
+        $addCol('diet_templates', 'category', "ENUM('weight','therapeutic','sports','general') NOT NULL DEFAULT 'weight'");
+        $addCol('diet_templates', 'tag', "VARCHAR(30) NOT NULL DEFAULT ''");
+        $addCol('diet_templates', 'description', "VARCHAR(255) NOT NULL DEFAULT ''");
+        $addCol('diet_templates', 'warnings', 'TEXT NULL');
+        $addCol('diet_templates', 'forbidden', 'TEXT NULL');
+        $addCol('diet_plans', 'warnings', 'TEXT NULL');
+        seed_diet_library($pdo);
     }
 
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')

@@ -111,6 +111,9 @@ td { white-space: pre-line; }
     <?php if (trim((string)$pl['notes'])): ?>
     <div class="box"><h3>📌 تعليمات عامة</h3><?= e($pl['notes']) ?></div>
     <?php endif; ?>
+    <?php if (trim((string)($pl['warnings'] ?? ''))): ?>
+    <div class="box warn"><h3>⚠️ تنبيهات هامة</h3><?= e($pl['warnings']) ?></div>
+    <?php endif; ?>
 
     <div class="footer">
         <div><?= e(setting('print_note')) ?></div>

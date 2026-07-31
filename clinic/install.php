@@ -85,13 +85,18 @@ function schema_statements(): array
         "CREATE TABLE IF NOT EXISTS diet_templates (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             title VARCHAR(150) NOT NULL,
+            category ENUM('weight','therapeutic','sports','general') NOT NULL DEFAULT 'weight',
+            tag VARCHAR(30) NOT NULL DEFAULT '',
+            description VARCHAR(255) NOT NULL DEFAULT '',
             calories INT NULL,
             breakfast TEXT NULL,
             snack1 TEXT NULL,
             lunch TEXT NULL,
             snack2 TEXT NULL,
             dinner TEXT NULL,
-            notes TEXT NULL
+            forbidden TEXT NULL,
+            notes TEXT NULL,
+            warnings TEXT NULL
         ) $opts",
         "CREATE TABLE IF NOT EXISTS diet_plans (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -107,6 +112,7 @@ function schema_statements(): array
             dinner TEXT NULL,
             forbidden TEXT NULL,
             notes TEXT NULL,
+            warnings TEXT NULL,
             created_by INT UNSIGNED NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
@@ -243,27 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
                 $st->execute([$k, $v]);
             }
 
-            if (!(int)$db->query('SELECT COUNT(*) FROM diet_templates')->fetchColumn()) {
-                $tpl = $db->prepare('INSERT INTO diet_templates (title, calories, breakfast, snack1, lunch, snack2, dinner, notes) VALUES (?,?,?,?,?,?,?,?)');
-                $tpl->execute([
-                    'نظام 1200 سعر حراري', 1200,
-                    "2 بيضة مسلوقة + ربع رغيف بلدي + خيار وطماطم\nأو: 3 ملاعق فول بليمون وكمون + ربع رغيف",
-                    "ثمرة فاكهة (تفاح / برتقال / جوافة)",
-                    "ربع فرخة مشوية بدون جلد أو سمكة مشوية\n+ 3 ملاعق أرز أو ربع رغيف\n+ طبق سلطة خضراء كبير + خضار سوتيه",
-                    "كوب زبادي لايت أو حفنة مكسرات نيئة (5-7 حبات)",
-                    "علبة تونة مصفاة أو قطعة جبن قريش\n+ طبق سلطة خضراء",
-                    "الماء: 2-3 لتر يوميًا. المشي: 30 دقيقة يوميًا.\nممنوع: السكر الأبيض، المقليات، المشروبات الغازية.",
-                ]);
-                $tpl->execute([
-                    'نظام 1500 سعر حراري', 1500,
-                    "2 بيضة أومليت بقليل من الزيت + نصف رغيف بلدي + جبن قريش + خضروات",
-                    "ثمرة فاكهة + 3 تمرات أو كوب عصير طبيعي بدون سكر",
-                    "صدر فرخة مشوي أو لحم مسلوق (150 جم)\n+ 5 ملاعق أرز أو مكرونة مسلوقة\n+ سلطة خضراء + شوربة خضار",
-                    "كوب زبادي + ملعقة شوفان",
-                    "2 توست سن + جبن قريش أو بيضة مسلوقة + سلطة",
-                    "الماء: 3 لتر يوميًا. رياضة: 45 دقيقة 3 مرات أسبوعيًا.",
-                ]);
-            }
+            seed_diet_library($db);
 
             $configContent = "<?php\n"
                 . "define('DB_HOST', " . var_export($dbHost, true) . ");\n"
