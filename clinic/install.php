@@ -134,6 +134,7 @@ function schema_statements(): array
             skey VARCHAR(50) PRIMARY KEY,
             svalue TEXT NOT NULL
         ) $opts",
+        ...injection_schema(),
     ];
 }
 
@@ -171,6 +172,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
         try {
             foreach (schema_statements() as $sql) {
                 $db->exec($sql);
+            }
+
+            // ربط المدفوعات بجرعات الحقن (يُنفَّذ مرة واحدة فقط)
+            if (!$db->query("SHOW COLUMNS FROM payments LIKE 'dose_id'")->fetchAll()) {
+                $db->exec('ALTER TABLE payments ADD COLUMN dose_id INT UNSIGNED NULL');
+                $db->exec('ALTER TABLE payments ADD CONSTRAINT fk_pay_dose FOREIGN KEY (dose_id)
+                           REFERENCES injection_doses(id) ON DELETE CASCADE');
+            }
+
+            // أدوية شائعة كبداية — قابلة للتعديل والحذف من صفحة الأدوية
+            if (!(int)$db->query('SELECT COUNT(*) FROM drugs')->fetchColumn()) {
+                $drug = $db->prepare('INSERT INTO drugs (name, units_per_pen, unit_price, cost_per_pen, low_units, notes) VALUES (?,?,?,?,?,?)');
+                $drug->execute(['ساكسيندا Saxenda 6mg/ml (قلم 3 مل)', 300, 0, 0, 100, 'ليراجلوتايد — جرعة يومية عادةً']);
+                $drug->execute(['أوزمبك Ozempic (قلم 3 مل)', 300, 0, 0, 100, 'سيماجلوتايد — جرعة أسبوعية']);
+                $drug->execute(['مونجارو Mounjaro (قلم)', 300, 0, 0, 100, 'تيرزيباتايد — جرعة أسبوعية']);
             }
 
             $st = $db->prepare('INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, "admin")');

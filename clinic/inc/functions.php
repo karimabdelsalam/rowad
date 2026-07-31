@@ -10,6 +10,13 @@ const APPT_BADGE  = ['scheduled' => 'info', 'done' => 'ok', 'cancelled' => 'mute
 const PAY_METHODS  = ['cash' => 'نقدي', 'card' => 'بطاقة', 'transfer' => 'تحويل بنكي', 'wallet' => 'محفظة إلكترونية'];
 const EXPENSE_CATS = ['rent' => 'إيجار', 'salaries' => 'مرتبات', 'supplies' => 'مستلزمات', 'marketing' => 'تسويق', 'utilities' => 'مرافق وفواتير', 'other' => 'أخرى'];
 
+const INJ_STATUS = ['active' => 'نشط', 'completed' => 'مكتمل', 'stopped' => 'موقوف'];
+const INJ_BADGE  = ['active' => 'ok', 'completed' => 'muted', 'stopped' => 'bad'];
+const INJ_SITES  = ['abdomen' => 'البطن', 'thigh' => 'الفخذ', 'arm' => 'الذراع', 'other' => 'أخرى'];
+
+/** الخدمة المستخدمة في جدول المدفوعات لدخل الحقن */
+const INJ_SERVICE = 'حقن تخسيس';
+
 const AR_DAYS = [
     'Saturday' => 'السبت', 'Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء',
     'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة',
@@ -166,6 +173,90 @@ function bmi_label(float $bmi): array
     return ['سمنة مفرطة', 'bad'];
 }
 
+/* ------------------------------------------- حقن التخسيس والمحاسبة بالوحدات */
+
+/** يعرض الأرقام بدون أصفار زائدة: 10.0 ← «10» و 7.5 ← «7.5» */
+function num_fmt(mixed $n, int $decimals = 1): string
+{
+    $s = number_format((float)$n, $decimals, '.', '');
+    return str_contains($s, '.') ? rtrim(rtrim($s, '0'), '.') : $s;
+}
+
+function units_fmt(mixed $units): string
+{
+    return num_fmt($units) . ' وحدة';
+}
+
+/** إجمالي الوحدات المتبقية في مخزون دواء معيّن */
+function drug_units_left(PDO $pdo, int $drugId): float
+{
+    $st = $pdo->prepare('SELECT COALESCE(SUM(units_total - units_used), 0) FROM drug_batches WHERE drug_id = ?');
+    $st->execute([$drugId]);
+    return (float)$st->fetchColumn();
+}
+
+/**
+ * دفعات الدواء التي بها رصيد، مرتبة بالأقرب انتهاءً (صرف FIFO حسب الصلاحية)
+ * حتى لا تنتهي صلاحية الأقلام في المخزن.
+ */
+function drug_batches_available(PDO $pdo, int $drugId): array
+{
+    $st = $pdo->prepare(
+        'SELECT * FROM drug_batches
+         WHERE drug_id = ? AND units_total > units_used
+         ORDER BY (expiry_date IS NULL), expiry_date, id'
+    );
+    $st->execute([$drugId]);
+    return $st->fetchAll();
+}
+
+/** رصيد المريض من الحقن: المستحق ناقص المدفوع (موجب = عليه متأخرات) */
+function injection_balance(PDO $pdo, int $patientId): float
+{
+    $st = $pdo->prepare('SELECT COALESCE(SUM(amount - paid), 0) FROM injection_doses WHERE patient_id = ?');
+    $st->execute([$patientId]);
+    return round((float)$st->fetchColumn(), 2);
+}
+
+/** البروتوكول النشط للمريض (الدواء + الجرعة الأسبوعية + سعر الوحدة) */
+function active_plan(PDO $pdo, int $patientId): ?array
+{
+    $st = $pdo->prepare(
+        "SELECT p.*, d.name AS drug_name, d.units_per_pen
+         FROM injection_plans p JOIN drugs d ON d.id = p.drug_id
+         WHERE p.patient_id = ? AND p.status = 'active'
+         ORDER BY p.start_date DESC, p.id DESC LIMIT 1"
+    );
+    $st->execute([$patientId]);
+    return $st->fetch() ?: null;
+}
+
+/** موعد الجرعة القادمة = آخر جرعة + 7 أيام (أو بداية البروتوكول لو لسه مفيش جرعات) */
+function next_dose_date(PDO $pdo, array $plan): string
+{
+    $st = $pdo->prepare('SELECT MAX(dose_date) FROM injection_doses WHERE plan_id = ?');
+    $st->execute([(int)$plan['id']]);
+    $last = $st->fetchColumn();
+    return $last
+        ? date('Y-m-d', strtotime($last . ' +7 days'))
+        : (string)$plan['start_date'];
+}
+
+/** تكلفة الوحدة من دفعة معيّنة — لحساب ربح الحقن */
+function batch_unit_cost(array $batch): float
+{
+    $units = (float)$batch['units_total'];
+    return $units > 0 ? (float)$batch['cost_total'] / $units : 0.0;
+}
+
+/** قيمة المخزون المتبقي بسعر التكلفة — رأس مال «واقف» في الأقلام */
+function stock_value(PDO $pdo): float
+{
+    $sql = 'SELECT COALESCE(SUM((units_total - units_used) * (cost_total / units_total)), 0)
+            FROM drug_batches WHERE units_total > 0 AND units_total > units_used';
+    return round((float)$pdo->query($sql)->fetchColumn(), 2);
+}
+
 /* ------------------------------------------------------------- واتساب */
 
 /** رقم العيادة الدولي بدون + أو أصفار بادئة، أو null لو الرقم غير صالح */
@@ -230,7 +321,80 @@ function wa_link(string $phoneDigits, string $message): string
 
 /* ------------------------------------------------------------- الترقية */
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
+
+/** جمل إنشاء جداول الحقن — مشتركة بين التثبيت الجديد والترقية */
+function injection_schema(): array
+{
+    $opts = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+    return [
+        "CREATE TABLE IF NOT EXISTS drugs (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            units_per_pen DECIMAL(8,1) NOT NULL DEFAULT 300,
+            unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            cost_per_pen DECIMAL(10,2) NOT NULL DEFAULT 0,
+            low_units DECIMAL(8,1) NOT NULL DEFAULT 100,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS drug_batches (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            drug_id INT UNSIGNED NOT NULL,
+            batch_no VARCHAR(60) NOT NULL DEFAULT '',
+            expiry_date DATE NULL,
+            pens DECIMAL(8,1) NOT NULL DEFAULT 1,
+            units_total DECIMAL(10,1) NOT NULL DEFAULT 0,
+            units_used DECIMAL(10,1) NOT NULL DEFAULT 0,
+            cost_total DECIMAL(10,2) NOT NULL DEFAULT 0,
+            received_date DATE NOT NULL,
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            created_by INT UNSIGNED NULL,
+            FOREIGN KEY (drug_id) REFERENCES drugs(id) ON DELETE CASCADE,
+            INDEX idx_drug (drug_id, expiry_date)
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS injection_plans (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            patient_id INT UNSIGNED NOT NULL,
+            drug_id INT UNSIGNED NOT NULL,
+            start_date DATE NOT NULL,
+            end_date DATE NULL,
+            weekly_units DECIMAL(8,1) NOT NULL,
+            unit_price DECIMAL(10,2) NOT NULL,
+            status ENUM('active','completed','stopped') NOT NULL DEFAULT 'active',
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            created_by INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+            FOREIGN KEY (drug_id) REFERENCES drugs(id),
+            INDEX idx_patient (patient_id, status)
+        ) $opts",
+        "CREATE TABLE IF NOT EXISTS injection_doses (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            patient_id INT UNSIGNED NOT NULL,
+            plan_id INT UNSIGNED NULL,
+            drug_id INT UNSIGNED NOT NULL,
+            batch_id INT UNSIGNED NULL,
+            dose_date DATE NOT NULL,
+            units DECIMAL(8,1) NOT NULL,
+            unit_price DECIMAL(10,2) NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            paid DECIMAL(10,2) NOT NULL DEFAULT 0,
+            unit_cost DECIMAL(10,4) NOT NULL DEFAULT 0,
+            site ENUM('abdomen','thigh','arm','other') NOT NULL DEFAULT 'abdomen',
+            notes VARCHAR(255) NOT NULL DEFAULT '',
+            given_by INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+            FOREIGN KEY (plan_id) REFERENCES injection_plans(id) ON DELETE SET NULL,
+            FOREIGN KEY (drug_id) REFERENCES drugs(id),
+            FOREIGN KEY (batch_id) REFERENCES drug_batches(id) ON DELETE SET NULL,
+            INDEX idx_patient (patient_id, dose_date),
+            INDEX idx_date (dose_date)
+        ) $opts",
+    ];
+}
 
 /**
  * ترقية بنية قاعدة البيانات للتركيبات القديمة — تعمل مرة واحدة فقط
@@ -255,6 +419,18 @@ function db_migrate(PDO $pdo): void
         $st = $pdo->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
         $st->execute(['country_code', '20']);
         $st->execute(['wa_template', wa_default_template()]);
+    }
+
+    if ($current < 3) {
+        foreach (injection_schema() as $sql) {
+            $pdo->exec($sql);
+        }
+        $cols = $pdo->query("SHOW COLUMNS FROM payments LIKE 'dose_id'")->fetchAll();
+        if (!$cols) {
+            $pdo->exec('ALTER TABLE payments ADD COLUMN dose_id INT UNSIGNED NULL');
+            $pdo->exec('ALTER TABLE payments ADD CONSTRAINT fk_pay_dose FOREIGN KEY (dose_id)
+                        REFERENCES injection_doses(id) ON DELETE CASCADE');
+        }
     }
 
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
@@ -325,6 +501,8 @@ function page_header(string $title, string $active = ''): void
         ['reminders.php',    'تذكير واتساب',      '💬', ['admin', 'doctor', 'reception']],
         ['patients.php',     'المرضى',            '👥', ['admin', 'doctor', 'reception']],
         ['plans.php',        'الأنظمة الغذائية',  '🥗', ['admin', 'doctor', 'reception']],
+        ['injections.php',   'الحقن',             '💉', ['admin', 'doctor', 'reception']],
+        ['drugs.php',        'الأدوية والمخزون',  '📦', ['admin', 'doctor']],
         ['payments.php',     'المدفوعات',         '💰', ['admin', 'reception']],
         ['expenses.php',     'المصروفات',         '🧾', ['admin']],
         ['reports.php',      'التقارير',          '📈', ['admin']],

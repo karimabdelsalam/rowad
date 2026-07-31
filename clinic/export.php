@@ -224,6 +224,123 @@ switch ($type) {
         $x->download('المصروفات-' . $from . '-' . $to);
     }
 
+    /* ------------------------------------------------------ جرعات الحقن */
+    case 'injections': {
+        $st = $pdo->prepare(
+            'SELECT i.*, p.name AS pname, p.code, d.name AS drug_name, u.name AS uname
+             FROM injection_doses i
+             JOIN patients p ON p.id = i.patient_id
+             JOIN drugs d ON d.id = i.drug_id
+             LEFT JOIN users u ON u.id = i.given_by
+             WHERE i.dose_date BETWEEN ? AND ? ORDER BY i.dose_date, i.id'
+        );
+        $st->execute([$from, $to]);
+        $rows = $st->fetchAll();
+
+        $sumUnits = array_sum(array_map(fn($r) => (float)$r['units'], $rows));
+        $sumAmount = array_sum(array_map(fn($r) => (float)$r['amount'], $rows));
+        $sumPaid = array_sum(array_map(fn($r) => (float)$r['paid'], $rows));
+        $isAdmin = has_role('admin');
+
+        $x = new XlsxWriter('جرعات الحقن');
+        $x->setTitle($clinic . ' — سجل جرعات الحقن',
+            $period . ' — ' . num_fmt($sumUnits) . ' وحدة بإجمالي ' . number_format($sumAmount, 2) . ' ' . $cur);
+        $cols = [
+            ['التاريخ', XlsxWriter::DATE, 13],
+            ['الكود', XlsxWriter::TEXT, 12],
+            ['المريض', XlsxWriter::TEXT, 24],
+            ['الدواء', XlsxWriter::TEXT, 30],
+            ['الوحدات', XlsxWriter::NUM, 11],
+            ['سعر الوحدة', XlsxWriter::MONEY, 13],
+            ['المستحق', XlsxWriter::MONEY, 13],
+            ['المدفوع', XlsxWriter::MONEY, 13],
+            ['المتبقي', XlsxWriter::MONEY, 13],
+            ['مكان الحقن', XlsxWriter::TEXT, 12],
+            ['أعطاها', XlsxWriter::TEXT, 18],
+            ['ملاحظات', XlsxWriter::TEXT, 24],
+        ];
+        if ($isAdmin) {
+            array_splice($cols, 9, 0, [['ربح الجرعة', XlsxWriter::MONEY, 13]]);
+        }
+        $x->setColumns($cols);
+
+        $sumProfit = 0.0;
+        foreach ($rows as $r) {
+            $profit = (float)$r['units'] * ((float)$r['unit_price'] - (float)$r['unit_cost']);
+            $sumProfit += $profit;
+            $cells = [
+                $r['dose_date'], $r['code'], $r['pname'], $r['drug_name'],
+                $r['units'], $r['unit_price'], $r['amount'], $r['paid'],
+                (float)$r['amount'] - (float)$r['paid'],
+            ];
+            if ($isAdmin) {
+                $cells[] = $profit;
+            }
+            $cells[] = INJ_SITES[$r['site']] ?? $r['site'];
+            $cells[] = $r['uname'] ?? '—';
+            $cells[] = $r['notes'];
+            $x->addRow($cells);
+        }
+        $totals = ['الإجمالي', null, count($rows) . ' جرعة', null,
+                   $sumUnits, null, $sumAmount, $sumPaid, $sumAmount - $sumPaid];
+        if ($isAdmin) {
+            $totals[] = $sumProfit;
+        }
+        $x->addTotalRow($totals);
+        $x->download('جرعات-الحقن-' . $from . '-' . $to);
+    }
+
+    /* ------------------------------------------- كشف حساب حقن مريض واحد */
+    case 'patient_injections': {
+        $pid = (int)($_GET['patient'] ?? 0);
+        $st = $pdo->prepare('SELECT * FROM patients WHERE id = ?');
+        $st->execute([$pid]);
+        $p = $st->fetch();
+        if (!$p) {
+            flash('المريض غير موجود.', 'danger');
+            redirect('patients.php');
+        }
+        $st = $pdo->prepare(
+            'SELECT i.*, d.name AS drug_name FROM injection_doses i
+             JOIN drugs d ON d.id = i.drug_id WHERE i.patient_id = ? ORDER BY i.dose_date, i.id'
+        );
+        $st->execute([$pid]);
+        $rows = $st->fetchAll();
+
+        $totUnits = array_sum(array_map(fn($r) => (float)$r['units'], $rows));
+        $totAmount = array_sum(array_map(fn($r) => (float)$r['amount'], $rows));
+        $totPaid = array_sum(array_map(fn($r) => (float)$r['paid'], $rows));
+        $plan = active_plan($pdo, $pid);
+
+        $x = new XlsxWriter('كشف حساب الحقن');
+        $x->setTitle($clinic . ' — كشف حساب الحقن: ' . $p['name'],
+            'الكود: ' . $p['code'] . ($plan
+                ? ' — ' . $plan['drug_name'] . ' — ' . num_fmt($plan['weekly_units']) . ' وحدة أسبوعيًا بسعر '
+                  . number_format((float)$plan['unit_price'], 2) . ' ' . $cur . ' للوحدة'
+                : ''));
+        $x->setColumns([
+            ['التاريخ', XlsxWriter::DATE, 13],
+            ['الدواء', XlsxWriter::TEXT, 30],
+            ['الوحدات', XlsxWriter::NUM, 11],
+            ['سعر الوحدة', XlsxWriter::MONEY, 13],
+            ['المستحق', XlsxWriter::MONEY, 13],
+            ['المدفوع', XlsxWriter::MONEY, 13],
+            ['الرصيد التراكمي', XlsxWriter::MONEY, 16],
+            ['ملاحظات', XlsxWriter::TEXT, 26],
+        ]);
+        $running = 0.0;
+        foreach ($rows as $r) {
+            $running += (float)$r['amount'] - (float)$r['paid'];
+            $x->addRow([
+                $r['dose_date'], $r['drug_name'], $r['units'], $r['unit_price'],
+                $r['amount'], $r['paid'], $running, $r['notes'],
+            ]);
+        }
+        $x->addTotalRow(['الإجمالي', count($rows) . ' جرعة', $totUnits, null,
+                         $totAmount, $totPaid, $totAmount - $totPaid]);
+        $x->download('كشف-حقن-' . $p['name']);
+    }
+
     /* ---------------------------------------------------- التقرير الشهري */
     case 'report': {
         require_role('admin');
@@ -285,6 +402,30 @@ switch ($type) {
         $x->addTotalRow(['المواعيد']);
         foreach (APPT_STATUS as $k => $label) {
             $x->addRow([$label, (int)($apptStats[$k] ?? 0), null]);
+        }
+
+        $st = $pdo->prepare(
+            'SELECT d.name, SUM(i.units) units, SUM(i.amount) amount, SUM(i.paid) paid,
+                    SUM(i.units * (i.unit_price - i.unit_cost)) profit, COUNT(*) c
+             FROM injection_doses i JOIN drugs d ON d.id = i.drug_id
+             WHERE i.dose_date BETWEEN ? AND ? GROUP BY d.id, d.name ORDER BY amount DESC'
+        );
+        $st->execute([$mFrom, $mTo]);
+        $byDrug = $st->fetchAll();
+
+        if ($byDrug) {
+            $x->addRow([null]);
+            $x->addTotalRow(['الحقن حسب الدواء (وحدات / قيمة)']);
+            foreach ($byDrug as $r) {
+                $x->addRow([$r['name'] . ' — ' . num_fmt($r['units']) . ' وحدة في ' . (int)$r['c'] . ' جرعة',
+                            $r['units'], $r['amount']]);
+            }
+            $totalInj = array_sum(array_map(fn($r) => (float)$r['amount'], $byDrug));
+            $paidInj = array_sum(array_map(fn($r) => (float)$r['paid'], $byDrug));
+            $x->addTotalRow(['إجمالي الحقن', null, $totalInj]);
+            $x->addRow(['منها محصَّل', null, $paidInj]);
+            $x->addRow(['متأخرات الحقن', null, $totalInj - $paidInj]);
+            $x->addRow(['ربح الحقن', null, array_sum(array_map(fn($r) => (float)$r['profit'], $byDrug))]);
         }
 
         $x->addRow([null]);

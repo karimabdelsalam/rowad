@@ -46,6 +46,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("patient.php?id=$id&tab=measure");
     }
 
+    /* ------------------------------------------- بروتوكول الحقن للمريض */
+    if ($action === 'save_plan' && has_role('admin', 'doctor')) {
+        $planId = (int)($_POST['plan_id'] ?? 0);
+        $drugId = (int)($_POST['drug_id'] ?? 0);
+        $weekly = (float)($_POST['weekly_units'] ?? 0);
+        $price = (float)($_POST['unit_price'] ?? 0);
+        if (!$drugId || $weekly <= 0) {
+            flash('اختر الدواء وأدخل الجرعة الأسبوعية بالوحدات.', 'danger');
+            redirect("patient.php?id=$id&tab=inj");
+        }
+        $status = array_key_exists($_POST['status'] ?? '', INJ_STATUS) ? $_POST['status'] : 'active';
+        $data = [
+            $drugId,
+            ($_POST['start_date'] ?? '') ?: date('Y-m-d'),
+            ($_POST['end_date'] ?? '') ?: null,
+            $weekly, $price, $status,
+            trim($_POST['plan_notes'] ?? ''),
+        ];
+        if ($planId) {
+            $pdo->prepare('UPDATE injection_plans SET drug_id=?, start_date=?, end_date=?, weekly_units=?,
+                           unit_price=?, status=?, notes=? WHERE id=? AND patient_id=?')
+                ->execute([...$data, $planId, $id]);
+            flash('تم تحديث البروتوكول.');
+        } else {
+            // بروتوكول واحد نشط في كل وقت — أوقف السابق تلقائيًا
+            if ($status === 'active') {
+                $pdo->prepare("UPDATE injection_plans SET status='completed' WHERE patient_id=? AND status='active'")
+                    ->execute([$id]);
+            }
+            $pdo->prepare('INSERT INTO injection_plans (patient_id, drug_id, start_date, end_date, weekly_units,
+                           unit_price, status, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?)')
+                ->execute([$id, ...$data, user()['id']]);
+            flash('تم إنشاء بروتوكول الحقن.');
+        }
+        redirect("patient.php?id=$id&tab=inj");
+    }
+
+    if ($action === 'pay_inj' && has_role('admin', 'reception')) {
+        $doseId = (int)($_POST['dose_id'] ?? 0);
+        $pay = (float)($_POST['pay'] ?? 0);
+        $st = $pdo->prepare('SELECT d.*, dr.name AS drug_name FROM injection_doses d
+                             JOIN drugs dr ON dr.id = d.drug_id WHERE d.id = ? AND d.patient_id = ?');
+        $st->execute([$doseId, $id]);
+        $dose = $st->fetch();
+        if ($dose && $pay > 0) {
+            $pay = min($pay, (float)$dose['amount'] - (float)$dose['paid']);
+            $pdo->beginTransaction();
+            try {
+                $pdo->prepare('UPDATE injection_doses SET paid = paid + ? WHERE id = ?')->execute([$pay, $doseId]);
+                $pdo->prepare('INSERT INTO payments (patient_id, pdate, amount, method, service, notes, created_by, dose_id)
+                               VALUES (?,?,?,?,?,?,?,?)')
+                    ->execute([
+                        $id, date('Y-m-d'), $pay,
+                        array_key_exists($_POST['method'] ?? '', PAY_METHODS) ? $_POST['method'] : 'cash',
+                        INJ_SERVICE, 'سداد متأخرات — ' . $dose['drug_name'], user()['id'], $doseId,
+                    ]);
+                $pdo->commit();
+                flash('تم سداد ' . money($pay) . '.');
+            } catch (PDOException) {
+                $pdo->rollBack();
+                flash('تعذر تسجيل السداد.', 'danger');
+            }
+        }
+        redirect("patient.php?id=$id&tab=inj");
+    }
+
     if ($action === 'add_payment' && has_role('admin', 'reception')) {
         $amount = (float)($_POST['amount'] ?? 0);
         if ($amount <= 0) {
@@ -81,10 +147,13 @@ $first = $measures[0] ?? null;
 
 page_header('ملف: ' . $p['name'], 'patients.php');
 
+$injBalance = injection_balance($pdo, $id);
+
 $tabs = [
     'overview' => 'نظرة عامة',
     'measure'  => 'القياسات (' . count($measures) . ')',
     'plans'    => 'الأنظمة الغذائية',
+    'inj'      => 'الحقن' . ($injBalance > 0.005 ? ' ⚠' : ''),
     'appts'    => 'المواعيد',
 ];
 if (has_role('admin', 'reception')) {
@@ -242,6 +311,230 @@ if (has_role('admin', 'reception')) {
             </tbody>
         </table></div>
     </div>
+
+<?php elseif ($tab === 'inj'):
+    $drugList = $pdo->query('SELECT * FROM drugs WHERE active = 1 ORDER BY name')->fetchAll();
+
+    $st = $pdo->prepare(
+        'SELECT pl.*, d.name AS drug_name FROM injection_plans pl
+         JOIN drugs d ON d.id = pl.drug_id WHERE pl.patient_id = ?
+         ORDER BY (pl.status = "active") DESC, pl.start_date DESC, pl.id DESC'
+    );
+    $st->execute([$id]);
+    $plansInj = $st->fetchAll();
+    $current = null;
+    foreach ($plansInj as $pl) {
+        if ($pl['status'] === 'active') { $current = $pl; break; }
+    }
+
+    $st = $pdo->prepare(
+        'SELECT i.*, d.name AS drug_name, u.name AS uname FROM injection_doses i
+         JOIN drugs d ON d.id = i.drug_id LEFT JOIN users u ON u.id = i.given_by
+         WHERE i.patient_id = ? ORDER BY i.dose_date, i.id'
+    );
+    $st->execute([$id]);
+    $doses = $st->fetchAll();
+
+    $totUnits = array_sum(array_map(fn($r) => (float)$r['units'], $doses));
+    $totAmount = array_sum(array_map(fn($r) => (float)$r['amount'], $doses));
+    $totPaid = array_sum(array_map(fn($r) => (float)$r['paid'], $doses));
+
+    $editPlanId = (int)($_GET['plan'] ?? 0);
+    $editPlan = null;
+    foreach ($plansInj as $pl) {
+        if ((int)$pl['id'] === $editPlanId) { $editPlan = $pl; break; }
+    }
+    $showPlanForm = $editPlan || isset($_GET['newplan']) || !$plansInj;
+?>
+    <div class="stats">
+        <div class="stat accent"><div class="label">إجمالي الوحدات المأخوذة</div>
+            <div class="value"><?= e(num_fmt($totUnits)) ?></div></div>
+        <div class="stat"><div class="label">إجمالي المستحق</div><div class="value"><?= e(money($totAmount)) ?></div></div>
+        <div class="stat"><div class="label">المسدَّد</div><div class="value"><?= e(money($totPaid)) ?></div></div>
+        <div class="stat"><div class="label">الرصيد المتبقي</div>
+            <div class="value" style="color:<?= $injBalance > 0.005 ? '#b91c1c' : '#15803d' ?>">
+                <?= e(money($injBalance)) ?></div></div>
+    </div>
+
+    <?php if ($current):
+        $nextDate = next_dose_date($pdo, $current);
+        $overdue = $nextDate < date('Y-m-d');
+    ?>
+    <div class="card">
+        <div class="card-head">
+            <h2>💉 البروتوكول الحالي</h2>
+            <div class="actions">
+                <a class="btn btn-sm" href="injections.php?tab=give">تسجيل جرعة</a>
+                <a class="btn btn-light btn-sm" href="patient.php?id=<?= $id ?>&tab=inj&plan=<?= (int)$current['id'] ?>">تعديل</a>
+                <a class="btn btn-light btn-sm" href="injection_statement.php?id=<?= $id ?>">🖨️ كشف حساب</a>
+            </div>
+        </div>
+        <div class="grid4">
+            <p><span class="muted">الدواء:</span> <strong><?= e($current['drug_name']) ?></strong></p>
+            <p><span class="muted">الجرعة الأسبوعية:</span> <strong><?= e(num_fmt($current['weekly_units'])) ?> وحدة</strong></p>
+            <p><span class="muted">سعر الوحدة:</span> <strong><?= e(money($current['unit_price'])) ?></strong></p>
+            <p><span class="muted">تكلفة الأسبوع:</span>
+               <strong><?= e(money((float)$current['weekly_units'] * (float)$current['unit_price'])) ?></strong></p>
+            <p><span class="muted">بدأ في:</span> <?= e(fmt_date($current['start_date'])) ?></p>
+            <p><span class="muted">الجرعة القادمة:</span>
+                <?php if ($overdue): ?><span class="badge bad">متأخرة — <?= e(fmt_date($nextDate)) ?></span>
+                <?php else: ?><strong><?= e(day_ar($nextDate)) ?> <?= e(fmt_date($nextDate)) ?></strong><?php endif; ?>
+            </p>
+        </div>
+        <?php if ($current['notes']): ?><p><span class="muted">ملاحظات:</span> <?= e($current['notes']) ?></p><?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if (has_role('admin', 'doctor') && $showPlanForm): $pf = $editPlan ?: []; ?>
+    <div class="card">
+        <h2><?= $editPlan ? 'تعديل البروتوكول' : '➕ بروتوكول حقن جديد' ?></h2>
+        <?php if (!$drugList): ?>
+            <p class="muted">لا توجد أدوية مفعّلة — <a href="drugs.php?new=1">أضف دواءً أولًا</a>.</p>
+        <?php else: ?>
+        <form method="post">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="save_plan">
+            <input type="hidden" name="id" value="<?= $id ?>">
+            <input type="hidden" name="plan_id" value="<?= (int)($pf['id'] ?? 0) ?>">
+            <div class="grid4">
+                <label>الدواء *
+                    <select name="drug_id" id="plan-drug" required>
+                        <option value="">— اختر —</option>
+                        <?php foreach ($drugList as $dr): ?>
+                            <option value="<?= (int)$dr['id'] ?>" data-price="<?= e($dr['unit_price']) ?>"
+                                <?= (int)($pf['drug_id'] ?? 0) === (int)$dr['id'] ? 'selected' : '' ?>>
+                                <?= e($dr['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>الجرعة الأسبوعية (وحدة) *
+                    <input type="number" step="0.5" min="0.5" name="weekly_units" id="plan-units"
+                           value="<?= e($pf['weekly_units'] ?? '') ?>" required></label>
+                <label>سعر الوحدة (<?= e(setting('currency', 'ج.م')) ?>) *
+                    <input type="number" step="0.01" min="0" name="unit_price" id="plan-price"
+                           value="<?= e($pf['unit_price'] ?? '') ?>" required></label>
+                <label>تكلفة الأسبوع
+                    <input id="plan-total" readonly value="0.00" style="background:#f0fdfa;font-weight:700"></label>
+            </div>
+            <div class="grid4">
+                <label>تاريخ البداية <input type="date" name="start_date"
+                    value="<?= e($pf['start_date'] ?? date('Y-m-d')) ?>" required></label>
+                <label>تاريخ النهاية <input type="date" name="end_date" value="<?= e($pf['end_date'] ?? '') ?>"></label>
+                <label>الحالة
+                    <select name="status">
+                        <?php foreach (INJ_STATUS as $k => $v): ?>
+                            <option value="<?= e($k) ?>" <?= ($pf['status'] ?? 'active') === $k ? 'selected' : '' ?>><?= e($v) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>ملاحظات <input name="plan_notes" value="<?= e($pf['notes'] ?? '') ?>"></label>
+            </div>
+            <div class="actions">
+                <button class="btn" type="submit">حفظ البروتوكول</button>
+                <?php if ($editPlan): ?><a class="btn btn-light" href="patient.php?id=<?= $id ?>&tab=inj">إلغاء</a><?php endif; ?>
+            </div>
+        </form>
+        <script>
+        (function () {
+            var d = document.getElementById('plan-drug'), u = document.getElementById('plan-units'),
+                p = document.getElementById('plan-price'), t = document.getElementById('plan-total');
+            function calc() { t.value = ((parseFloat(u.value) || 0) * (parseFloat(p.value) || 0)).toFixed(2); }
+            d.addEventListener('change', function () {
+                var dp = d.options[d.selectedIndex].dataset.price;
+                if (dp && parseFloat(dp) > 0 && !p.value) p.value = dp;
+                calc();
+            });
+            u.addEventListener('input', calc);
+            p.addEventListener('input', calc);
+            calc();
+        })();
+        </script>
+        <?php endif; ?>
+    </div>
+    <?php elseif (has_role('admin', 'doctor')): ?>
+    <div class="card"><a class="btn" href="patient.php?id=<?= $id ?>&tab=inj&newplan=1">➕ بروتوكول حقن جديد</a></div>
+    <?php endif; ?>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>🧾 كشف حساب الوحدات</h2>
+            <div class="actions">
+                <a class="btn btn-light btn-sm" href="injection_statement.php?id=<?= $id ?>">🖨️ طباعة</a>
+                <a class="btn btn-xls btn-sm" href="export.php?type=patient_injections&patient=<?= $id ?>">⬇ Excel</a>
+            </div>
+        </div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>التاريخ</th><th>الدواء</th><th>الوحدات</th><th>سعر الوحدة</th><th>المستحق</th>
+                <th>المدفوع</th><th>الرصيد التراكمي</th><th>أعطاها</th><th></th></tr></thead>
+            <tbody>
+            <?php $running = 0.0; foreach ($doses as $r):
+                $running += (float)$r['amount'] - (float)$r['paid'];
+                $rest = (float)$r['amount'] - (float)$r['paid'];
+            ?>
+                <tr>
+                    <td class="num"><?= e(fmt_date($r['dose_date'])) ?></td>
+                    <td><?= e($r['drug_name']) ?><?php if ($r['notes']): ?><br><small class="muted"><?= e($r['notes']) ?></small><?php endif; ?></td>
+                    <td class="num"><strong><?= e(num_fmt($r['units'])) ?></strong></td>
+                    <td class="num"><?= e(money($r['unit_price'])) ?></td>
+                    <td class="num"><?= e(money($r['amount'])) ?></td>
+                    <td class="num"><?= e(money($r['paid'])) ?></td>
+                    <td class="num"><strong style="color:<?= $running > 0.005 ? '#b91c1c' : '#15803d' ?>"><?= e(money($running)) ?></strong></td>
+                    <td><?= e($r['uname'] ?? '—') ?></td>
+                    <td>
+                    <?php if ($rest > 0.005 && has_role('admin', 'reception')): ?>
+                        <form method="post" class="inline-form" style="gap:4px">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="pay_inj">
+                            <input type="hidden" name="id" value="<?= $id ?>">
+                            <input type="hidden" name="dose_id" value="<?= (int)$r['id'] ?>">
+                            <input type="number" step="0.01" min="0.01" max="<?= e(number_format($rest, 2, '.', '')) ?>"
+                                   name="pay" value="<?= e(number_format($rest, 2, '.', '')) ?>" style="width:90px;min-width:0">
+                            <button class="btn btn-sm" type="submit">سداد</button>
+                        </form>
+                    <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (!$doses): ?><tr><td colspan="9" class="muted">لا توجد جرعات مسجّلة لهذا المريض.</td></tr><?php endif; ?>
+            </tbody>
+            <?php if ($doses): ?>
+            <tfoot><tr>
+                <td colspan="2">الإجمالي (<?= count($doses) ?> جرعة)</td>
+                <td class="num"><?= e(num_fmt($totUnits)) ?></td>
+                <td></td>
+                <td class="num"><?= e(money($totAmount)) ?></td>
+                <td class="num"><?= e(money($totPaid)) ?></td>
+                <td class="num"><?= e(money($injBalance)) ?></td>
+                <td colspan="2"></td>
+            </tr></tfoot>
+            <?php endif; ?>
+        </table></div>
+    </div>
+
+    <?php if (count($plansInj) > 1 || ($plansInj && !$current)): ?>
+    <div class="card">
+        <h2>📜 سجل البروتوكولات</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>الدواء</th><th>الجرعة</th><th>سعر الوحدة</th><th>من</th><th>إلى</th><th>الحالة</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($plansInj as $pl): ?>
+                <tr>
+                    <td><?= e($pl['drug_name']) ?></td>
+                    <td class="num"><?= e(num_fmt($pl['weekly_units'])) ?> وحدة</td>
+                    <td class="num"><?= e(money($pl['unit_price'])) ?></td>
+                    <td class="num"><?= e(fmt_date($pl['start_date'])) ?></td>
+                    <td class="num"><?= e(fmt_date($pl['end_date'])) ?></td>
+                    <td><span class="badge <?= e(INJ_BADGE[$pl['status']]) ?>"><?= e(INJ_STATUS[$pl['status']]) ?></span></td>
+                    <td><?php if (has_role('admin', 'doctor')): ?>
+                        <a class="btn btn-light btn-sm" href="patient.php?id=<?= $id ?>&tab=inj&plan=<?= (int)$pl['id'] ?>">تعديل</a>
+                    <?php endif; ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
+    </div>
+    <?php endif; ?>
 
 <?php elseif ($tab === 'appts'):
     $st = $pdo->prepare('SELECT * FROM appointments WHERE patient_id = ? ORDER BY adate DESC, atime DESC');

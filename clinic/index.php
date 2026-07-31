@@ -37,6 +37,38 @@ $appts = $st->fetchAll();
 
 $recent = $pdo->query('SELECT id, code, name, phone, created_at FROM patients ORDER BY id DESC LIMIT 6')->fetchAll();
 
+/* ------------------------------------------------- تنبيهات ومتابعة الحقن */
+$injDue = $pdo->query(
+    "SELECT pl.id, pl.patient_id, pl.weekly_units, pl.start_date, p.name AS pname, d.name AS drug_name,
+        (SELECT MAX(dose_date) FROM injection_doses i WHERE i.plan_id = pl.id) AS last_dose
+     FROM injection_plans pl JOIN patients p ON p.id = pl.patient_id JOIN drugs d ON d.id = pl.drug_id
+     WHERE pl.status = 'active'"
+)->fetchAll();
+$dueSoon = [];
+foreach ($injDue as $pl) {
+    $next = $pl['last_dose'] ? date('Y-m-d', strtotime($pl['last_dose'] . ' +7 days')) : $pl['start_date'];
+    if ($next <= date('Y-m-d', strtotime('+2 days'))) {
+        $dueSoon[] = $pl + ['next_date' => $next];
+    }
+}
+usort($dueSoon, fn($a, $b) => strcmp($a['next_date'], $b['next_date']));
+
+$injDebt = (float)$pdo->query('SELECT COALESCE(SUM(amount - paid), 0) FROM injection_doses')->fetchColumn();
+
+$lowStock = has_role('admin', 'doctor') ? $pdo->query(
+    'SELECT d.name, d.low_units,
+        COALESCE((SELECT SUM(units_total - units_used) FROM drug_batches b WHERE b.drug_id = d.id), 0) AS units_left
+     FROM drugs d WHERE d.active = 1
+     HAVING units_left <= d.low_units ORDER BY units_left'
+)->fetchAll() : [];
+
+$expiring = has_role('admin', 'doctor') ? $pdo->query(
+    "SELECT b.*, d.name AS drug_name FROM drug_batches b JOIN drugs d ON d.id = b.drug_id
+     WHERE b.units_total > b.units_used AND b.expiry_date IS NOT NULL
+       AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 60 DAY)
+     ORDER BY b.expiry_date"
+)->fetchAll() : [];
+
 page_header('لوحة التحكم', 'index.php');
 ?>
 <div class="stats">
@@ -48,6 +80,56 @@ page_header('لوحة التحكم', 'index.php');
     <div class="stat"><div class="label">إيراد الشهر</div><div class="value"><?= e(money($monthIncome)) ?></div></div>
     <?php endif; ?>
 </div>
+
+<?php foreach ($lowStock as $s): ?>
+    <div class="alert alert-warning">📦 مخزون منخفض: <strong><?= e($s['name']) ?></strong> —
+        متبقٍ <?= e(num_fmt($s['units_left'])) ?> وحدة فقط.
+        <a href="drugs.php?stock=1">استلام كمية</a></div>
+<?php endforeach; ?>
+<?php foreach ($expiring as $b): ?>
+    <div class="alert alert-<?= $b['expiry_date'] < $today ? 'danger' : 'warning' ?>">
+        ⏳ <strong><?= e($b['drug_name']) ?></strong>
+        <?= $b['expiry_date'] < $today ? 'دفعة منتهية الصلاحية في' : 'دفعة تنتهي في' ?>
+        <?= e(fmt_date($b['expiry_date'])) ?> — متبقٍ بها
+        <?= e(num_fmt((float)$b['units_total'] - (float)$b['units_used'])) ?> وحدة.
+        <a href="drugs.php?stock=1">المخزون</a></div>
+<?php endforeach; ?>
+
+<?php if ($dueSoon || $injDebt > 0.005): ?>
+<div class="card">
+    <div class="card-head">
+        <h2>💉 متابعة الحقن</h2>
+        <div class="actions">
+            <?php if ($injDebt > 0.005): ?>
+                <a class="btn btn-light btn-sm" href="injections.php?tab=due">متأخرات: <?= e(money($injDebt)) ?></a>
+            <?php endif; ?>
+            <a class="btn btn-sm" href="injections.php?tab=give">تسجيل جرعة</a>
+        </div>
+    </div>
+    <?php if (!$dueSoon): ?>
+        <p class="muted">لا توجد جرعات مستحقة خلال اليومين القادمين.</p>
+    <?php else: ?>
+    <div class="table-wrap"><table>
+        <thead><tr><th>المريض</th><th>الدواء</th><th>الجرعة</th><th>موعدها</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($dueSoon as $r): $overdue = $r['next_date'] < $today; ?>
+            <tr>
+                <td><a href="patient.php?id=<?= (int)$r['patient_id'] ?>&tab=inj"><?= e($r['pname']) ?></a></td>
+                <td><?= e($r['drug_name']) ?></td>
+                <td class="num"><strong><?= e(num_fmt($r['weekly_units'])) ?></strong> وحدة</td>
+                <td class="num">
+                    <?php if ($overdue): ?><span class="badge bad">متأخرة <?= e(fmt_date($r['next_date'])) ?></span>
+                    <?php elseif ($r['next_date'] === $today): ?><span class="badge warn">اليوم</span>
+                    <?php else: ?><?= e(fmt_date($r['next_date'])) ?><?php endif; ?>
+                </td>
+                <td><a class="btn btn-light btn-sm" href="injections.php?tab=give">تسجيل</a></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table></div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <div class="card">
     <div class="card-head">
