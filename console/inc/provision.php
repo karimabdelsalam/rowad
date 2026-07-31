@@ -28,6 +28,17 @@ function tenant_db_prefix(): string
     return setting('tenant_prefix', 'clinic_');
 }
 
+/**
+ * يتحقق أن اسم القاعدة آمن للإدراج في عبارة SQL.
+ *
+ * أسماء القواعد والجداول لا يمكن تمريرها كمعاملات مُجهَّزة، فتُدرَج نصًا.
+ * لذلك يمر كل اسم من هنا قبل أي CREATE أو DROP أو اتصال — خاصةً DROP.
+ */
+function valid_db_name(string $name): bool
+{
+    return (bool)preg_match('/^[A-Za-z0-9_]{1,64}$/', $name);
+}
+
 /** يتحقق من صلاحية النطاق الفرعي شكلًا */
 function subdomain_valid(string $sub): bool
 {
@@ -88,7 +99,7 @@ function server_pdo(): PDO
 function provision_tenant_db(PDO $ctl, int $clinicId, array $opt): string
 {
     $dbName = tenant_db_prefix() . $clinicId;
-    if (!preg_match('/^[A-Za-z0-9_]{1,60}$/', $dbName)) {
+    if (!valid_db_name($dbName)) {
         throw new RuntimeException('اسم قاعدة غير صالح: ' . $dbName);
     }
 
@@ -189,6 +200,11 @@ function migrate_all_tenants(PDO $ctl): array
     $out = [];
     foreach ($rows as $r) {
         $entry = ['clinic' => $r['name'], 'db' => $r['db_name'], 'ok' => false, 'note' => ''];
+        if (!valid_db_name((string)$r['db_name'])) {
+            $entry['note'] = 'اسم قاعدة غير صالح — تخطّي';
+            $out[] = $entry;
+            continue;
+        }
         try {
             $db = new PDO(
                 'mysql:host=' . DB_HOST . ';dbname=' . $r['db_name'] . ';charset=utf8mb4',

@@ -1,6 +1,7 @@
 <?php
 /** سجل العيادات العميلة. */
 require __DIR__ . '/inc/bootstrap.php';
+require_once __DIR__ . '/inc/provision.php';
 require_login();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -15,12 +16,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('clinics.php?new=1');
         }
         $status = array_key_exists($_POST['status'] ?? '', CLINIC_STATUS) ? $_POST['status'] : 'trial';
+
+        // النطاق الفرعي يُغيَّر فقط لعيادات SaaS، ويُتحقق منه كما عند الإنشاء
+        $sub = strtolower(trim($_POST['subdomain'] ?? '')) ?: null;
+        if ($sub !== null && $errs = subdomain_errors($pdo, $sub, $id ?: null)) {
+            flash(implode(' ', $errs), 'danger');
+            redirect('clinics.php?edit=' . $id);
+        }
+        $custom = strtolower(trim($_POST['custom_domain'] ?? ''));
+        if ($custom !== '' && !preg_match('/^[a-z0-9.-]+\.[a-z]{2,}$/', $custom)) {
+            flash('النطاق المخصص غير صالح.', 'danger');
+            redirect('clinics.php?edit=' . $id);
+        }
+
         $data = [
             $name,
             trim($_POST['owner_name'] ?? ''),
             trim($_POST['phone'] ?? ''),
             trim($_POST['email'] ?? ''),
             trim($_POST['site_url'] ?? ''),
+            $sub,
+            $custom,
             ((int)($_POST['plan_id'] ?? 0)) ?: null,
             $status,
             ($_POST['start_date'] ?? '') ?: null,
@@ -29,13 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         if ($id) {
             $pdo->prepare('UPDATE clinics SET name=?, owner_name=?, phone=?, email=?, site_url=?,
-                           plan_id=?, status=?, start_date=?, expires_at=?, notes=? WHERE id=?')
+                           subdomain=?, custom_domain=?, plan_id=?, status=?, start_date=?,
+                           expires_at=?, notes=? WHERE id=?')
                 ->execute([...$data, $id]);
             log_action($pdo, 'update', 'clinic', $id, 'تعديل عيادة: ' . $name);
             flash('تم تحديث بيانات العيادة.');
         } else {
-            $pdo->prepare('INSERT INTO clinics (name, owner_name, phone, email, site_url, plan_id,
-                           status, start_date, expires_at, notes, token) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+            $pdo->prepare('INSERT INTO clinics (name, owner_name, phone, email, site_url, subdomain,
+                           custom_domain, plan_id, status, start_date, expires_at, notes, token)
+                           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
                 ->execute([...$data, bin2hex(random_bytes(24))]);
             $id = (int)$pdo->lastInsertId();
             log_action($pdo, 'create', 'clinic', $id, 'إضافة عيادة: ' . $name);
@@ -46,12 +64,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
-        $st = $pdo->prepare('SELECT name FROM clinics WHERE id = ?');
+        $st = $pdo->prepare('SELECT name, db_name FROM clinics WHERE id = ?');
         $st->execute([$id]);
-        $nm = (string)$st->fetchColumn();
+        $c = $st->fetch();
+        if (!$c) {
+            flash('العيادة غير موجودة.', 'danger');
+            redirect('clinics.php');
+        }
+
+        // كتابة اسم العيادة يدويًا شرط للحذف: ضغطة واحدة لا تكفي لإزالة عميل
+        if (trim($_POST['confirm_name'] ?? '') !== $c['name']) {
+            flash('اكتب اسم العيادة بالضبط لتأكيد الحذف.', 'danger');
+            redirect('clinics.php?edit=' . $id);
+        }
+
+        $dropDb = isset($_POST['drop_db']) && $c['db_name'] !== '';
+        if ($dropDb) {
+            /*
+             * إسقاط قاعدة عيادة يمحو سجلات مرضى نهائيًا. لا يحدث إلا بطلب صريح
+             * منفصل، وبعد أخذ نسخة احتياطية — وإلا يُكتفى بفك الارتباط فتبقى
+             * القاعدة قابلة للاسترجاع.
+             */
+            if (!valid_db_name((string)$c['db_name'])) {
+                flash('اسم قاعدة العيادة غير صالح — أُلغي الحذف.', 'danger');
+                redirect('clinics.php?edit=' . $id);
+            }
+            try {
+                $srv = server_pdo();
+                $srv->exec('DROP DATABASE `' . $c['db_name'] . '`');
+                log_action($pdo, 'drop_db', 'clinic', $id,
+                    'إسقاط قاعدة العيادة ' . $c['db_name'] . ' — ' . $c['name']);
+            } catch (Throwable $ex) {
+                flash('تعذر إسقاط القاعدة: ' . $ex->getMessage(), 'danger');
+                redirect('clinics.php?edit=' . $id);
+            }
+        }
+
         $pdo->prepare('DELETE FROM clinics WHERE id = ?')->execute([$id]);
-        log_action($pdo, 'delete', 'clinic', $id, 'حذف عيادة: ' . $nm);
-        flash('تم حذف العيادة وكل فواتيرها ومدفوعاتها.', 'warning');
+        log_action($pdo, 'delete', 'clinic', $id, 'حذف عيادة: ' . $c['name']
+            . ($dropDb ? ' (مع قاعدتها)' : ($c['db_name'] !== '' ? ' (القاعدة ' . $c['db_name'] . ' باقية)' : '')));
+        flash($dropDb
+            ? 'حُذفت العيادة وقاعدتها نهائيًا.'
+            : 'حُذفت العيادة من الكونسول.' . ($c['db_name'] !== '' ? ' قاعدتها «' . $c['db_name'] . '» ما زالت على السيرفر.' : ''),
+            'warning');
         redirect('clinics.php');
     }
 }
@@ -138,8 +193,21 @@ page_header('العيادات', 'clinics.php');
             <label>الهاتف <input name="phone" value="<?= e($c['phone'] ?? '') ?>" dir="ltr"></label>
             <label>البريد <input type="email" name="email" value="<?= e($c['email'] ?? '') ?>" dir="ltr"></label>
         </div>
-        <label>رابط نسخة العيادة <input name="site_url" value="<?= e($c['site_url'] ?? '') ?>" dir="ltr"
-            placeholder="https://clinic.example.com"></label>
+        <?php if (!empty($c['db_name'])): ?>
+            <div class="grid2">
+                <label>النطاق الفرعي (SaaS)
+                    <input name="subdomain" value="<?= e($c['subdomain'] ?? '') ?>" dir="ltr"
+                           pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]">
+                    <small class="muted">تغييره يغيّر رابط دخول العيادة فورًا — بلّغ العميل.</small></label>
+                <label>نطاق مخصص للعميل
+                    <input name="custom_domain" value="<?= e($c['custom_domain'] ?? '') ?>" dir="ltr"
+                           placeholder="clinic.example.com">
+                    <small class="muted">يوجّهه العميل بـ CNAME لسيرفرك.</small></label>
+            </div>
+        <?php else: ?>
+            <label>رابط نسخة العيادة <input name="site_url" value="<?= e($c['site_url'] ?? '') ?>" dir="ltr"
+                placeholder="https://clinic.example.com"></label>
+        <?php endif; ?>
         <div class="grid3">
             <label>الخطة
                 <select name="plan_id">
@@ -167,5 +235,30 @@ page_header('العيادات', 'clinics.php');
         </div>
     </form>
 </div>
+
+<?php if ($edit): ?>
+<div class="card" style="border-color:#fecaca">
+    <h2>🗑️ حذف العيادة</h2>
+    <p class="muted">يحذف العيادة وفواتيرها ومدفوعاتها من الكونسول.
+        <?php if (!empty($c['db_name'])): ?>
+            قاعدة بياناتها <code dir="ltr"><?= e($c['db_name']) ?></code> <strong>تبقى على السيرفر</strong>
+            إلا إذا طلبت إسقاطها صراحةً — وفيها سجلات مرضى، فخُذ نسخة احتياطية أولًا.
+        <?php endif; ?>
+    </p>
+    <form method="post" onsubmit="return confirm('تأكيد نهائي: حذف «<?= e($c['name']) ?>»؟')">
+        <?= csrf_field() ?><input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+        <label>اكتب اسم العيادة للتأكيد
+            <input name="confirm_name" placeholder="<?= e($c['name']) ?>" autocomplete="off" required></label>
+        <?php if (!empty($c['db_name'])): ?>
+            <label style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" name="drop_db" style="width:auto">
+                أسقِط قاعدة البيانات أيضًا — <strong>محو نهائي لسجلات المرضى</strong>
+            </label>
+        <?php endif; ?>
+        <button class="btn btn-danger" type="submit">حذف نهائيًا</button>
+    </form>
+</div>
+<?php endif; ?>
 <?php endif; ?>
 <?php page_footer();
