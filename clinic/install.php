@@ -26,6 +26,7 @@ function schema_statements(): array
             username VARCHAR(50) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
             role ENUM('admin','doctor','reception') NOT NULL DEFAULT 'reception',
+            perms TEXT NULL,
             active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) $opts",

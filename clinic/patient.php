@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add_measure') {
+        deny_unless('measure.add', "patient.php?id=$id&tab=measure");
         $weight = (float)($_POST['weight'] ?? 0);
         if ($weight <= 0) {
             flash('الوزن مطلوب.', 'danger');
@@ -43,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("patient.php?id=$id&tab=measure");
     }
 
-    if ($action === 'del_measure' && has_role('admin', 'doctor')) {
+    if ($action === 'del_measure') {
+        deny_unless('measure.delete', "patient.php?id=$id&tab=measure");
         $pdo->prepare('DELETE FROM measurements WHERE id = ? AND patient_id = ?')
             ->execute([(int)$_POST['mid'], $id]);
         flash('تم حذف القياس.');
@@ -51,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     /* ------------------------------------------- بروتوكول الحقن للمريض */
-    if ($action === 'save_plan' && has_role('admin', 'doctor')) {
+    if ($action === 'save_plan') {
+        deny_unless('inj.plan', "patient.php?id=$id&tab=inj");
         $planId = (int)($_POST['plan_id'] ?? 0);
         $drugId = (int)($_POST['drug_id'] ?? 0);
         $weekly = (float)($_POST['weekly_units'] ?? 0);
@@ -87,7 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("patient.php?id=$id&tab=inj");
     }
 
-    if ($action === 'pay_inj' && has_role('admin', 'reception')) {
+    if ($action === 'pay_inj') {
+        deny_unless('pay.create', "patient.php?id=$id&tab=inj");
         $doseId = (int)($_POST['dose_id'] ?? 0);
         $pay = (float)($_POST['pay'] ?? 0);
         $st = $pdo->prepare('SELECT d.*, dr.name AS drug_name FROM injection_doses d
@@ -117,7 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     /* ------------------------------------------- تفعيل بوابة المريض */
-    if ($action === 'portal' && has_role('admin', 'reception')) {
+    if ($action === 'portal') {
+        deny_unless('portal.manage', "patient.php?id=$id&tab=portal");
         $mode = $_POST['mode'] ?? '';
         if ($mode === 'disable') {
             $pdo->prepare('UPDATE patients SET portal_enabled = 0 WHERE id = ?')->execute([$id]);
@@ -140,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'use_pkg') {
+        deny_unless('pkg.use', "patient.php?id=$id&tab=pkg");
         $ppId = (int)($_POST['pp_id'] ?? 0);
         $st = $pdo->prepare('SELECT pp.*, (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) AS used
                              FROM patient_packages pp WHERE pp.id = ? AND pp.patient_id = ?');
@@ -157,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'undo_pkg') {
+        deny_unless('pkg.use', "patient.php?id=$id&tab=pkg");
         $st = $pdo->prepare('SELECT u.id FROM package_uses u JOIN patient_packages pp ON pp.id = u.patient_package_id
                              WHERE u.id = ? AND pp.patient_id = ?');
         $st->execute([(int)($_POST['use_id'] ?? 0), $id]);
@@ -168,7 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("patient.php?id=$id&tab=pkg");
     }
 
-    if ($action === 'pay_pkg2' && has_role('admin', 'reception')) {
+    if ($action === 'pay_pkg2') {
+        deny_unless('pay.create', "patient.php?id=$id&tab=pkg");
         $ppId = (int)($_POST['pp_id'] ?? 0);
         $pay = (float)($_POST['pay'] ?? 0);
         $st = $pdo->prepare('SELECT * FROM patient_packages WHERE id = ? AND patient_id = ?');
@@ -194,7 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("patient.php?id=$id&tab=pkg");
     }
 
-    if ($action === 'add_payment' && has_role('admin', 'reception')) {
+    if ($action === 'add_payment') {
+        deny_unless('pay.create', "patient.php?id=$id&tab=pay");
         $amount = (float)($_POST['amount'] ?? 0);
         if ($amount <= 0) {
             flash('أدخل مبلغًا صحيحًا.', 'danger');
@@ -240,7 +249,7 @@ $tabs = [
     'portal'   => 'بوابة المريض' . ($p['portal_enabled'] ? ' ✔' : ''),
     'appts'    => 'المواعيد',
 ];
-if (has_role('admin', 'reception')) {
+if (can('pay.view')) {
     $tabs['pay'] = 'المدفوعات';
 }
 ?>
@@ -254,7 +263,7 @@ if (has_role('admin', 'reception')) {
             <?php endif; ?>
             <a class="btn btn-light btn-sm" href="patients.php?edit=<?= $id ?>">تعديل البيانات</a>
             <a class="btn btn-sm" href="plan_edit.php?patient=<?= $id ?>">+ نظام غذائي</a>
-            <?php if (has_role('admin')): ?>
+            <?php if (can('patients.delete')): ?>
             <form method="post" action="patients.php" data-confirm="سيتم حذف المريض وكل قياساته ومواعيده وأنظمته نهائيًا. متأكد؟">
                 <?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $id ?>">
                 <button class="btn btn-danger btn-sm" type="submit">حذف</button>
@@ -360,7 +369,7 @@ if (has_role('admin', 'reception')) {
                     <td class="num"><?= $m['thigh'] !== null ? e($m['thigh']) : '—' ?></td>
                     <td><?= e($m['notes']) ?></td>
                     <td>
-                    <?php if (has_role('admin', 'doctor')): ?>
+                    <?php if (can('measure.delete')): ?>
                         <form method="post" data-confirm="حذف هذا القياس؟">
                             <?= csrf_field() ?><input type="hidden" name="action" value="del_measure">
                             <input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="mid" value="<?= (int)$m['id'] ?>">
@@ -479,7 +488,7 @@ if (has_role('admin', 'reception')) {
     </div>
     <?php endif; ?>
 
-    <?php if (has_role('admin', 'doctor') && $showPlanForm): $pf = $editPlan ?: []; ?>
+    <?php if (can('inj.plan') && $showPlanForm): $pf = $editPlan ?: []; ?>
     <div class="card">
         <h2><?= $editPlan ? 'تعديل البروتوكول' : '➕ بروتوكول حقن جديد' ?></h2>
         <?php if (!$drugList): ?>
@@ -546,7 +555,7 @@ if (has_role('admin', 'reception')) {
         </script>
         <?php endif; ?>
     </div>
-    <?php elseif (has_role('admin', 'doctor')): ?>
+    <?php elseif (can('inj.plan')): ?>
     <div class="card"><a class="btn" href="patient.php?id=<?= $id ?>&tab=inj&newplan=1">➕ بروتوكول حقن جديد</a></div>
     <?php endif; ?>
 
@@ -576,7 +585,7 @@ if (has_role('admin', 'reception')) {
                     <td class="num"><strong style="color:<?= $running > 0.005 ? '#b91c1c' : '#15803d' ?>"><?= e(money($running)) ?></strong></td>
                     <td><?= e($r['uname'] ?? '—') ?></td>
                     <td>
-                    <?php if ($rest > 0.005 && has_role('admin', 'reception')): ?>
+                    <?php if ($rest > 0.005 && can('pay.create')): ?>
                         <form method="post" class="inline-form" style="gap:4px">
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="pay_inj">
@@ -620,7 +629,7 @@ if (has_role('admin', 'reception')) {
                     <td class="num"><?= e(fmt_date($pl['start_date'])) ?></td>
                     <td class="num"><?= e(fmt_date($pl['end_date'])) ?></td>
                     <td><span class="badge <?= e(INJ_BADGE[$pl['status']]) ?>"><?= e(INJ_STATUS[$pl['status']]) ?></span></td>
-                    <td><?php if (has_role('admin', 'doctor')): ?>
+                    <td><?php if (can('inj.plan')): ?>
                         <a class="btn btn-light btn-sm" href="patient.php?id=<?= $id ?>&tab=inj&plan=<?= (int)$pl['id'] ?>">تعديل</a>
                     <?php endif; ?></td>
                 </tr>
@@ -693,7 +702,7 @@ if (has_role('admin', 'reception')) {
                             <button class="btn btn-sm" type="submit">خصم جلسة</button>
                         </form>
                         <?php endif; ?>
-                        <?php if ($rest > 0.005 && has_role('admin', 'reception')): ?>
+                        <?php if ($rest > 0.005 && can('pay.create')): ?>
                         <form method="post" class="inline-form" style="gap:4px">
                             <?= csrf_field() ?><input type="hidden" name="action" value="pay_pkg2">
                             <input type="hidden" name="id" value="<?= $id ?>">
@@ -758,7 +767,7 @@ if (has_role('admin', 'reception')) {
         <p><span class="muted">اسم الدخول:</span> <strong dir="ltr"><?= e($p['code']) ?></strong>
            <span class="muted">أو رقم هاتفه</span></p>
 
-        <?php if (has_role('admin', 'reception')): ?>
+        <?php if (can('portal.manage')): ?>
         <h3 class="form-section"><?= $p['portal_enabled'] ? 'إعادة تعيين كلمة المرور' : 'تفعيل البوابة' ?></h3>
         <form method="post">
             <?= csrf_field() ?>
@@ -828,7 +837,7 @@ if (has_role('admin', 'reception')) {
         </table></div>
     </div>
 
-<?php elseif ($tab === 'pay' && has_role('admin', 'reception')):
+<?php elseif ($tab === 'pay' && can('pay.view')):
     $st = $pdo->prepare('SELECT * FROM payments WHERE patient_id = ? ORDER BY pdate DESC, id DESC');
     $st->execute([$id]);
     $pays = $st->fetchAll();

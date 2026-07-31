@@ -1,12 +1,13 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
-require_role('admin', 'reception');
+require_perm('pay.view');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add') {
+        deny_unless('pay.create', 'payments.php');
         $amount = (float)($_POST['amount'] ?? 0);
         if ($amount <= 0) {
             flash('أدخل مبلغًا صحيحًا.', 'danger');
@@ -27,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('payments.php');
     }
 
-    if ($action === 'delete' && has_role('admin')) {
+    if ($action === 'delete') {
+        deny_unless('pay.delete', 'payments.php');
         $pdo->prepare('DELETE FROM payments WHERE id = ?')->execute([(int)$_POST['payid']]);
         flash('تم حذف الدفعة.');
         redirect('payments.php?from=' . urlencode($_POST['from'] ?? '') . '&to=' . urlencode($_POST['to'] ?? ''));
@@ -105,7 +107,7 @@ page_header('المدفوعات', 'payments.php');
                 <td><?= e($r['notes']) ?></td>
                 <td><?= e($r['uname'] ?? '—') ?></td>
                 <td>
-                <?php if (has_role('admin')): ?>
+                <?php if (can('pay.delete')): ?>
                     <form method="post" data-confirm="حذف هذه الدفعة؟">
                         <?= csrf_field() ?><input type="hidden" name="action" value="delete">
                         <input type="hidden" name="payid" value="<?= (int)$r['id'] ?>">

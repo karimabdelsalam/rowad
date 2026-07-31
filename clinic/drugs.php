@@ -1,12 +1,13 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
-require_role('admin', 'doctor');
+require_perm('drug.view');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'save_drug') {
+        deny_unless('drug.manage', 'drugs.php');
         $did = (int)($_POST['did'] ?? 0);
         $name = trim($_POST['name'] ?? '');
         $unitsPerPen = (float)($_POST['units_per_pen'] ?? 0);
@@ -35,7 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('drugs.php');
     }
 
-    if ($action === 'del_drug' && has_role('admin')) {
+    if ($action === 'del_drug') {
+        deny_unless('drug.manage', 'drugs.php');
         $did = (int)($_POST['did'] ?? 0);
         $st = $pdo->prepare('SELECT COUNT(*) FROM injection_doses WHERE drug_id = ?');
         $st->execute([$did]);
@@ -50,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // استلام كمية جديدة للمخزن
     if ($action === 'add_batch') {
+        deny_unless('drug.stock', 'drugs.php?stock=1');
         $drugId = (int)($_POST['drug_id'] ?? 0);
         $pens = (float)($_POST['pens'] ?? 0);
         $st = $pdo->prepare('SELECT * FROM drugs WHERE id = ?');
@@ -93,7 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('drugs.php?stock=1');
     }
 
-    if ($action === 'del_batch' && has_role('admin')) {
+    if ($action === 'del_batch') {
+        deny_unless('drug.stock', 'drugs.php?stock=1');
         $bid = (int)($_POST['bid'] ?? 0);
         $st = $pdo->prepare('SELECT units_used FROM drug_batches WHERE id = ?');
         $st->execute([$bid]);
@@ -205,7 +209,7 @@ page_header('الأدوية والمخزون', 'drugs.php');
                     <td><span class="badge <?= $r['active'] ? 'ok' : 'muted' ?>"><?= $r['active'] ? 'مفعّل' : 'موقوف' ?></span></td>
                     <td><div class="actions">
                         <a class="btn btn-light btn-sm" href="drugs.php?edit=<?= (int)$r['id'] ?>">تعديل</a>
-                        <?php if (has_role('admin')): ?>
+                        <?php if (can('drug.manage')): ?>
                         <form method="post" data-confirm="حذف هذا الدواء؟">
                             <?= csrf_field() ?><input type="hidden" name="action" value="del_drug">
                             <input type="hidden" name="did" value="<?= (int)$r['id'] ?>">
@@ -296,7 +300,7 @@ page_header('الأدوية والمخزون', 'drugs.php');
                     <td class="num"><?= e(money(batch_unit_cost($b))) ?></td>
                     <td class="num"><?= e(fmt_date($b['received_date'])) ?></td>
                     <td>
-                    <?php if (has_role('admin') && (float)$b['units_used'] <= 0): ?>
+                    <?php if (can('drug.stock') && (float)$b['units_used'] <= 0): ?>
                         <form method="post" data-confirm="حذف هذه الدفعة؟">
                             <?= csrf_field() ?><input type="hidden" name="action" value="del_batch">
                             <input type="hidden" name="bid" value="<?= (int)$b['id'] ?>">

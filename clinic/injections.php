@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('inj.view');
 
 $tab = $_GET['tab'] ?? 'give';
 
@@ -10,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ------------------------------------------------ تسجيل جرعة حقن */
     if ($action === 'give') {
+        deny_unless('inj.give', 'injections.php');
         $pid = posted_patient_id($pdo);
         $drugId = (int)($_POST['drug_id'] ?? 0);
         $units = (float)($_POST['units'] ?? 0);
@@ -97,7 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     /* ------------------------------------------------ سداد متأخرات جرعة */
-    if ($action === 'pay_dose' && has_role('admin', 'reception')) {
+    if ($action === 'pay_dose') {
+        deny_unless('pay.create', 'injections.php?tab=due');
         $doseId = (int)($_POST['dose_id'] ?? 0);
         $pay = (float)($_POST['pay'] ?? 0);
         $st = $pdo->prepare('SELECT d.*, dr.name AS drug_name FROM injection_doses d JOIN drugs dr ON dr.id = d.drug_id WHERE d.id = ?');
@@ -134,7 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     /* ------------------------------------------------------ حذف جرعة */
-    if ($action === 'del_dose' && has_role('admin')) {
+    if ($action === 'del_dose') {
+        deny_unless('inj.delete', 'injections.php?tab=log');
         $doseId = (int)($_POST['dose_id'] ?? 0);
         $st = $pdo->prepare('SELECT * FROM injection_doses WHERE id = ?');
         $st->execute([$doseId]);
@@ -422,7 +426,7 @@ document.querySelector('.patient-pick').addEventListener('input', function () {
     <div class="stat"><div class="label">المحصَّل</div><div class="value"><?= e(money($sumPaid)) ?></div></div>
     <div class="stat"><div class="label">المتأخر</div>
         <div class="value" style="color:<?= $sumAmount - $sumPaid > 0 ? '#b91c1c' : '#15803d' ?>"><?= e(money($sumAmount - $sumPaid)) ?></div></div>
-    <?php if (has_role('admin')): ?>
+    <?php if (can('profit.view')): ?>
     <div class="stat"><div class="label">ربح الحقن</div><div class="value" style="color:#15803d"><?= e(money($sumProfit)) ?></div></div>
     <?php endif; ?>
 </div>
@@ -456,7 +460,7 @@ document.querySelector('.patient-pick').addEventListener('input', function () {
                     : '<span class="badge ok">مسدَّد</span>' ?></td>
                 <td><?= e($r['uname'] ?? '—') ?></td>
                 <td>
-                <?php if (has_role('admin')): ?>
+                <?php if (can('inj.delete')): ?>
                     <form method="post" data-confirm="حذف الجرعة؟ سيتم إرجاع الوحدات للمخزن وحذف مدفوعاتها.">
                         <?= csrf_field() ?><input type="hidden" name="action" value="del_dose">
                         <input type="hidden" name="dose_id" value="<?= (int)$r['id'] ?>">

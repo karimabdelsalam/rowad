@@ -20,7 +20,7 @@ $st = $pdo->prepare("SELECT COUNT(*) FROM appointments a JOIN patients p ON p.id
 $st->execute([$today, ...$dfArgs]);
 $todayAppts = (int)$st->fetchColumn();
 
-$canSeeMoney = has_role('admin', 'reception');
+$canSeeMoney = can('pay.view');
 $todayIncome = $monthIncome = 0.0;
 if ($canSeeMoney) {
     $st = $pdo->prepare('SELECT COALESCE(SUM(amount),0) FROM payments WHERE pdate = ?');
@@ -68,14 +68,14 @@ $st = $pdo->prepare("SELECT COALESCE(SUM(i.amount - i.paid), 0) FROM injection_d
 $st->execute($dfArgs);
 $injDebt = (float)$st->fetchColumn();
 
-$lowStock = has_role('admin', 'doctor') ? $pdo->query(
+$lowStock = can('drug.view') ? $pdo->query(
     'SELECT d.name, d.low_units,
         COALESCE((SELECT SUM(units_total - units_used) FROM drug_batches b WHERE b.drug_id = d.id), 0) AS units_left
      FROM drugs d WHERE d.active = 1
      HAVING units_left <= d.low_units ORDER BY units_left'
 )->fetchAll() : [];
 
-$expiring = has_role('admin', 'doctor') ? $pdo->query(
+$expiring = can('drug.view') ? $pdo->query(
     "SELECT b.*, d.name AS drug_name FROM drug_batches b JOIN drugs d ON d.id = b.drug_id
      WHERE b.units_total > b.units_used AND b.expiry_date IS NOT NULL
        AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 60 DAY)

@@ -1,12 +1,13 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
-require_role('admin');
+require_perm('exp.view');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add') {
+        deny_unless('exp.manage', 'expenses.php');
         $amount = (float)($_POST['amount'] ?? 0);
         if ($amount <= 0) {
             flash('أدخل مبلغًا صحيحًا.', 'danger');
@@ -26,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'delete') {
+        deny_unless('exp.manage', 'expenses.php');
         $pdo->prepare('DELETE FROM expenses WHERE id = ?')->execute([(int)$_POST['eid']]);
         flash('تم حذف المصروف.');
         redirect('expenses.php');

@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('patients.view');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
@@ -47,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('patient.php?id=' . $id);
     }
 
-    if ($action === 'delete' && has_role('admin')) {
+    if ($action === 'delete') {
+        deny_unless('patients.delete', 'patients.php');
         $id = (int)($_POST['id'] ?? 0);
         $pdo->prepare('DELETE FROM patients WHERE id = ?')->execute([$id]);
         flash('تم حذف المريض وكل بياناته.');

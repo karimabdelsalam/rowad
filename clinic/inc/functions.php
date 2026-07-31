@@ -79,6 +79,173 @@ function has_role(string ...$roles): bool
     return user() !== null && in_array(user()['role'], $roles, true);
 }
 
+/* ======================================================= نظام الصلاحيات */
+
+/**
+ * كتالوج الصلاحيات مجمَّعًا حسب الوحدة.
+ * الأدوار مجرد قوالب جاهزة — يمكن للمدير تخصيص صلاحيات كل حساب على حدة.
+ */
+const PERM_GROUPS = [
+    'المرضى' => [
+        'patients.view'   => 'عرض قائمة المرضى وملفاتهم',
+        'patients.create' => 'تسجيل مريض جديد',
+        'patients.edit'   => 'تعديل بيانات المريض',
+        'patients.delete' => 'حذف مريض نهائيًا',
+    ],
+    'القياسات' => [
+        'measure.add'    => 'تسجيل قياس جديد',
+        'measure.delete' => 'حذف قياس',
+    ],
+    'المواعيد' => [
+        'appt.view'   => 'عرض المواعيد',
+        'appt.manage' => 'حجز المواعيد وتغيير حالتها',
+        'appt.delete' => 'حذف موعد',
+        'appt.remind' => 'إرسال تذكيرات واتساب',
+    ],
+    'الأنظمة الغذائية' => [
+        'plan.view'   => 'عرض الأنظمة والقوالب',
+        'plan.manage' => 'إنشاء وتعديل الأنظمة والقوالب',
+        'plan.delete' => 'حذف نظام غذائي أو قالب',
+    ],
+    'الحقن' => [
+        'inj.view'   => 'عرض الجرعات وكشوف الحساب',
+        'inj.plan'   => 'إنشاء وتعديل بروتوكول الحقن',
+        'inj.give'   => 'تسجيل جرعة حقن',
+        'inj.delete' => 'حذف جرعة',
+    ],
+    'الأدوية والمخزون' => [
+        'drug.view'   => 'عرض الأدوية والمخزون',
+        'drug.manage' => 'إضافة وتعديل وحذف الأدوية',
+        'drug.stock'  => 'استلام كميات في المخزن',
+    ],
+    'باقات الجلسات' => [
+        'pkg.view'   => 'عرض الباقات',
+        'pkg.sell'   => 'بيع باقة لمريض',
+        'pkg.use'    => 'خصم جلسة من باقة',
+        'pkg.manage' => 'إدارة كتالوج الباقات وإلغاء الباقات',
+    ],
+    'المالية' => [
+        'pay.view'    => 'عرض المدفوعات',
+        'pay.create'  => 'تسجيل دفعة',
+        'pay.delete'  => 'حذف دفعة',
+        'exp.view'    => 'عرض المصروفات',
+        'exp.manage'  => 'تسجيل وحذف المصروفات',
+        'report.view' => 'عرض التقارير الشهرية',
+        'profit.view' => 'عرض التكاليف وهوامش الربح',
+    ],
+    'النظام' => [
+        'portal.manage'   => 'تفعيل بوابة المرضى',
+        'export.data'     => 'تصدير ملفات Excel',
+        'users.manage'    => 'إدارة المستخدمين والصلاحيات',
+        'settings.manage' => 'تعديل إعدادات النظام',
+    ],
+];
+
+/** كل مفاتيح الصلاحيات في قائمة مسطّحة */
+function all_perms(): array
+{
+    static $flat = null;
+    if ($flat === null) {
+        $flat = [];
+        foreach (PERM_GROUPS as $group) {
+            $flat = array_merge($flat, array_keys($group));
+        }
+    }
+    return $flat;
+}
+
+function perm_label(string $perm): string
+{
+    foreach (PERM_GROUPS as $group) {
+        if (isset($group[$perm])) {
+            return $group[$perm];
+        }
+    }
+    return $perm;
+}
+
+/** الصلاحيات الافتراضية لكل دور — نقطة البداية عند إنشاء حساب */
+function role_perms(string $role): array
+{
+    return match ($role) {
+        'admin' => all_perms(),
+        'doctor' => [
+            'patients.view', 'patients.create', 'patients.edit',
+            'measure.add', 'measure.delete',
+            'appt.view', 'appt.manage', 'appt.remind',
+            'plan.view', 'plan.manage', 'plan.delete',
+            'inj.view', 'inj.plan', 'inj.give',
+            'drug.view',
+            'pkg.view', 'pkg.use',
+            'export.data',
+        ],
+        'reception' => [
+            'patients.view', 'patients.create', 'patients.edit',
+            'measure.add',
+            'appt.view', 'appt.manage', 'appt.delete', 'appt.remind',
+            'plan.view',
+            'inj.view', 'inj.give',
+            'pkg.view', 'pkg.sell', 'pkg.use',
+            'pay.view', 'pay.create',
+            'portal.manage', 'export.data',
+        ],
+        default => [],
+    };
+}
+
+/** صلاحيات المستخدم الحالي الفعلية (المخصصة إن وُجدت، وإلا افتراضي دوره) */
+function my_perms(): array
+{
+    $u = user();
+    if (!$u) {
+        return [];
+    }
+    if (($u['role'] ?? '') === 'admin') {
+        return all_perms();          // المدير لا يمكن حجب صلاحياته عن نفسه
+    }
+    $custom = $u['perms'] ?? null;
+    if (is_string($custom) && $custom !== '') {
+        $decoded = json_decode($custom, true);
+        if (is_array($decoded)) {
+            return array_values(array_intersect($decoded, all_perms()));
+        }
+    }
+    return role_perms((string)($u['role'] ?? ''));
+}
+
+function can(string $perm): bool
+{
+    static $cache = null;
+    if ($cache === null) {
+        $cache = array_flip(my_perms());
+    }
+    return isset($cache[$perm]);
+}
+
+/** يمنع الوصول للصفحة إذا لم تتوفر الصلاحية */
+function require_perm(string $perm): void
+{
+    require_login();
+    if (!can($perm)) {
+        page_header('غير مصرح');
+        echo '<div class="card"><h2>غير مصرح</h2>'
+           . '<p class="muted">ليست لديك صلاحية «' . e(perm_label($perm)) . '».'
+           . ' راجع مدير النظام إذا كنت تحتاجها.</p>'
+           . '<a class="btn" href="index.php">العودة للوحة التحكم</a></div>';
+        page_footer();
+        exit;
+    }
+}
+
+/** يوقف تنفيذ إجراء POST غير مصرح به ويعيد المستخدم برسالة */
+function deny_unless(string $perm, string $backUrl): void
+{
+    if (!can($perm)) {
+        flash('ليست لديك صلاحية «' . perm_label($perm) . '».', 'danger');
+        redirect($backUrl);
+    }
+}
+
 function &setting_cache(): ?array
 {
     static $cache = null;
@@ -321,7 +488,7 @@ function wa_link(string $phoneDigits, string $message): string
 
 /* ------------------------------------------------------------- الترقية */
 
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 const PKG_STATUS = ['active' => 'سارية', 'finished' => 'مستهلكة', 'expired' => 'منتهية', 'cancelled' => 'ملغاة'];
 const PKG_BADGE  = ['active' => 'ok', 'finished' => 'muted', 'expired' => 'bad', 'cancelled' => 'muted'];
@@ -606,6 +773,12 @@ function db_migrate(PDO $pdo): void
         }
     }
 
+    if ($current < 5) {
+        if (!$pdo->query("SHOW COLUMNS FROM users LIKE 'perms'")->fetchAll()) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN perms TEXT NULL');
+        }
+    }
+
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
         ->execute(['schema_version', (string)SCHEMA_VERSION]);
     setting_flush();
@@ -669,19 +842,19 @@ function page_header(string $title, string $active = ''): void
     $u = user();
     $clinic = setting('clinic_name', 'عيادة التغذية');
     $nav = [
-        ['index.php',        'لوحة التحكم',      '🏠', ['admin', 'doctor', 'reception']],
-        ['appointments.php', 'المواعيد',          '📅', ['admin', 'doctor', 'reception']],
-        ['reminders.php',    'تذكير واتساب',      '💬', ['admin', 'doctor', 'reception']],
-        ['patients.php',     'المرضى',            '👥', ['admin', 'doctor', 'reception']],
-        ['plans.php',        'الأنظمة الغذائية',  '🥗', ['admin', 'doctor', 'reception']],
-        ['injections.php',   'الحقن',             '💉', ['admin', 'doctor', 'reception']],
-        ['drugs.php',        'الأدوية والمخزون',  '📦', ['admin', 'doctor']],
-        ['packages.php',     'باقات الجلسات',     '🎟️', ['admin', 'doctor', 'reception']],
-        ['payments.php',     'المدفوعات',         '💰', ['admin', 'reception']],
-        ['expenses.php',     'المصروفات',         '🧾', ['admin']],
-        ['reports.php',      'التقارير',          '📈', ['admin']],
-        ['users.php',        'المستخدمون',        '👤', ['admin']],
-        ['settings.php',     'الإعدادات',         '⚙️', ['admin']],
+        ['index.php',        'لوحة التحكم',      '🏠', ''],
+        ['appointments.php', 'المواعيد',          '📅', 'appt.view'],
+        ['reminders.php',    'تذكير واتساب',      '💬', 'appt.remind'],
+        ['patients.php',     'المرضى',            '👥', 'patients.view'],
+        ['plans.php',        'الأنظمة الغذائية',  '🥗', 'plan.view'],
+        ['injections.php',   'الحقن',             '💉', 'inj.view'],
+        ['drugs.php',        'الأدوية والمخزون',  '📦', 'drug.view'],
+        ['packages.php',     'باقات الجلسات',     '🎟️', 'pkg.view'],
+        ['payments.php',     'المدفوعات',         '💰', 'pay.view'],
+        ['expenses.php',     'المصروفات',         '🧾', 'exp.view'],
+        ['reports.php',      'التقارير',          '📈', 'report.view'],
+        ['users.php',        'المستخدمون',        '👤', 'users.manage'],
+        ['settings.php',     'الإعدادات',         '⚙️', 'settings.manage'],
     ];
     echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
@@ -690,8 +863,8 @@ function page_header(string $title, string $active = ''): void
     echo '</head><body><div class="layout">';
 
     echo '<aside class="sidebar"><div class="brand">🍏 ' . e($clinic) . '</div><nav>';
-    foreach ($nav as [$href, $label, $icon, $roles]) {
-        if ($u && !in_array($u['role'], $roles, true)) {
+    foreach ($nav as [$href, $label, $icon, $perm]) {
+        if ($perm !== '' && !can($perm)) {
             continue;
         }
         $cls = $active === $href ? ' class="active"' : '';

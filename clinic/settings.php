@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
-require_role('admin');
+require_perm('settings.manage');
 
 $keys = [
     'clinic_name'    => 'اسم العيادة',

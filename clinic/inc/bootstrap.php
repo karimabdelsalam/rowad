@@ -41,3 +41,24 @@ if (empty($_SESSION['csrf'])) {
 }
 
 db_migrate($pdo);
+
+/*
+ * تحديث بيانات المستخدم من قاعدة البيانات في كل طلب، حتى يسري أي تغيير في
+ * الصلاحيات أو الدور فورًا، ويُطرد المستخدم المعطَّل بدل انتظار انتهاء جلسته.
+ */
+if (!empty($_SESSION['user']['id'])) {
+    $st = $pdo->prepare('SELECT id, name, role, perms, active FROM users WHERE id = ?');
+    $st->execute([(int)$_SESSION['user']['id']]);
+    $fresh = $st->fetch();
+    if (!$fresh || !$fresh['active']) {
+        $_SESSION = [];
+        session_destroy();
+        redirect('login.php');
+    }
+    $_SESSION['user'] = [
+        'id'    => (int)$fresh['id'],
+        'name'  => $fresh['name'],
+        'role'  => $fresh['role'],
+        'perms' => $fresh['perms'],
+    ];
+}

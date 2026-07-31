@@ -1,12 +1,14 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('plan.view');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'save_tpl' && has_role('admin', 'doctor')) {
+    if ($action === 'save_tpl') {
+        deny_unless('plan.manage', 'plans.php');
         $tid = (int)($_POST['tid'] ?? 0);
         $data = [
             trim($_POST['title'] ?? '') ?: 'قالب بدون عنوان',
@@ -30,13 +32,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('plans.php');
     }
 
-    if ($action === 'del_tpl' && has_role('admin', 'doctor')) {
+    if ($action === 'del_tpl') {
+        deny_unless('plan.delete', 'plans.php');
         $pdo->prepare('DELETE FROM diet_templates WHERE id = ?')->execute([(int)$_POST['tid']]);
         flash('تم حذف القالب.');
         redirect('plans.php');
     }
 
-    if ($action === 'del_plan' && has_role('admin', 'doctor')) {
+    if ($action === 'del_plan') {
+        deny_unless('plan.delete', 'plans.php');
         $pdo->prepare('DELETE FROM diet_plans WHERE id = ?')->execute([(int)$_POST['plid']]);
         flash('تم حذف النظام الغذائي.');
         redirect('plans.php');
@@ -44,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $editTpl = null;
-if (isset($_GET['tpl']) && has_role('admin', 'doctor')) {
+if (isset($_GET['tpl']) && can('plan.manage')) {
     $st = $pdo->prepare('SELECT * FROM diet_templates WHERE id = ?');
     $st->execute([(int)$_GET['tpl']]);
     $editTpl = $st->fetch() ?: null;
@@ -78,7 +82,7 @@ page_header('الأنظمة الغذائية', 'plans.php');
                 <td><div class="actions">
                     <a class="btn btn-sm" href="plan_print.php?id=<?= (int)$pl['id'] ?>">🖨️ طباعة</a>
                     <a class="btn btn-light btn-sm" href="plan_edit.php?id=<?= (int)$pl['id'] ?>">تعديل</a>
-                    <?php if (has_role('admin', 'doctor')): ?>
+                    <?php if (can('plan.delete')): ?>
                     <form method="post" data-confirm="حذف هذا النظام الغذائي؟">
                         <?= csrf_field() ?><input type="hidden" name="action" value="del_plan">
                         <input type="hidden" name="plid" value="<?= (int)$pl['id'] ?>">
@@ -96,7 +100,7 @@ page_header('الأنظمة الغذائية', 'plans.php');
 <div class="card">
     <div class="card-head">
         <h2>📋 القوالب الجاهزة</h2>
-        <?php if (has_role('admin', 'doctor')): ?><a class="btn btn-sm" href="plans.php?new_tpl=1">+ قالب جديد</a><?php endif; ?>
+        <?php if (can('plan.manage')): ?><a class="btn btn-sm" href="plans.php?new_tpl=1">+ قالب جديد</a><?php endif; ?>
     </div>
     <p class="muted">القوالب توفر وقتك: عند إنشاء نظام غذائي لمريض يمكنك البدء من قالب ثم تخصيصه.</p>
     <div class="table-wrap"><table>
@@ -108,7 +112,7 @@ page_header('الأنظمة الغذائية', 'plans.php');
                 <td class="num"><?= $t['calories'] ? e($t['calories']) . ' سعر' : '—' ?></td>
                 <td><div class="actions">
                     <a class="btn btn-light btn-sm" href="plan_edit.php?tpl=<?= (int)$t['id'] ?>">استخدام لمريض</a>
-                    <?php if (has_role('admin', 'doctor')): ?>
+                    <?php if (can('plan.manage')): ?>
                     <a class="btn btn-light btn-sm" href="plans.php?tpl=<?= (int)$t['id'] ?>">تعديل</a>
                     <form method="post" data-confirm="حذف هذا القالب؟">
                         <?= csrf_field() ?><input type="hidden" name="action" value="del_tpl">
@@ -124,7 +128,7 @@ page_header('الأنظمة الغذائية', 'plans.php');
     </table></div>
 </div>
 
-<?php if ($showTplForm && has_role('admin', 'doctor')): $t = $editTpl ?: []; ?>
+<?php if ($showTplForm && can('plan.manage')): $t = $editTpl ?: []; ?>
 <div class="card" id="tpl-form">
     <h2><?= $editTpl ? 'تعديل قالب: ' . e($t['title']) : 'قالب جديد' ?></h2>
     <form method="post">

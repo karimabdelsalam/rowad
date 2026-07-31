@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('appt.view');
 
 $date = $_GET['date'] ?? date('Y-m-d');
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !strtotime($date)) {
@@ -13,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $back = 'appointments.php?date=' . urlencode($_POST['back_date'] ?? $date);
 
     if ($action === 'add') {
+        deny_unless('appt.manage', $back);
         $pid = posted_patient_id($pdo);
         if (!$pid) {
             flash('اختر المريض من قائمة البحث.', 'danger');
@@ -40,13 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'status') {
+        deny_unless('appt.manage', $back);
         $status = array_key_exists($_POST['status'] ?? '', APPT_STATUS) ? $_POST['status'] : 'scheduled';
         $pdo->prepare('UPDATE appointments SET status = ? WHERE id = ?')
             ->execute([$status, (int)$_POST['aid']]);
         redirect($back);
     }
 
-    if ($action === 'delete' && has_role('admin', 'reception')) {
+    if ($action === 'delete') {
+        deny_unless('appt.delete', $back);
         $pdo->prepare('DELETE FROM appointments WHERE id = ?')->execute([(int)$_POST['aid']]);
         flash('تم حذف الموعد.');
         redirect($back);
@@ -171,7 +175,7 @@ page_header('المواعيد', 'appointments.php');
                             <button class="btn btn-light btn-sm" type="submit"><?= e($label) ?></button>
                         </form>
                     <?php endforeach; ?>
-                    <?php if (has_role('admin', 'reception')): ?>
+                    <?php if (can('appt.delete')): ?>
                         <form method="post" data-confirm="حذف الموعد نهائيًا؟">
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="delete">

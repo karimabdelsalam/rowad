@@ -178,6 +178,28 @@ textarea { min-height: 90px; resize: vertical; }
 .btn-block { width: 100%; margin-top: 6px; }
 .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
+/* ---------- لوحة الصلاحيات ---------- */
+.perm-mode { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
+.perm-box { border: 1px solid var(--line); border-radius: 10px; padding: 14px; background: #f8fafc; }
+.perm-box.locked { opacity: .5; pointer-events: none; }
+.perm-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.perm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.perm-group {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px 12px;
+    background: var(--card);
+}
+.perm-group legend { font-size: 13px; font-weight: 700; color: var(--primary-dark); padding: 0 6px; }
+.perm-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 13.5px; font-weight: 400; color: var(--ink);
+    margin: 0 0 6px; cursor: pointer;
+}
+.perm-item:last-child { margin-bottom: 0; }
+.perm-item input { width: auto; margin: 3px 0 0; flex-shrink: 0; }
+.perm-item:hover span { color: var(--primary-dark); }
+
 /* ---------- التنبيهات ---------- */
 .alert { padding: 11px 16px; border-radius: 8px; margin-bottom: 14px; font-weight: 700; }
 .alert-success { background: #dcfce7; color: #15803d; }

@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('pkg.view');
 
 refresh_package_status($pdo);
 
@@ -9,7 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     /* --------------------------------------------- كتالوج الباقات */
-    if ($action === 'save_pkg' && has_role('admin')) {
+    if ($action === 'save_pkg') {
+        deny_unless('pkg.manage', 'packages.php');
         $pid = (int)($_POST['pid'] ?? 0);
         $name = trim($_POST['name'] ?? '');
         $sessions = max(1, (int)($_POST['sessions'] ?? 1));
@@ -36,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('packages.php');
     }
 
-    if ($action === 'del_pkg' && has_role('admin')) {
+    if ($action === 'del_pkg') {
+        deny_unless('pkg.manage', 'packages.php');
         $pdo->prepare('DELETE FROM packages WHERE id = ?')->execute([(int)$_POST['pid']]);
         flash('تم حذف الباقة من الكتالوج (الباقات المُباعة للمرضى لم تتأثر).');
         redirect('packages.php');
@@ -44,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* --------------------------------------------- بيع باقة لمريض */
     if ($action === 'sell') {
+        deny_unless('pkg.sell', 'packages.php?tab=sell');
         $patientId = posted_patient_id($pdo);
         $pkgId = (int)($_POST['package_id'] ?? 0);
         $st = $pdo->prepare('SELECT * FROM packages WHERE id = ?');
@@ -94,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* --------------------------------------------- خصم / إرجاع جلسة */
     if ($action === 'use_session') {
+        deny_unless('pkg.use', 'packages.php?tab=sold');
         $ppId = (int)($_POST['pp_id'] ?? 0);
         $st = $pdo->prepare('SELECT pp.*, (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) AS used
                              FROM patient_packages pp WHERE pp.id = ?');
@@ -114,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'undo_session') {
+        deny_unless('pkg.use', 'packages.php?tab=sold');
         $useId = (int)($_POST['use_id'] ?? 0);
         $st = $pdo->prepare('SELECT patient_package_id FROM package_uses WHERE id = ?');
         $st->execute([$useId]);
@@ -127,7 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($_POST['back'] ?? 'packages.php?tab=sold');
     }
 
-    if ($action === 'pay_pkg' && has_role('admin', 'reception')) {
+    if ($action === 'pay_pkg') {
+        deny_unless('pay.create', 'packages.php?tab=sold');
         $ppId = (int)($_POST['pp_id'] ?? 0);
         $pay = (float)($_POST['pay'] ?? 0);
         $st = $pdo->prepare('SELECT * FROM patient_packages WHERE id = ?');
@@ -155,7 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($_POST['back'] ?? 'packages.php?tab=sold');
     }
 
-    if ($action === 'cancel_pkg' && has_role('admin')) {
+    if ($action === 'cancel_pkg') {
+        deny_unless('pkg.manage', 'packages.php?tab=sold');
         $pdo->prepare("UPDATE patient_packages SET status='cancelled' WHERE id=?")->execute([(int)$_POST['pp_id']]);
         flash('تم إلغاء الباقة.');
         redirect('packages.php?tab=sold');
@@ -168,7 +176,7 @@ $catalog = $pdo->query('SELECT * FROM packages ORDER BY active DESC, name')->fet
 page_header('باقات الجلسات', 'packages.php');
 
 $tabs = ['sold' => 'باقات المرضى', 'sell' => 'بيع باقة'];
-if (has_role('admin')) {
+if (can('pkg.manage')) {
     $tabs['catalog'] = 'كتالوج الباقات';
 }
 ?>
@@ -178,7 +186,7 @@ if (has_role('admin')) {
     <?php endforeach; ?>
 </div>
 
-<?php if ($tab === 'catalog' && has_role('admin')):
+<?php if ($tab === 'catalog' && can('pkg.manage')):
     $editId = (int)($_GET['edit'] ?? 0);
     $pk = ['id' => 0, 'name' => '', 'sessions' => 8, 'price' => '', 'validity_days' => 90, 'includes' => '', 'active' => 1];
     foreach ($catalog as $c) {
@@ -243,7 +251,7 @@ if (has_role('admin')) {
 <div class="card">
     <h2>🛒 بيع باقة لمريض</h2>
     <?php if (!array_filter($catalog, fn($c) => $c['active'])): ?>
-        <p class="muted">لا توجد باقات مفعّلة — <?= has_role('admin')
+        <p class="muted">لا توجد باقات مفعّلة — <?= can('pkg.manage')
             ? '<a href="packages.php?tab=catalog">أضف باقة أولًا</a>' : 'اطلب من المدير إضافة باقة' ?>.</p>
     <?php else: ?>
     <form method="post">

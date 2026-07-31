@@ -2,6 +2,7 @@
 require __DIR__ . '/inc/bootstrap.php';
 require __DIR__ . '/inc/xlsx.php';
 require_login();
+require_perm('export.data');
 
 $type = $_GET['type'] ?? '';
 
@@ -157,7 +158,7 @@ switch ($type) {
 
     /* -------------------------------------------------------- المدفوعات */
     case 'payments': {
-        require_role('admin', 'reception');
+        require_perm('pay.view');
         $st = $pdo->prepare(
             'SELECT pay.*, p.name AS pname, p.code, u.name AS uname FROM payments pay
              LEFT JOIN patients p ON p.id = pay.patient_id
@@ -194,7 +195,7 @@ switch ($type) {
 
     /* -------------------------------------------------------- المصروفات */
     case 'expenses': {
-        require_role('admin');
+        require_perm('exp.view');
         $st = $pdo->prepare(
             'SELECT e.*, u.name AS uname FROM expenses e LEFT JOIN users u ON u.id = e.created_by
              WHERE e.edate BETWEEN ? AND ? ORDER BY e.edate, e.id'
@@ -240,7 +241,7 @@ switch ($type) {
         $sumUnits = array_sum(array_map(fn($r) => (float)$r['units'], $rows));
         $sumAmount = array_sum(array_map(fn($r) => (float)$r['amount'], $rows));
         $sumPaid = array_sum(array_map(fn($r) => (float)$r['paid'], $rows));
-        $isAdmin = has_role('admin');
+        $isAdmin = can('profit.view');
 
         $x = new XlsxWriter('جرعات الحقن');
         $x->setTitle($clinic . ' — سجل جرعات الحقن',
@@ -393,7 +394,7 @@ switch ($type) {
 
     /* ---------------------------------------------------- التقرير الشهري */
     case 'report': {
-        require_role('admin');
+        require_perm('report.view');
         $month = (string)($_GET['m'] ?? date('Y-m'));
         if (!preg_match('/^\d{4}-\d{2}$/', $month) || !strtotime($month . '-01')) {
             $month = date('Y-m');

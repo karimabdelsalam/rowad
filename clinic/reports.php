@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
-require_role('admin');
+require_perm('report.view');
 
 $month = $_GET['m'] ?? date('Y-m');
 if (!preg_match('/^\d{4}-\d{2}$/', $month) || !strtotime($month . '-01')) {
