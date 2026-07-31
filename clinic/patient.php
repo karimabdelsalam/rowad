@@ -695,7 +695,7 @@ if (can('pay.view')) {
                     <td><span class="badge <?= e(PKG_BADGE[$r['status']]) ?>"><?= e(PKG_STATUS[$r['status']]) ?></span></td>
                     <td><div class="actions">
                         <?php if ($r['status'] === 'active' && $left > 0): ?>
-                        <form method="post">
+                        <form method="post" data-confirm="خصم جلسة من باقة «<?= e($r['name']) ?>»؟&#10;المتبقي بعد الخصم: <?= $left - 1 ?> من <?= (int)$r['sessions_total'] ?> جلسة.">
                             <?= csrf_field() ?><input type="hidden" name="action" value="use_pkg">
                             <input type="hidden" name="id" value="<?= $id ?>">
                             <input type="hidden" name="pp_id" value="<?= (int)$r['id'] ?>">

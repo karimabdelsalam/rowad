@@ -30,9 +30,10 @@ $balance = round($totAmount - $totPaid, 2);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>كشف حساب الحقن — <?= e($p['name']) ?></title>
+<link rel="stylesheet" href="assets/cairo.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; color: #0f172a; font-size: 14px; line-height: 1.7; background: #f1f5f9; }
+body { font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; color: #0f172a; font-size: 14px; line-height: 1.7; background: #f1f5f9; }
 .sheet { max-width: 820px; margin: 20px auto; background: #fff; padding: 32px 36px; border-radius: 10px; }
 .head { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
 .head h1 { font-size: 20px; color: #0f766e; }

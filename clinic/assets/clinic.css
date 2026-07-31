@@ -1,3 +1,5 @@
+@import url('cairo.css');
+
 /* نظام إدارة عيادة التغذية — واجهة عربية RTL */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -15,7 +17,7 @@
 }
 
 body {
-    font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif;
+    font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
     background: var(--bg);
     color: var(--ink);
     font-size: 15px;

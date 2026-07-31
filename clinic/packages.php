@@ -359,7 +359,7 @@ if (can('pkg.manage')) {
                 <td><span class="badge <?= e(PKG_BADGE[$r['status']]) ?>"><?= e(PKG_STATUS[$r['status']]) ?></span></td>
                 <td><div class="actions">
                     <?php if ($r['status'] === 'active' && $left > 0): ?>
-                    <form method="post">
+                    <form method="post" data-confirm="خصم جلسة من باقة «<?= e($r['name']) ?>» للمريض <?= e($r['pname']) ?>؟&#10;المتبقي بعد الخصم: <?= $left - 1 ?> من <?= (int)$r['sessions_total'] ?> جلسة.">
                         <?= csrf_field() ?><input type="hidden" name="action" value="use_session">
                         <input type="hidden" name="pp_id" value="<?= (int)$r['id'] ?>">
                         <input type="hidden" name="back" value="packages.php?tab=sold&status=<?= e($stFilter) ?>">
