@@ -17,24 +17,27 @@ declare(strict_types=1);
 
 $isCli = PHP_SAPI === 'cli';
 
-require dirname(__DIR__) . '/inc/config.php';
-require dirname(__DIR__) . '/inc/functions.php';
+require_once dirname(__DIR__) . '/inc/config.php';
+require_once dirname(__DIR__) . '/inc/functions.php';
+require_once dirname(__DIR__) . '/inc/tenant.php';
 
 date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'Africa/Cairo');
 mb_internal_encoding('UTF-8');
 
-try {
-    $pdo = new PDO(
-        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-        DB_USER, DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
-    );
-} catch (PDOException) {
-    http_response_code(500);
-    exit("تعذر الاتصال بقاعدة البيانات\n");
+/*
+ * قد يكون الاتصال جاهزًا بالفعل حين يستدعينا مشغّل كل العيادات (reminders_all.php)
+ * لعيادة بعينها؛ وإلا نفتح اتصال العيادة الواحدة.
+ */
+if (!isset($pdo) || !$pdo instanceof PDO) {
+    try {
+        $pdo = app_pdo();
+    } catch (PDOException) {
+        http_response_code(500);
+        exit("تعذر الاتصال بقاعدة البيانات\n");
+    }
 }
 
-require dirname(__DIR__) . '/inc/notify.php';
+require_once dirname(__DIR__) . '/inc/notify.php';
 
 // حماية التشغيل عبر المتصفح برمز سري
 if (!$isCli) {

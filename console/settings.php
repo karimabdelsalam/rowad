@@ -11,6 +11,7 @@ $plain = [
     'support_phone' => 'هاتف الدعم',
     'grace_days'    => 'مهلة السماح بعد انتهاء الاشتراك (أيام)',
 ];
+$saas = ['base_domain', 'base_scheme', 'tenant_prefix', 'trial_days'];
 $instapay = [
     'instapay_addr' => 'عنوان إنستا باي (‎@اسمك أو رقم الموبايل)',
     'instapay_note' => 'تعليمات تظهر للعميل',
@@ -27,9 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $st = $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?)
                          ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)');
-    foreach ([...array_keys($plain), ...array_keys($instapay)] as $k) {
+    foreach ([...array_keys($plain), ...array_keys($instapay), ...$saas] as $k) {
         $st->execute([$k, trim($_POST[$k] ?? '')]);
     }
+    $st->execute(['signup_open', isset($_POST['signup_open']) ? '1' : '0']);
     foreach (array_keys($paymobKeys) as $k) {
         // المفاتيح السرية لا تُمسح لو تُرك الحقل فارغًا
         $v = trim($_POST[$k] ?? '');
@@ -61,6 +63,30 @@ page_header('الإعدادات', 'settings.php');
                     <?= in_array($k, ['console_url', 'support_phone'], true) ? 'dir="ltr"' : '' ?>
                     <?= $k === 'console_url' ? 'placeholder="https://console.example.com"' : '' ?>></label>
             <?php endforeach; ?>
+        </div>
+
+        <h3 class="form-section">🏢 وضع SaaS</h3>
+        <p class="muted">لكل عيادة نطاق فرعي وقاعدة بيانات مستقلة تحت النطاق الأساسي.
+            اضبط في DNS سجل <code dir="ltr">*.نطاقك</code> يشير لهذا السيرفر.</p>
+        <div class="grid3">
+            <label>النطاق الأساسي
+                <input name="base_domain" value="<?= $v('base_domain') ?>" dir="ltr" placeholder="myclinic.app"></label>
+            <label>البروتوكول
+                <select name="base_scheme">
+                    <option value="https" <?= ($cur['base_scheme'] ?? 'https') === 'https' ? 'selected' : '' ?>>https</option>
+                    <option value="http" <?= ($cur['base_scheme'] ?? '') === 'http' ? 'selected' : '' ?>>http</option>
+                </select></label>
+            <label>بادئة أسماء القواعد
+                <input name="tenant_prefix" value="<?= $v('tenant_prefix', 'clinic_') ?>" dir="ltr">
+                <small class="muted">يجب أن تطابق منحة MySQL</small></label>
+        </div>
+        <div class="grid2">
+            <label>أيام التجربة المجانية
+                <input type="number" min="0" max="90" name="trial_days" value="<?= $v('trial_days', '14') ?>"></label>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:26px">
+                <input type="checkbox" name="signup_open" style="width:auto" <?= ($cur['signup_open'] ?? '0') === '1' ? 'checked' : '' ?>>
+                فتح التسجيل الذاتي للعامة (<code dir="ltr">signup.php</code>)
+            </label>
         </div>
 
         <h3 class="form-section">📲 إنستا باي</h3>

@@ -66,7 +66,7 @@ if ($installed) {
     // $pdo متاح بالفعل من bootstrap الذي حُمّل في أعلى الملف
     try {
         $tables = (int)$pdo->query(
-            'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ' . $pdo->quote(DB_NAME)
+            'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ' . $pdo->quote(current_db_name())
         )->fetchColumn();
         $checks[] = row('الاتصال بقاعدة البيانات', true, 'ناجح — ' . $tables . ' جدول');
     } catch (PDOException) {

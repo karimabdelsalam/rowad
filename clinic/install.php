@@ -3,6 +3,7 @@ declare(strict_types=1);
 mb_internal_encoding('UTF-8');
 
 require_once __DIR__ . '/inc/functions.php';
+require_once __DIR__ . '/inc/schema.php';
 
 $configFile = __DIR__ . '/inc/config.php';
 $installed = false;
@@ -16,139 +17,6 @@ if (is_file($configFile)) {
     }
 }
 
-function schema_statements(): array
-{
-    $opts = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
-    return [
-        "CREATE TABLE IF NOT EXISTS users (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            username VARCHAR(50) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL,
-            role ENUM('admin','doctor','reception') NOT NULL DEFAULT 'reception',
-            perms TEXT NULL,
-            active TINYINT(1) NOT NULL DEFAULT 1,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS patients (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            code VARCHAR(20) NOT NULL DEFAULT '',
-            name VARCHAR(150) NOT NULL,
-            phone VARCHAR(30) NOT NULL DEFAULT '',
-            gender ENUM('male','female') NOT NULL DEFAULT 'female',
-            birth_date DATE NULL,
-            height_cm DECIMAL(5,1) NULL,
-            job VARCHAR(100) NOT NULL DEFAULT '',
-            address VARCHAR(255) NOT NULL DEFAULT '',
-            medical_conditions TEXT NULL,
-            allergies TEXT NULL,
-            goal VARCHAR(255) NOT NULL DEFAULT '',
-            notes TEXT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_name (name),
-            INDEX idx_phone (phone)
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS measurements (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            patient_id INT UNSIGNED NOT NULL,
-            mdate DATE NOT NULL,
-            weight DECIMAL(5,1) NOT NULL,
-            body_fat DECIMAL(4,1) NULL,
-            muscle DECIMAL(5,1) NULL,
-            water DECIMAL(4,1) NULL,
-            waist DECIMAL(5,1) NULL,
-            hips DECIMAL(5,1) NULL,
-            arm DECIMAL(4,1) NULL,
-            thigh DECIMAL(4,1) NULL,
-            notes VARCHAR(255) NOT NULL DEFAULT '',
-            created_by INT UNSIGNED NULL,
-            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-            INDEX idx_pd (patient_id, mdate)
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS appointments (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            patient_id INT UNSIGNED NOT NULL,
-            adate DATE NOT NULL,
-            atime TIME NOT NULL,
-            type ENUM('new','followup','consult') NOT NULL DEFAULT 'followup',
-            status ENUM('scheduled','done','cancelled','no_show') NOT NULL DEFAULT 'scheduled',
-            notes VARCHAR(255) NOT NULL DEFAULT '',
-            reminder_sent DATETIME NULL,
-            confirm_status ENUM('pending','confirmed','no_answer','declined') NOT NULL DEFAULT 'pending',
-            confirmed_at DATETIME NULL,
-            confirmed_by INT UNSIGNED NULL,
-            created_by INT UNSIGNED NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-            INDEX idx_date (adate, atime)
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS diet_templates (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            title VARCHAR(150) NOT NULL,
-            category ENUM('weight','therapeutic','sports','general') NOT NULL DEFAULT 'weight',
-            tag VARCHAR(30) NOT NULL DEFAULT '',
-            description VARCHAR(255) NOT NULL DEFAULT '',
-            calories INT NULL,
-            breakfast TEXT NULL,
-            snack1 TEXT NULL,
-            lunch TEXT NULL,
-            snack2 TEXT NULL,
-            dinner TEXT NULL,
-            forbidden TEXT NULL,
-            notes TEXT NULL,
-            warnings TEXT NULL
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS diet_plans (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            patient_id INT UNSIGNED NOT NULL,
-            title VARCHAR(150) NOT NULL,
-            start_date DATE NOT NULL,
-            end_date DATE NULL,
-            calories INT NULL,
-            breakfast TEXT NULL,
-            snack1 TEXT NULL,
-            lunch TEXT NULL,
-            snack2 TEXT NULL,
-            dinner TEXT NULL,
-            forbidden TEXT NULL,
-            notes TEXT NULL,
-            warnings TEXT NULL,
-            created_by INT UNSIGNED NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-            INDEX idx_p (patient_id, start_date)
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS payments (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            patient_id INT UNSIGNED NULL,
-            pdate DATE NOT NULL,
-            amount DECIMAL(10,2) NOT NULL,
-            method ENUM('cash','card','transfer','wallet') NOT NULL DEFAULT 'cash',
-            service VARCHAR(100) NOT NULL DEFAULT '',
-            notes VARCHAR(255) NOT NULL DEFAULT '',
-            created_by INT UNSIGNED NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE SET NULL,
-            INDEX idx_date (pdate)
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS expenses (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            edate DATE NOT NULL,
-            category ENUM('rent','salaries','supplies','marketing','utilities','other') NOT NULL DEFAULT 'other',
-            amount DECIMAL(10,2) NOT NULL,
-            notes VARCHAR(255) NOT NULL DEFAULT '',
-            created_by INT UNSIGNED NULL,
-            INDEX idx_date (edate)
-        ) $opts",
-        "CREATE TABLE IF NOT EXISTS settings (
-            skey VARCHAR(50) PRIMARY KEY,
-            svalue TEXT NOT NULL
-        ) $opts",
-        ...injection_schema(),
-        ...packages_schema(),
-        ...ops_schema(),
-    ];
-}
 
 $errors = [];
 $done = false;
@@ -182,78 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
 
     if (!$errors) {
         try {
-            foreach (schema_statements() as $sql) {
-                $db->exec($sql);
-            }
-
-            // أعمدة إضافية (تُنفَّذ مرة واحدة فقط)
-            $addCol = function (string $table, string $col, string $def) use ($db): void {
-                if (!$db->query("SHOW COLUMNS FROM `$table` LIKE " . $db->quote($col))->fetchAll()) {
-                    $db->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def");
-                }
-            };
-            $addCol('patients', 'doctor_id', 'INT UNSIGNED NULL');
-            $addCol('patients', 'portal_password', 'VARCHAR(255) NULL');
-            $addCol('patients', 'portal_enabled', 'TINYINT(1) NOT NULL DEFAULT 0');
-            $addCol('appointments', 'doctor_id', 'INT UNSIGNED NULL');
-            $addCol('appointments', 'patient_package_id', 'INT UNSIGNED NULL');
-
-            // ربط المدفوعات بجرعات الحقن (يُنفَّذ مرة واحدة فقط)
-            if (!$db->query("SHOW COLUMNS FROM payments LIKE 'dose_id'")->fetchAll()) {
-                $db->exec('ALTER TABLE payments ADD COLUMN dose_id INT UNSIGNED NULL');
-                $db->exec('ALTER TABLE payments ADD CONSTRAINT fk_pay_dose FOREIGN KEY (dose_id)
-                           REFERENCES injection_doses(id) ON DELETE CASCADE');
-            }
-
-            if (!(int)$db->query('SELECT COUNT(*) FROM packages')->fetchColumn()) {
-                $pk = $db->prepare('INSERT INTO packages (name, sessions, price, validity_days, includes) VALUES (?,?,?,?,?)');
-                $pk->execute(['باقة 4 جلسات متابعة', 4, 500, 60, 'أربع جلسات متابعة مع قياسات وتعديل النظام الغذائي']);
-                $pk->execute(['باقة 8 جلسات متابعة', 8, 900, 120, 'ثماني جلسات متابعة — أوفر للمتابعة الشهرية']);
-                $pk->execute(['باقة 12 جلسة (3 شهور)', 12, 1200, 180, 'متابعة كاملة لمدة ثلاثة شهور']);
-            }
-
-            // أدوية شائعة كبداية — قابلة للتعديل والحذف من صفحة الأدوية
-            if (!(int)$db->query('SELECT COUNT(*) FROM drugs')->fetchColumn()) {
-                $drug = $db->prepare('INSERT INTO drugs (name, units_per_pen, unit_price, cost_per_pen, low_units, notes) VALUES (?,?,?,?,?,?)');
-                $drug->execute(['ساكسيندا Saxenda 6mg/ml (قلم 3 مل)', 300, 0, 0, 100, 'ليراجلوتايد — جرعة يومية عادةً']);
-                $drug->execute(['أوزمبك Ozempic (قلم 3 مل)', 300, 0, 0, 100, 'سيماجلوتايد — جرعة أسبوعية']);
-                $drug->execute(['مونجارو Mounjaro (قلم)', 300, 0, 0, 100, 'تيرزيباتايد — جرعة أسبوعية']);
-            }
-
-            $st = $db->prepare('INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, "admin")');
-            $st->execute([$adminName, $adminUser, password_hash($adminPass, PASSWORD_DEFAULT)]);
-
-            $defaults = [
-                'clinic_name'    => $clinicName,
-                'clinic_phone'   => '',
-                'clinic_address' => '',
-                'currency'       => 'ج.م',
-                'price_new'      => '300',
-                'price_followup' => '150',
-                'print_note'     => 'نتمنى لكم دوام الصحة والعافية 🌿',
-                'country_code'   => trim($_POST['country_code'] ?? '20') ?: '20',
-                'wa_template'    => wa_default_template(),
-                'schema_version' => (string)SCHEMA_VERSION,
-                'doctor_scope'   => 'own',
-                'notify_enabled' => '0',
-                'notify_channel' => 'whatsapp',
-                'notify_provider'=> 'webhook',
-                'notify_lead_days' => '1',
-                'cron_token'     => bin2hex(random_bytes(16)),
-                'portal_enabled' => '1',
-                'max_upload_mb'  => '8',
-                'inactive_days'  => '45',
-                'setup_done'     => '0',
-            ];
-            foreach (array_keys(CLINIC_MODULES) as $mod) {
-                $defaults['mod_' . $mod] = '1';
-            }
-            $st = $db->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
-            foreach ($defaults as $k => $v) {
-                $st->execute([$k, $v]);
-            }
-
-            seed_diet_library($db);
+            build_clinic_db($db, [
+                'clinic_name'  => $clinicName,
+                'admin_name'   => $adminName,
+                'admin_user'   => $adminUser,
+                'admin_pass'   => $adminPass,
+                'country_code' => trim($_POST['country_code'] ?? '20') ?: '20',
+            ]);
 
             $configContent = "<?php\n"
                 . "define('DB_HOST', " . var_export($dbHost, true) . ");\n"

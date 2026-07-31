@@ -24,6 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+require_once __DIR__ . '/inc/provision.php';
+
 $invoices = $pdo->prepare('SELECT * FROM invoices WHERE clinic_id = ? ORDER BY id DESC');
 $invoices->execute([$id]);
 $invoices = $invoices->fetchAll();
@@ -128,6 +130,21 @@ page_header($c['name'], 'clinics.php');
     </table></div>
 </div>
 
+<?php if ($c['db_name'] !== ''): $url = $c['subdomain'] ? tenant_url($c['subdomain']) : ''; ?>
+<div class="card">
+    <h2>🏢 عيادة SaaS</h2>
+    <div class="grid3">
+        <div><span class="muted">العنوان</span><br>
+            <?= $url ? '<a href="' . e($url) . '" target="_blank" rel="noopener" dir="ltr">' . e($url) . '</a>'
+                     : '<span class="muted">اضبط النطاق الأساسي في الإعدادات</span>' ?></div>
+        <div><span class="muted">قاعدة البيانات</span><br><strong dir="ltr"><?= e($c['db_name']) ?></strong></div>
+        <div><span class="muted">النطاق المخصص</span><br>
+            <?= $c['custom_domain'] !== '' ? '<strong dir="ltr">' . e($c['custom_domain']) . '</strong>' : '<span class="muted">—</span>' ?></div>
+    </div>
+    <p class="muted" style="margin-top:10px">هذه العيادة تعمل على قاعدتها الخاصة داخل نظامك،
+        فلا تحتاج رمز ربط ولا نبضة — حالة اشتراكها تُقرأ مباشرة من هنا.</p>
+</div>
+<?php else: ?>
 <div class="card">
     <h2>🔗 ربط نسخة العيادة</h2>
     <p class="muted">ضع هذين السطرين في ملف <code>clinic/inc/config.php</code> على سيرفر العيادة،
@@ -138,4 +155,5 @@ page_header($c['name'], 'clinics.php');
         <button class="btn btn-light btn-sm" type="submit">تجديد الرمز</button>
     </form>
 </div>
+<?php endif; ?>
 <?php page_footer();

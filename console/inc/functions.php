@@ -8,7 +8,7 @@ declare(strict_types=1);
  * بياناته تجارية (عملاء واشتراكات وتحصيل) ولا يصح أن تختلط ببيانات المرضى.
  */
 
-const CONSOLE_SCHEMA_VERSION = 1;
+const CONSOLE_SCHEMA_VERSION = 2;
 
 const CLINIC_STATUS = [
     'trial'     => 'تجريبي',
@@ -220,6 +220,7 @@ function page_header(string $title, string $active = ''): void
     $nav = [
         ['index.php',    'لوحة التحكم',      '📊'],
         ['clinics.php',  'العيادات',          '🏥'],
+        ['tenants.php',  'عيادات SaaS',       '🏢'],
         ['invoices.php', 'الفواتير',          '🧾'],
         ['payments.php', 'المدفوعات',         '💳'],
         ['plans.php',    'خطط الاشتراك',      '📦'],
@@ -286,6 +287,9 @@ function console_schema(): array
             phone VARCHAR(30) NOT NULL DEFAULT '',
             email VARCHAR(150) NOT NULL DEFAULT '',
             site_url VARCHAR(255) NOT NULL DEFAULT '',
+            subdomain VARCHAR(40) NULL,
+            custom_domain VARCHAR(120) NOT NULL DEFAULT '',
+            db_name VARCHAR(64) NOT NULL DEFAULT '',
             plan_id INT UNSIGNED NULL,
             status ENUM('trial','active','suspended','cancelled') NOT NULL DEFAULT 'trial',
             start_date DATE NULL,
@@ -298,6 +302,8 @@ function console_schema(): array
             notes TEXT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY uq_token (token),
+            UNIQUE KEY uq_subdomain (subdomain),
+            INDEX idx_custom_domain (custom_domain),
             INDEX idx_status (status, expires_at)
         ) $opts",
         "CREATE TABLE IF NOT EXISTS invoices (
@@ -369,6 +375,42 @@ function console_migrate(PDO $pdo): void
     if ($current >= CONSOLE_SCHEMA_VERSION) {
         return;
     }
+
+    if ($current < 2) {
+        // أعمدة وضع SaaS: العيادة تُعرَف بنطاقها وتشير لقاعدتها الخاصة
+        $addCol = function (string $table, string $col, string $def) use ($pdo): void {
+            if (!$pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col))->fetchAll()) {
+                $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def");
+            }
+        };
+        // NULL لا NOT NULL: العيادات القائمة (تركيب مستقل) بلا نطاق فرعي، و MySQL
+        // يسمح بتكرار NULL في الفهرس الفريد بينما يرفض تكرار السلسلة الفارغة
+        $addCol('clinics', 'subdomain', 'VARCHAR(40) NULL');
+        $addCol('clinics', 'custom_domain', "VARCHAR(120) NOT NULL DEFAULT ''");
+        $addCol('clinics', 'db_name', "VARCHAR(64) NOT NULL DEFAULT ''");
+        foreach ([
+            "CREATE UNIQUE INDEX uq_subdomain ON clinics (subdomain)",
+            "CREATE INDEX idx_custom_domain ON clinics (custom_domain)",
+        ] as $idx) {
+            try {
+                $pdo->exec($idx);
+            } catch (PDOException) {
+                // الفهرس موجود بالفعل
+            }
+        }
+        $defaults = [
+            'base_domain'   => '',
+            'base_scheme'   => 'https',
+            'tenant_prefix' => 'clinic_',
+            'trial_days'    => '14',
+            'signup_open'   => '0',
+        ];
+        $set = $pdo->prepare('INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)');
+        foreach ($defaults as $k => $v) {
+            $set->execute([$k, $v]);
+        }
+    }
+
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?)
                    ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
         ->execute(['schema_version', (string)CONSOLE_SCHEMA_VERSION]);

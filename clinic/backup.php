@@ -25,7 +25,7 @@ if (isset($_GET['download'])) {
     echo "-- نسخة احتياطية لنظام إدارة عيادة التغذية\n";
     echo '-- العيادة: ' . setting('clinic_name', '') . "\n";
     echo '-- التاريخ: ' . date('Y-m-d H:i:s') . "\n";
-    echo '-- قاعدة البيانات: ' . DB_NAME . "\n\n";
+    echo '-- قاعدة البيانات: ' . current_db_name() . "\n\n";
     echo "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n";
 
     $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
@@ -76,7 +76,7 @@ $sizeRow = $pdo->prepare(
     'SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS mb
      FROM information_schema.TABLES WHERE table_schema = ?'
 );
-$sizeRow->execute([DB_NAME]);
+$sizeRow->execute([current_db_name()]);
 $sizeMb = (float)$sizeRow->fetchColumn();
 
 page_header('النسخ الاحتياطي', 'backup.php');

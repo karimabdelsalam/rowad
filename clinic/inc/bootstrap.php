@@ -12,28 +12,56 @@ require $configFile;
 
 date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'Africa/Cairo');
 
-session_name('clinic_session');
-session_start([
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Lax',
-]);
-
 require __DIR__ . '/functions.php';
+require_once __DIR__ . '/tenant.php';
 
-try {
-    $pdo = new PDO(
-        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ]
-    );
-} catch (PDOException $e) {
-    http_response_code(500);
-    exit('تعذر الاتصال بقاعدة البيانات — راجع إعدادات ملف inc/config.php');
+if (saas_mode()) {
+    /*
+     * وضع SaaS: العيادة تُحدَّد من اسم النطاق، ولكل عيادة قاعدتها. العزل يقع
+     * هنا عند الاتصال، فلا يوجد استعلام لاحق يمكن أن يُنسى فيه فلتر العيادة.
+     */
+    try {
+        $tenantRow = resolve_tenant();
+    } catch (PDOException) {
+        http_response_code(503);
+        exit('تعذر الوصول لقاعدة التحكم — حاول بعد قليل.');
+    }
+
+    if (!$tenantRow) {
+        http_response_code(404);
+        exit('لا توجد عيادة على هذا العنوان.');
+    }
+    tenant($tenantRow);
+
+    // جلسة باسم العيادة، فلا تتسرب جلسة عيادة لأخرى على نفس النطاق الأساسي
+    session_name('clinic_' . preg_replace('/[^a-z0-9]/', '', (string)$tenantRow['subdomain']));
+    session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax']);
+
+    try {
+        $pdo = tenant_pdo((string)$tenantRow['db_name']);
+    } catch (PDOException) {
+        http_response_code(503);
+        exit('تعذر الاتصال بقاعدة بيانات العيادة.');
+    }
+} else {
+    session_name('clinic_session');
+    session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax']);
+
+    try {
+        $pdo = new PDO(
+            'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+            DB_USER,
+            DB_PASS,
+            [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ]
+        );
+    } catch (PDOException) {
+        http_response_code(500);
+        exit('تعذر الاتصال بقاعدة البيانات — راجع إعدادات ملف inc/config.php');
+    }
 }
 
 if (empty($_SESSION['csrf'])) {
@@ -41,6 +69,9 @@ if (empty($_SESSION['csrf'])) {
 }
 
 db_migrate($pdo);
+
+// يمنع الكتابة بعد انتهاء مهلة الاشتراك؛ القراءة والتصدير يبقيان مفتوحين
+tenant_guard_write();
 
 /*
  * تحديث بيانات المستخدم من قاعدة البيانات في كل طلب، حتى يسري أي تغيير في
@@ -62,6 +93,8 @@ if (!empty($_SESSION['user']['id'])) {
         'perms' => $fresh['perms'],
     ];
 
-    // فحص الاشتراك مرة يوميًا، ولا يتم إلا للنسخ المرتبطة بكونسول مزوّد
-    license_refresh($pdo);
+    // فحص الاشتراك مرة يوميًا للنسخ المستقلة المرتبطة بكونسول مزوّد
+    if (!saas_mode()) {
+        license_refresh($pdo);
+    }
 }

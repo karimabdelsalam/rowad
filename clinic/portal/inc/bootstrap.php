@@ -10,26 +10,31 @@ if (!is_file($configFile)) {
 }
 require $configFile;
 require $root . '/inc/functions.php';
+require_once $root . '/inc/tenant.php';
 
 date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'Africa/Cairo');
 
-// جلسة منفصلة تمامًا عن جلسة الموظفين
-session_name('clinic_portal');
+// في وضع SaaS تُحدَّد العيادة من النطاق كما في تطبيق الموظفين
+$portalSuffix = '';
+if (saas_mode()) {
+    $tenantRow = resolve_tenant();
+    if (!$tenantRow) {
+        http_response_code(404);
+        exit('لا توجد عيادة على هذا العنوان.');
+    }
+    tenant($tenantRow);
+    $portalSuffix = '_' . preg_replace('/[^a-z0-9]/', '', (string)$tenantRow['subdomain']);
+}
+
+// جلسة منفصلة تمامًا عن جلسة الموظفين، وعن بوابة أي عيادة أخرى
+session_name('clinic_portal' . $portalSuffix);
 session_start([
     'cookie_httponly' => true,
     'cookie_samesite' => 'Lax',
 ]);
 
 try {
-    $pdo = new PDO(
-        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-        DB_USER, DB_PASS,
-        [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ]
-    );
+    $pdo = app_pdo();
 } catch (PDOException) {
     http_response_code(500);
     exit('تعذر الاتصال بقاعدة البيانات.');
