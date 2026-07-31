@@ -135,7 +135,7 @@ page_header('المواعيد', 'appointments.php');
             <label>ملاحظات <input name="notes"></label>
         </div>
         <button class="btn" type="submit">حجز الموعد</button>
-        <?php if (!patient_options($pdo)): ?>
+        <?php if (!patients_exist($pdo)): ?>
             <p class="muted">لا يوجد مرضى مسجلون بعد — <a href="patients.php?new=1">سجّل مريضًا أولًا</a>.</p>
         <?php endif; ?>
     </form>

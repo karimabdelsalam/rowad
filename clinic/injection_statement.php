@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('inj.view');
 
 $id = (int)($_GET['id'] ?? 0);
 $st = $pdo->prepare('SELECT * FROM patients WHERE id = ?');
@@ -8,6 +9,10 @@ $st->execute([$id]);
 $p = $st->fetch();
 if (!$p) {
     flash('المريض غير موجود.', 'danger');
+    redirect('patients.php');
+}
+if (!can_access_patient($p)) {
+    flash('هذا المريض تحت رعاية طبيب آخر.', 'danger');
     redirect('patients.php');
 }
 

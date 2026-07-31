@@ -106,7 +106,10 @@ page_header('المدفوعات', 'payments.php');
                 <td><?= e($r['service']) ?></td>
                 <td><?= e($r['notes']) ?></td>
                 <td><?= e($r['uname'] ?? '—') ?></td>
-                <td>
+                <td><div class="actions">
+                <?php if (can('receipt.print')): ?>
+                    <a class="btn btn-light btn-sm" href="receipt.php?id=<?= (int)$r['id'] ?>" target="_blank">🧾 إيصال</a>
+                <?php endif; ?>
                 <?php if (can('pay.delete')): ?>
                     <form method="post" data-confirm="حذف هذه الدفعة؟">
                         <?= csrf_field() ?><input type="hidden" name="action" value="delete">
@@ -115,7 +118,7 @@ page_header('المدفوعات', 'payments.php');
                         <button class="btn btn-light btn-sm" type="submit">حذف</button>
                     </form>
                 <?php endif; ?>
-                </td>
+                </div></td>
             </tr>
         <?php endforeach; ?>
         <?php if (!$rows): ?><tr><td colspan="8" class="muted">لا توجد مدفوعات في هذه الفترة.</td></tr><?php endif; ?>

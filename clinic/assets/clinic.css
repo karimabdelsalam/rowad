@@ -180,6 +180,35 @@ textarea { min-height: 90px; resize: vertical; }
 .btn-block { width: 100%; margin-top: 6px; }
 .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
+/* ---------- البحث السريع عن مريض ---------- */
+.pfind { position: relative; display: block; }
+.pfind-input { width: 100%; }
+.pfind-list {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    z-index: 30;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .14);
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 2px;
+}
+.pfind-item {
+    display: block;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+    font-weight: 400;
+}
+.pfind-item:last-child { border-bottom: none; }
+.pfind-item:hover, .pfind-item.on { background: var(--primary-light); }
+.pfind-item b { display: block; font-size: 14px; }
+.pfind-item small { color: var(--muted); font-size: 12px; }
+.pfind-empty { display: block; padding: 10px 12px; color: var(--muted); font-size: 13px; }
+
 /* ---------- لوحة الصلاحيات ---------- */
 .perm-mode { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
 .perm-box { border: 1px solid var(--line); border-radius: 10px; padding: 14px; background: #f8fafc; }

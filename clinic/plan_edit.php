@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('plan.manage');
 
 $planId = (int)($_GET['id'] ?? 0);
 $plan = null;
@@ -106,7 +107,12 @@ page_header($plan ? 'تعديل نظام غذائي' : 'نظام غذائي جد
         <div class="grid3">
             <label>تاريخ البداية <input type="date" name="start_date" value="<?= e($plan['start_date'] ?? date('Y-m-d')) ?>" required></label>
             <label>تاريخ النهاية <input type="date" name="end_date" value="<?= e($plan['end_date'] ?? '') ?>"></label>
-            <label>السعرات الحرارية <input type="number" min="0" name="calories" value="<?= $val('calories') ?>"></label>
+            <?php
+            $calPrefill = ($plan || $tpl)
+                ? $val('calories')
+                : ((int)($_GET['calories'] ?? 0) > 0 ? (string)(int)$_GET['calories'] : '');
+            ?>
+            <label>السعرات الحرارية <input type="number" min="0" name="calories" value="<?= e($calPrefill) ?>"></label>
         </div>
         <h3 class="form-section">الوجبات</h3>
         <div class="grid2">

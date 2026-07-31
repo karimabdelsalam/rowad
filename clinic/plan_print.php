@@ -1,16 +1,21 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('plan.view');
 
 $id = (int)($_GET['id'] ?? 0);
 $st = $pdo->prepare(
-    'SELECT d.*, p.name AS pname, p.code, p.phone, p.height_cm, p.birth_date, p.gender
+    'SELECT d.*, p.name AS pname, p.code, p.phone, p.height_cm, p.birth_date, p.gender, p.doctor_id
      FROM diet_plans d JOIN patients p ON p.id = d.patient_id WHERE d.id = ?'
 );
 $st->execute([$id]);
 $pl = $st->fetch();
 if (!$pl) {
     flash('النظام الغذائي غير موجود.', 'danger');
+    redirect('plans.php');
+}
+if (!can_access_patient(['doctor_id' => $pl['doctor_id'] ?? null])) {
+    flash('هذا المريض تحت رعاية طبيب آخر.', 'danger');
     redirect('plans.php');
 }
 

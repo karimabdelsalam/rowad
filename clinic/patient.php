@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/inc/bootstrap.php';
 require_login();
+require_perm('patients.view');
 
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 $st = $pdo->prepare('SELECT * FROM patients WHERE id = ?');
@@ -147,17 +148,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'use_pkg') {
         deny_unless('pkg.use', "patient.php?id=$id&tab=pkg");
         $ppId = (int)($_POST['pp_id'] ?? 0);
-        $st = $pdo->prepare('SELECT pp.*, (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) AS used
-                             FROM patient_packages pp WHERE pp.id = ? AND pp.patient_id = ?');
-        $st->execute([$ppId, $id]);
-        $pp = $st->fetch();
-        if ($pp && (int)$pp['used'] < (int)$pp['sessions_total']) {
-            $pdo->prepare('INSERT INTO package_uses (patient_package_id, use_date, notes, created_by) VALUES (?,?,?,?)')
-                ->execute([$ppId, date('Y-m-d'), trim($_POST['notes'] ?? ''), user()['id']]);
-            refresh_package_status($pdo);
-            flash('تم خصم جلسة من الباقة.');
-        } else {
-            flash('الباقة مستهلكة بالكامل.', 'danger');
+        $pdo->beginTransaction();
+        try {
+            $st = $pdo->prepare('SELECT * FROM patient_packages WHERE id = ? AND patient_id = ? FOR UPDATE');
+            $st->execute([$ppId, $id]);
+            $pp = $st->fetch();
+            $used = $pp ? package_used($pdo, $ppId) : 0;
+            if ($pp && $used < (int)$pp['sessions_total']) {
+                $pdo->prepare('INSERT INTO package_uses (patient_package_id, use_date, notes, created_by) VALUES (?,?,?,?)')
+                    ->execute([$ppId, date('Y-m-d'), trim($_POST['notes'] ?? ''), user()['id']]);
+                $pdo->commit();
+                refresh_package_status($pdo);
+                flash('تم خصم جلسة — المتبقي ' . ((int)$pp['sessions_total'] - $used - 1) . ' جلسة.');
+            } else {
+                $pdo->rollBack();
+                flash('الباقة مستهلكة بالكامل.', 'danger');
+            }
+        } catch (PDOException) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            flash('تعذر خصم الجلسة — حاول مرة أخرى.', 'danger');
         }
         redirect("patient.php?id=$id&tab=pkg");
     }
@@ -260,6 +269,9 @@ if (can('pay.view')) {
             <?php $waPhone = wa_phone($p['phone']); if ($waPhone): ?>
                 <a class="btn btn-sm btn-wa" target="_blank" rel="noopener"
                    href="<?= e('https://wa.me/' . $waPhone) ?>" title="فتح محادثة واتساب">💬 واتساب</a>
+            <?php endif; ?>
+            <?php if (can('calc.use')): ?>
+                <a class="btn btn-light btn-sm" href="calculator.php?patient=<?= $id ?>">🧮 حاسبة السعرات</a>
             <?php endif; ?>
             <a class="btn btn-light btn-sm" href="patients.php?edit=<?= $id ?>">تعديل البيانات</a>
             <a class="btn btn-sm" href="plan_edit.php?patient=<?= $id ?>">+ نظام غذائي</a>
@@ -873,7 +885,7 @@ if (can('pay.view')) {
     <div class="card">
         <h2>سجل المدفوعات — الإجمالي: <?= e(money($sum)) ?></h2>
         <div class="table-wrap"><table>
-            <thead><tr><th>التاريخ</th><th>المبلغ</th><th>الطريقة</th><th>الخدمة</th><th>ملاحظات</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>المبلغ</th><th>الطريقة</th><th>الخدمة</th><th>ملاحظات</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($pays as $pay): ?>
                 <tr>
@@ -882,9 +894,12 @@ if (can('pay.view')) {
                     <td><?= e(PAY_METHODS[$pay['method']] ?? $pay['method']) ?></td>
                     <td><?= e($pay['service']) ?></td>
                     <td><?= e($pay['notes']) ?></td>
+                    <td><?php if (can('receipt.print')): ?>
+                        <a class="btn btn-light btn-sm" href="receipt.php?id=<?= (int)$pay['id'] ?>" target="_blank">🧾 إيصال</a>
+                    <?php endif; ?></td>
                 </tr>
             <?php endforeach; ?>
-            <?php if (!$pays): ?><tr><td colspan="5" class="muted">لا توجد مدفوعات.</td></tr><?php endif; ?>
+            <?php if (!$pays): ?><tr><td colspan="6" class="muted">لا توجد مدفوعات.</td></tr><?php endif; ?>
             </tbody>
         </table></div>
     </div>

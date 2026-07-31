@@ -40,6 +40,15 @@ function csrf_verify(): void
     }
 }
 
+/** تحقق CSRF للروابط الحساسة التي تُنفَّذ عبر GET (مثل تنزيل النسخة الاحتياطية) */
+function csrf_verify_get(): void
+{
+    if (!hash_equals($_SESSION['csrf'] ?? '', (string)($_GET['csrf'] ?? ''))) {
+        http_response_code(400);
+        exit('طلب غير صالح.');
+    }
+}
+
 function redirect(string $url): never
 {
     header('Location: ' . $url);
@@ -133,7 +142,12 @@ const PERM_GROUPS = [
         'report.view' => 'عرض التقارير الشهرية',
         'profit.view' => 'عرض التكاليف وهوامش الربح',
     ],
+    'أدوات' => [
+        'calc.use'    => 'حاسبة السعرات والاحتياج اليومي',
+        'receipt.print' => 'طباعة إيصالات الدفع',
+    ],
     'النظام' => [
+        'backup.run'      => 'أخذ نسخة احتياطية من قاعدة البيانات',
         'portal.manage'   => 'تفعيل بوابة المرضى',
         'export.data'     => 'تصدير ملفات Excel',
         'users.manage'    => 'إدارة المستخدمين والصلاحيات',
@@ -177,6 +191,7 @@ function role_perms(string $role): array
             'inj.view', 'inj.plan', 'inj.give',
             'drug.view',
             'pkg.view', 'pkg.use',
+            'calc.use', 'receipt.print',
             'export.data',
         ],
         'reception' => [
@@ -187,6 +202,7 @@ function role_perms(string $role): array
             'inj.view', 'inj.give',
             'pkg.view', 'pkg.sell', 'pkg.use',
             'pay.view', 'pay.create',
+            'calc.use', 'receipt.print',
             'portal.manage', 'export.data',
         ],
         default => [],
@@ -488,7 +504,7 @@ function wa_link(string $phoneDigits, string $message): string
 
 /* ------------------------------------------------------------- الترقية */
 
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 const PKG_STATUS = ['active' => 'سارية', 'finished' => 'مستهلكة', 'expired' => 'منتهية', 'cancelled' => 'ملغاة'];
 const PKG_BADGE  = ['active' => 'ok', 'finished' => 'muted', 'expired' => 'bad', 'cancelled' => 'muted'];
@@ -779,35 +795,54 @@ function db_migrate(PDO $pdo): void
         }
     }
 
+    if ($current < 6) {
+        // فهارس الأعمدة التي تُستخدم في الفلترة على كل صفحة تقريبًا
+        $addIndex = function (string $table, string $name, string $cols) use ($pdo): void {
+            $exists = $pdo->query("SHOW INDEX FROM `$table` WHERE Key_name = " . $pdo->quote($name))->fetchAll();
+            if (!$exists) {
+                $pdo->exec("ALTER TABLE `$table` ADD INDEX `$name` ($cols)");
+            }
+        };
+        $addIndex('patients', 'idx_doctor', 'doctor_id');
+        $addIndex('appointments', 'idx_doctor', 'doctor_id, adate');
+        $addIndex('injection_doses', 'idx_patient_date', 'patient_id, dose_date');
+    }
+
     $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)')
         ->execute(['schema_version', (string)SCHEMA_VERSION]);
     setting_flush();
 }
 
-function patient_options(PDO $pdo): array
-{
-    return $pdo->query('SELECT id, code, name, phone FROM patients ORDER BY name')->fetchAll();
-}
-
-/** datalist للبحث عن مريض بالاسم أو الكود أو الهاتف؛ الحقل المخفي يحمل الرقم */
+/**
+ * حقل بحث عن مريض — يجلب النتائج من السيرفر أثناء الكتابة بدل تحميل كل
+ * المرضى داخل الصفحة، فتظل الصفحة خفيفة مهما كبر عدد المرضى.
+ */
 function patient_picker(PDO $pdo, string $inputName = 'patient_id', ?int $selected = null, bool $required = true): string
 {
-    $rows = patient_options($pdo);
-    $listId = 'pl_' . $inputName;
     $selText = '';
-    $out = '<input list="' . e($listId) . '" name="' . e($inputName) . '_text" class="patient-pick" data-target="' . e($inputName) . '" placeholder="ابحث بالاسم أو الهاتف…" autocomplete="off"' . ($required ? ' required' : '') . ' value="';
-    $data = '<datalist id="' . e($listId) . '">';
-    foreach ($rows as $r) {
-        $label = $r['name'] . ' — ' . $r['code'] . ($r['phone'] ? ' — ' . $r['phone'] : '');
-        if ($selected !== null && (int)$r['id'] === $selected) {
-            $selText = $label;
+    if ($selected !== null) {
+        $st = $pdo->prepare('SELECT code, name, phone FROM patients WHERE id = ?');
+        $st->execute([$selected]);
+        if ($row = $st->fetch()) {
+            $selText = $row['name'] . ' — ' . $row['code'] . ($row['phone'] ? ' — ' . $row['phone'] : '');
         }
-        $data .= '<option data-id="' . (int)$r['id'] . '" value="' . e($label) . '"></option>';
     }
-    $data .= '</datalist>';
-    $out .= e($selText) . '">' . $data;
-    $out .= '<input type="hidden" name="' . e($inputName) . '" id="' . e($inputName) . '" value="' . ($selected !== null ? $selected : '') . '">';
-    return $out;
+    $id = 'pp_' . preg_replace('/[^a-z0-9_]/i', '', $inputName);
+
+    return '<span class="pfind" data-target="' . e($inputName) . '">'
+        . '<input type="text" id="' . e($id) . '" class="pfind-input" autocomplete="off"'
+        . ' placeholder="اكتب اسم المريض أو رقمه…"' . ($required ? ' required' : '')
+        . ' value="' . e($selText) . '">'
+        . '<span class="pfind-list" hidden></span>'
+        . '<input type="hidden" name="' . e($inputName) . '" id="' . e($inputName) . '"'
+        . ' value="' . ($selected !== null ? $selected : '') . '">'
+        . '</span>';
+}
+
+/** هل يوجد مرضى مسجّلون؟ (بدون تحميل القائمة كاملة) */
+function patients_exist(PDO $pdo): bool
+{
+    return (int)$pdo->query('SELECT COUNT(*) FROM patients')->fetchColumn() > 0;
 }
 
 /** يقرأ رقم المريض من الحقل المخفي، أو يحلّه من النص المكتوب كخطة بديلة */
@@ -852,7 +887,9 @@ function page_header(string $title, string $active = ''): void
         ['packages.php',     'باقات الجلسات',     '🎟️', 'pkg.view'],
         ['payments.php',     'المدفوعات',         '💰', 'pay.view'],
         ['expenses.php',     'المصروفات',         '🧾', 'exp.view'],
+        ['calculator.php',   'حاسبة السعرات',     '🧮', 'calc.use'],
         ['reports.php',      'التقارير',          '📈', 'report.view'],
+        ['backup.php',       'نسخة احتياطية',     '💾', 'backup.run'],
         ['users.php',        'المستخدمون',        '👤', 'users.manage'],
         ['settings.php',     'الإعدادات',         '⚙️', 'settings.manage'],
     ];

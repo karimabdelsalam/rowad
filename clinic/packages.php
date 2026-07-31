@@ -100,20 +100,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'use_session') {
         deny_unless('pkg.use', 'packages.php?tab=sold');
         $ppId = (int)($_POST['pp_id'] ?? 0);
-        $st = $pdo->prepare('SELECT pp.*, (SELECT COUNT(*) FROM package_uses u WHERE u.patient_package_id = pp.id) AS used
-                             FROM patient_packages pp WHERE pp.id = ?');
-        $st->execute([$ppId]);
-        $pp = $st->fetch();
-        if (!$pp) {
-            redirect('packages.php?tab=sold');
-        }
-        if ((int)$pp['used'] >= (int)$pp['sessions_total']) {
-            flash('الباقة مستهلكة بالكامل.', 'danger');
-        } else {
-            $pdo->prepare('INSERT INTO package_uses (patient_package_id, use_date, notes, created_by) VALUES (?,?,?,?)')
-                ->execute([$ppId, ($_POST['use_date'] ?? '') ?: date('Y-m-d'), trim($_POST['notes'] ?? ''), user()['id']]);
-            refresh_package_status($pdo);
-            flash('تم خصم جلسة.');
+        /*
+         * القفل (FOR UPDATE) يمنع خصم جلستين في نفس اللحظة من موظفَين مختلفَين،
+         * وهو ما يحدث فعليًا على السيرفر الذي يعالج عدة طلبات بالتوازي.
+         */
+        $pdo->beginTransaction();
+        try {
+            $st = $pdo->prepare('SELECT * FROM patient_packages WHERE id = ? FOR UPDATE');
+            $st->execute([$ppId]);
+            $pp = $st->fetch();
+            if (!$pp) {
+                $pdo->rollBack();
+                redirect('packages.php?tab=sold');
+            }
+            $used = package_used($pdo, $ppId);
+            if ($used >= (int)$pp['sessions_total']) {
+                $pdo->rollBack();
+                flash('الباقة مستهلكة بالكامل.', 'danger');
+            } else {
+                $pdo->prepare('INSERT INTO package_uses (patient_package_id, use_date, notes, created_by) VALUES (?,?,?,?)')
+                    ->execute([$ppId, ($_POST['use_date'] ?? '') ?: date('Y-m-d'), trim($_POST['notes'] ?? ''), user()['id']]);
+                $pdo->commit();
+                refresh_package_status($pdo);
+                flash('تم خصم جلسة — المتبقي ' . ((int)$pp['sessions_total'] - $used - 1) . ' جلسة.');
+            }
+        } catch (PDOException) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            flash('تعذر خصم الجلسة — حاول مرة أخرى.', 'danger');
         }
         redirect($_POST['back'] ?? 'packages.php?tab=sold');
     }

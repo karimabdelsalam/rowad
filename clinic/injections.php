@@ -29,25 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('injections.php');
         }
 
-        $batch = null;
-        if ($batchId) {
-            $st = $pdo->prepare('SELECT * FROM drug_batches WHERE id = ? AND drug_id = ?');
-            $st->execute([$batchId, $drugId]);
-            $batch = $st->fetch();
-            if (!$batch) {
-                flash('الدفعة المختارة غير صالحة لهذا الدواء.', 'danger');
-                redirect('injections.php');
-            }
-            $left = (float)$batch['units_total'] - (float)$batch['units_used'];
-            if ($units > $left) {
-                flash('الدفعة بها ' . units_fmt($left) . ' فقط — اختر دفعة أخرى أو استلم كمية جديدة.', 'danger');
-                redirect('injections.php');
-            }
-        }
-
         $amount = round($units * $unitPrice, 2);
         $paidNow = min($paidNow, $amount);
-        $unitCost = $batch ? batch_unit_cost($batch) : 0.0;
 
         // البروتوكول النشط للمريض لهذا الدواء (لربط الجرعة به)
         $st = $pdo->prepare("SELECT id FROM injection_plans WHERE patient_id = ? AND drug_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1");
@@ -58,6 +41,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $pdo->beginTransaction();
         try {
+            /*
+             * قراءة الدفعة وقفلها داخل المعاملة، حتى لا يصرف موظفان في نفس
+             * اللحظة وحدات أكثر مما في الدفعة فعليًا.
+             */
+            $batch = null;
+            $unitCost = 0.0;
+            if ($batchId) {
+                $st = $pdo->prepare('SELECT * FROM drug_batches WHERE id = ? AND drug_id = ? FOR UPDATE');
+                $st->execute([$batchId, $drugId]);
+                $batch = $st->fetch();
+                if (!$batch) {
+                    $pdo->rollBack();
+                    flash('الدفعة المختارة غير صالحة لهذا الدواء.', 'danger');
+                    redirect('injections.php');
+                }
+                $left = (float)$batch['units_total'] - (float)$batch['units_used'];
+                if ($units > $left) {
+                    $pdo->rollBack();
+                    flash('الدفعة بها ' . units_fmt($left) . ' فقط — اختر دفعة أخرى أو استلم كمية جديدة.', 'danger');
+                    redirect('injections.php');
+                }
+                $unitCost = batch_unit_cost($batch);
+            }
+
             $pdo->prepare(
                 'INSERT INTO injection_doses (patient_id, plan_id, drug_id, batch_id, dose_date, units,
                  unit_price, amount, paid, unit_cost, site, notes, given_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)'
@@ -290,17 +297,18 @@ elDrug.addEventListener('change', function () {
 });
 
 // عند اختيار مريض له بروتوكول نشط: املأ الدواء والجرعة والسعر تلقائيًا
-document.querySelector('.patient-pick').addEventListener('input', function () {
-    setTimeout(function () {
-        var plan = PLANS[elPatient.value];
-        if (!plan) return;
-        elDrug.value = plan.drug;
-        elUnits.value = plan.units;
-        elPrice.value = plan.price;
-        fillBatches();
-        calc();
-        elHint.textContent = 'تم الملء من بروتوكول المريض النشط — يمكنك التعديل.';
-    }, 0);
+document.getElementById('dose-form').addEventListener('patient:selected', function () {
+    var plan = PLANS[elPatient.value];
+    if (!plan) {
+        elHint.textContent = 'لا يوجد بروتوكول نشط لهذا المريض — أدخل البيانات يدويًا.';
+        return;
+    }
+    elDrug.value = plan.drug;
+    elUnits.value = plan.units;
+    elPrice.value = plan.price;
+    fillBatches();
+    calc();
+    elHint.textContent = 'تم الملء من بروتوكول المريض النشط — يمكنك التعديل.';
 });
 }
 </script>
