@@ -1,0 +1,53 @@
+---
+# ==========================================================================
+#  النشر التلقائي على cPanel — Pclinic بي كلينك (من Planova)
+# ==========================================================================
+#
+#  خطوة واحدة قبل أول نشر:
+#  غيّر USERNAME في السطر التالي إلى اسم مستخدم cPanel عندك، وغيّر المسار
+#  لو كنت تريد النظام في مكان آخر (مثلًا public_html مباشرة بدل public_html/clinic).
+#
+#  بعدها: cPanel ← Git Version Control ← Manage ← Pull or Deploy ← Deploy HEAD Commit
+#
+#  ملاحظة مهمة: ملف inc/config.php (بيانات قاعدة البيانات) مستثنى من النشر،
+#  فلن تُمسح إعداداتك عند كل تحديث.
+# --------------------------------------------------------------------------
+deployment:
+  tasks:
+    - export USERNAME=USERNAME
+    - export DEPLOYPATH=/home/$USERNAME/public_html/clinic
+
+    - /bin/mkdir -p $DEPLOYPATH
+
+    # نسخ ملفات النظام مع استثناء الإعدادات المحلية وملفات التطوير
+    - >
+      /usr/bin/rsync -a --delete
+      --exclude 'inc/config.php'
+      --exclude '.git'
+      --exclude '*.md'
+      clinic/ $DEPLOYPATH/
+
+    # صلاحيات آمنة: الملفات للقراءة والمجلدات للدخول
+    - /bin/find $DEPLOYPATH -type d -exec /bin/chmod 755 {} \;
+    - /bin/find $DEPLOYPATH -type f -exec /bin/chmod 644 {} \;
+
+    # حماية ملف الإعدادات من القراءة الخارجية
+    - /bin/chmod 600 $DEPLOYPATH/inc/config.php 2>/dev/null || true
+
+    # ----------------------------------------------------------------------
+    #  كونسول إدارة الاشتراكات (اختياري — للمزوّد وحده لا للعيادات)
+    #  انشره على حسابك أنت فقط. لو لا تستخدمه احذف هذا القسم.
+    # ----------------------------------------------------------------------
+    - export CONSOLEPATH=/home/$USERNAME/public_html/console
+    - /bin/mkdir -p $CONSOLEPATH
+    - >
+      /usr/bin/rsync -a --delete
+      --exclude 'inc/config.php'
+      --exclude '.git'
+      --exclude '*.md'
+      console/ $CONSOLEPATH/
+    - /bin/find $CONSOLEPATH -type d -exec /bin/chmod 755 {} \;
+    - /bin/find $CONSOLEPATH -type f -exec /bin/chmod 644 {} \;
+    - /bin/chmod 600 $CONSOLEPATH/inc/config.php 2>/dev/null || true
+
+    - /bin/echo "تم النشر بنجاح في $DEPLOYPATH — $(date)"

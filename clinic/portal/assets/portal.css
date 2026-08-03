@@ -1,0 +1,149 @@
+@import url('cairo.css');
+
+/* بوابة المرضى — تصميم للموبايل أولًا */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --p: #0f766e;
+    --p-dark: #115e59;
+    --bg: #f1f5f9;
+    --card: #fff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+}
+
+body {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.7;
+    padding-bottom: 78px;               /* مساحة شريط التنقل السفلي */
+    -webkit-text-size-adjust: 100%;
+}
+a { color: var(--p); text-decoration: none; }
+
+/* ------------------------------------------------------------ الرأس */
+.pheader {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--p);
+    color: #fff;
+    padding: 14px 18px;
+    padding-top: calc(14px + env(safe-area-inset-top));
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 10px rgba(15, 118, 110, .25);
+}
+.pbrand { font-weight: 700; font-size: 17px; }
+.plogout { color: #ccfbf1; font-size: 14px; }
+
+.pmain { padding: 16px; max-width: 640px; margin: 0 auto; }
+.ptitle { font-size: 20px; margin-bottom: 14px; }
+
+/* ---------------------------------------------------------- البطاقات */
+.pcard {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+.phero { border-inline-start: 5px solid var(--p); }
+.pwarn { border-color: #fca5a5; background: #fef2f2; }
+.pdanger { border-color: #fca5a5; background: #fef2f2; }
+
+.plabel { color: var(--muted); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.pbig { font-size: 21px; font-weight: 700; }
+.pbig small { font-size: 14px; font-weight: 400; color: var(--muted); }
+.pbig.pdue { color: #b91c1c; }
+.pmuted { color: var(--muted); font-size: 14px; }
+.pgoal { font-size: 16px; font-weight: 700; color: var(--p-dark); }
+
+/* الإحصائيات */
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.pstat {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px;
+}
+.pstat-due { border-color: #fca5a5; background: #fef2f2; }
+.pvalue { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pvalue small { font-size: 13px; font-weight: 400; color: var(--muted); }
+.ptrend { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+/* شريط تقدّم الباقة */
+.pbar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 8px 0 6px; }
+.pbar span { display: block; height: 100%; background: var(--p); border-radius: 99px; }
+
+/* الوجبات */
+.pmeal-h { font-weight: 700; font-size: 16px; color: var(--p-dark); margin-bottom: 6px; }
+.pmeal-b { font-size: 15px; }
+
+/* الشارات */
+.pbadge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.pbadge.ok { background: #dcfce7; color: #15803d; }
+.pbadge.warn { background: #fef3c7; color: #92400e; }
+.pbadge.bad { background: #fee2e2; color: #b91c1c; }
+.pbadge.muted { background: #e2e8f0; color: #475569; }
+
+/* الجداول */
+.ptable-wrap { overflow-x: auto; margin-top: 8px; }
+.ptable { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ptable th, .ptable td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.ptable th { color: var(--muted); font-size: 12px; }
+
+/* الرسم البياني */
+.chart-wrap svg { width: 100%; height: auto; display: block; direction: ltr; }
+
+/* الأزرار */
+.pbtn {
+    display: inline-block; background: var(--p); color: #fff;
+    padding: 12px 22px; border: none; border-radius: 10px;
+    font: inherit; font-weight: 700; cursor: pointer; text-align: center;
+}
+.pbtn:active { background: var(--p-dark); }
+.pbtn-block { display: block; width: 100%; margin-top: 8px; }
+
+/* التنبيهات */
+.palert { padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-weight: 700; font-size: 14px; }
+.palert-success { background: #dcfce7; color: #15803d; }
+.palert-danger { background: #fee2e2; color: #b91c1c; }
+.palert-warning { background: #fef3c7; color: #92400e; }
+
+/* ------------------------------------------- شريط التنقل السفلي */
+.ptabs {
+    position: fixed; bottom: 0; inset-inline: 0; z-index: 20;
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.ptabs a {
+    flex: 1; text-align: center; padding: 9px 4px 11px;
+    color: var(--muted); font-size: 11.5px; font-weight: 700;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.ptabs a span { font-size: 21px; line-height: 1; }
+.ptabs a.on { color: var(--p); }
+
+/* ------------------------------------------------------ شاشة الدخول */
+.plogin-body {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px; padding-bottom: 20px;
+    background: linear-gradient(135deg, #0f172a, #134e4a);
+}
+.plogin {
+    background: var(--card); border-radius: 18px; padding: 30px 24px;
+    width: 100%; max-width: 380px; box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+}
+.plogin h1 { font-size: 20px; text-align: center; color: var(--p-dark); margin-bottom: 4px; }
+.plogin > p { text-align: center; }
+.plogin form { margin-top: 18px; }
+.plogin label { display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 14px; }
+.plogin input {
+    display: block; width: 100%; margin-top: 5px; padding: 12px 14px;
+    border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; font-size: 16px;
+}
+.plogin input:focus { outline: 2px solid #ccfbf1; border-color: var(--p); }
+.phint { text-align: center; margin-top: 14px; font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
