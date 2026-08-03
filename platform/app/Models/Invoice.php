@@ -43,6 +43,21 @@ class Invoice extends Model
         return round(max(0, (float)$this->amount - (float)$this->paid), 2);
     }
 
+    /**
+     * أيام التأخر عن الاستحقاق كعدد صحيح.
+     *
+     * الفرق يُحسب بين بداية اليومين: Carbon يعيد كسورًا وإلا فتظهر «متأخرة
+     * 4.91 يوم» للمستخدم.
+     */
+    public function daysOverdue(): int
+    {
+        if (!$this->due_date) {
+            return 0;
+        }
+
+        return max(0, (int)$this->due_date->startOfDay()->diffInDays(now()->startOfDay()));
+    }
+
     public function isOverdue(): bool
     {
         return $this->due_date
