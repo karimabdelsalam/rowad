@@ -8,7 +8,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', __('عقار نوفا — نظام إدارة الأملاك للمنشآت العقارية'))</title>
-    <meta name="description" content="{{ __('نظام سحابي متكامل لإدارة العقارات والعقود والتحصيل وحسابات الملاك، مع بوابات للملاك والمستأجرين وموقع خاص لكل مؤسسة.') }}">
+    @php($description = __('نظام سحابي متكامل لإدارة العقارات والعقود والتحصيل وحسابات الملاك، مع بوابات للملاك والمستأجرين وموقع خاص لكل مؤسسة.'))
+    <meta name="description" content="{{ $description }}">
+    <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="alternate" hreflang="ar" href="{{ url()->current() }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ __('عقار نوفا') }}">
+    <meta property="og:title" content="@yield('title', __('عقار نوفا — نظام إدارة الأملاك للمنشآت العقارية'))">
+    <meta property="og:description" content="{{ $description }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('images/platform/dashboard.jpg') }}">
+    <meta property="og:locale" content="{{ app()->getLocale() === 'ar' ? 'ar_SA' : 'en_US' }}">
+    <meta name="twitter:card" content="summary_large_image">
     @include('partials.favicons')
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=cairo:400,500,600,700,800&display=swap" rel="stylesheet">
@@ -101,6 +112,7 @@
             </a>
             <nav class="links">
                 <a href="{{ route('central.home', [], false) }}#features">{{ __('المزايا') }}</a>
+                <a href="{{ route('central.home', [], false) }}#ai">{{ __('الذكاء الاصطناعي') }}</a>
                 <a href="{{ route('central.home', [], false) }}#portals">{{ __('البوابات') }}</a>
                 <a href="{{ route('central.home', [], false) }}#pricing">{{ __('الأسعار') }}</a>
                 <a href="{{ route('central.home', [], false) }}#faq">{{ __('الأسئلة الشائعة') }}</a>
@@ -133,9 +145,17 @@
                     <h4>{{ __('الدعم') }}</h4>
                     <ul>
                         <li><a href="{{ route('central.home', [], false) }}#faq">{{ __('الأسئلة الشائعة') }}</a></li>
-                        @if (filled(config('mail.from.address')) && ! str_ends_with((string) config('mail.from.address'), '@example.com'))
-                            <li><a href="mailto:{{ config('mail.from.address') }}">{{ config('mail.from.address') }}</a></li>
+                        @if (filled($contactEmail = config('rowad.contact.email')))
+                            <li><a href="mailto:{{ $contactEmail }}" dir="ltr">{{ $contactEmail }}</a></li>
                         @endif
+                        @if (filled($contactPhone = config('rowad.contact.phone')))
+                            <li><a href="tel:{{ preg_replace('/[^0-9+]/', '', $contactPhone) }}" dir="ltr">{{ $contactPhone }}</a></li>
+                        @endif
+                        @if (filled($whatsapp = config('rowad.contact.whatsapp')))
+                            <li><a href="https://wa.me/{{ preg_replace('/\D/', '', $whatsapp) }}" target="_blank" rel="noopener">{{ __('واتساب') }}</a></li>
+                        @endif
+                        <li><a href="{{ route('central.terms', [], false) }}">{{ __('شروط الاستخدام') }}</a></li>
+                        <li><a href="{{ route('central.privacy', [], false) }}">{{ __('سياسة الخصوصية') }}</a></li>
                     </ul>
                 </div>
             </div>

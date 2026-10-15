@@ -1,2 +1,8 @@
 User-agent: *
-Disallow:
+Disallow: /platform
+Disallow: /admin
+Disallow: /owner
+Disallow: /client
+Disallow: /signup/done
+
+Sitemap: https://aqarnova.com/sitemap.xml

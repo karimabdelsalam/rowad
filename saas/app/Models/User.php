@@ -53,6 +53,21 @@ class User extends Authenticatable implements FilamentUser, HasEmailAuthenticati
         ];
     }
 
+    /** In the public demo office, visitors cannot lock others out by changing the shared accounts' sign-in details. */
+    protected static function booted(): void
+    {
+        static::updating(function (User $user) {
+            $demoEmails = array_column(\App\Console\Commands\CreateDemoOffice::ACCOUNTS, 0);
+            if (tenancy()->initialized && tenant()->isDemo() && in_array($user->getOriginal('email'), $demoEmails, true)) {
+                foreach (['email', 'password', 'username', 'is_active', 'sms_login_enabled', 'type'] as $locked) {
+                    if ($user->isDirty($locked)) {
+                        $user->setAttribute($locked, $user->getOriginal($locked));
+                    }
+                }
+            }
+        });
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         if (! $this->is_active) {

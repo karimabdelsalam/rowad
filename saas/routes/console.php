@@ -7,6 +7,8 @@ Schedule::command('rowad:daily')->dailyAt('03:00')->withoutOverlapping()->onOneS
 Schedule::command('rowad:subscriptions')->dailyAt('02:45')->withoutOverlapping()->onOneServer();
 Schedule::command('rowad:usage')->hourly()->withoutOverlapping()->onOneServer();
 Schedule::command('queue:prune-failed --hours=720')->daily();
+// The public demo office starts clean every day (DEMO_RESET_DAILY=true).
+Schedule::command('rowad:demo --fresh')->dailyAt('04:00')->when(fn () => config('rowad.demo_reset_daily'))->withoutOverlapping()->onOneServer();
 
 // cPanel and other hosting without Supervisor: work through queued messages every minute from cron (QUEUE_WORKER=scheduler).
 if (config('rowad.queue_via_scheduler')) {

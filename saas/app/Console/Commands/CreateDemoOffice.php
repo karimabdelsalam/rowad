@@ -23,9 +23,11 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Date;
 
 /**
- * A realistic demo office for previews and screenshots: http://demo.<base-domain>:8000
+ * The public demo office (demo.<base-domain>), also used for previews and screenshots:
  *   staff  admin@demo.test / demo-password
  *   owner  owner@demo.test / demo-password     client  client@demo.test / demo-password
+ * Visitors open it from the landing page; it sends no real messages, its accounts' passwords
+ * cannot be changed, and with DEMO_RESET_DAILY=true it is rebuilt every night.
  */
 class CreateDemoOffice extends Command
 {
@@ -34,6 +36,13 @@ class CreateDemoOffice extends Command
     protected $description = 'Create a demo office with sample units, contracts and payments';
 
     public const PASSWORD = 'demo-password';
+
+    /** role => [email, panel path] */
+    public const ACCOUNTS = [
+        'admin' => ['admin@demo.test', 'admin'],
+        'owner' => ['owner@demo.test', 'owner'],
+        'client' => ['client@demo.test', 'client'],
+    ];
 
     public function handle(OfficeProvisioner $provisioner): int
     {
@@ -51,10 +60,13 @@ class CreateDemoOffice extends Command
             'admin_email' => 'admin@demo.test', 'admin_password' => self::PASSWORD,
             'plan_id' => Plan::where('slug', 'professional')->value('id'), 'phone' => '0112345678',
         ]);
-        $tenant->forceFill(['status' => Tenant::STATUS_ACTIVE])->save();
+        $tenant->forceFill(['status' => Tenant::STATUS_ACTIVE, 'is_demo' => true, 'trial_ends_at' => null])->save();
 
         $tenant->run(fn () => $this->seedOffice());
-        $this->info("Demo office ready: http://{$domain}:8000  (admin@demo.test / ".self::PASSWORD.')');
+        $url = (parse_url((string) config('app.url'), PHP_URL_SCHEME) ?: 'https').'://'.$domain
+            .(($port = parse_url((string) config('app.url'), PHP_URL_PORT)) ? ':'.$port : '');
+        $this->info("Demo office ready: {$url}");
+        $this->table(['', 'login', 'password', 'one click'], collect(self::ACCOUNTS)->map(fn ($a, $role) => [$role, $a[0], self::PASSWORD, "{$url}/demo/{$role}"])->values()->all());
 
         return self::SUCCESS;
     }

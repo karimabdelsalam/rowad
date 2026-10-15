@@ -33,6 +33,14 @@ class SendOutgoingMessage implements ShouldQueue
             return;
         }
 
+        // The public demo office never reaches real phones or inboxes.
+        if (tenancy()->initialized && tenant()->isDemo()) {
+            $message->update(['status' => 'failed', 'error' => __('حساب تجريبي: لا تُرسل رسائل حقيقية.')]);
+            $message->campaign?->increment('failed_count');
+
+            return;
+        }
+
         if ($message->channel === MessageChannel::Sms) {
             if (PlanLimits::reached('sms')) {
                 $message->update(['status' => 'failed', 'error' => __('تم بلوغ حد رسائل SMS الشهري في باقة المؤسسة.')]);

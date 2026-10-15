@@ -157,6 +157,29 @@ php artisan filament:optimize
 - ادخل `https://aqarnova.com/platform` ببريد وكلمة مرور `PLATFORM_ADMIN_*`، ثم احذف `PLATFORM_ADMIN_PASSWORD` من `.env`.
 - جرّب التسجيل من الصفحة الرئيسية؛ يجب أن تظهر قاعدة جديدة `USER_t...` في MySQL® Databases.
 
+### الحساب التجريبي وبيانات التواصل
+
+```bash
+php artisan rowad:demo
+```
+
+ينشئ `demo.aqarnova.com` ببيانات تجريبية، ويظهر قسم "جرّب النظام الآن" في الصفحة الرئيسية بأزرار دخول بضغطة واحدة:
+
+| الحساب | البريد | كلمة المرور |
+|---|---|---|
+| لوحة المؤسسة | `admin@demo.test` | `demo-password` |
+| بوابة المالك | `owner@demo.test` | `demo-password` |
+| بوابة المستأجر | `client@demo.test` | `demo-password` |
+
+الحساب التجريبي لا يرسل رسائل حقيقية، ولا يمكن تغيير بريد أو كلمة مرور حساباته. أضف في `.env`:
+
+```dotenv
+DEMO_RESET_DAILY=true                  # يُعاد بناؤه كل ليلة 4 فجرًا
+PLATFORM_CONTACT_EMAIL=info@aqarnova.com
+PLATFORM_CONTACT_PHONE=<رقم-الشركة>
+PLATFORM_WHATSAPP=9665XXXXXXXX
+```
+
 ## 7. المهام المجدولة (Cron Jobs)
 
 في **Cron Jobs** أضف مهمة واحدة كل دقيقة (Once Per Minute):

@@ -107,6 +107,16 @@ return [
     // Behind Cloudflare or another proxy: "*" so HTTPS and visitor IPs are read from the proxy headers.
     'trusted_proxies' => env('TRUSTED_PROXIES'),
 
+    // Contact details shown on the platform's public pages (aqarnova.com).
+    'contact' => [
+        'email' => env('PLATFORM_CONTACT_EMAIL'),
+        'phone' => env('PLATFORM_CONTACT_PHONE'),
+        'whatsapp' => env('PLATFORM_WHATSAPP'), // international digits, e.g. 9665XXXXXXXX
+    ],
+
+    // Rebuild the public demo office (demo.<base-domain>) every night at 04:00.
+    'demo_reset_daily' => (bool) env('DEMO_RESET_DAILY', false),
+
     'tenancy' => [
         // Subdomains are created under this host, e.g. alrowad.aqarnova.com
         'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),

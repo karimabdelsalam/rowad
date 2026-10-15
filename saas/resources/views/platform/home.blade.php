@@ -34,6 +34,21 @@
 @endphp
 
 @section('styles')
+    .ai-sec { background: radial-gradient(900px 400px at 85% 10%, rgb(20 184 166 / .10), transparent 60%); }
+    .ai-mock { background: #fff; border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 22px; display: grid; gap: 14px; }
+    .ai-mock__q { justify-self: start; background: var(--brand); color: #fff; padding: 10px 16px; border-radius: 16px; font-weight: 600; max-width: 85%; }
+    .ai-mock__a { display: flex; gap: 12px; align-items: flex-start; font-size: .95rem; }
+    .ai-mock__a p { margin: 0 0 10px; }
+    .ai-mock__mark { width: 34px; height: 34px; flex: none; border-radius: 11px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #14b8a6, #0f766e); }
+    .ai-mock table { width: 100%; border-collapse: collapse; font-size: .88rem; margin-bottom: 10px; }
+    .ai-mock th { background: var(--soft); text-align: start; }
+    .ai-mock th, .ai-mock td { border: 1px solid var(--line); padding: 6px 10px; }
+    .ai-mock__tip { color: var(--brand-ink); background: var(--brand-soft); border: 1px solid var(--brand-line); border-radius: 12px; padding: 8px 12px; }
+    .demo-cards .portal { display: flex; flex-direction: column; }
+    .demo-cards .portal p { flex: 1; }
+    .demo-btn { margin-top: 10px; }
+    .demo-cred { display: block; text-align: center; color: rgb(255 255 255 / .85); margin-top: 10px; font-size: .82rem; position: relative; }
+    .demo-btn { position: relative; }
     .hero { position: relative; overflow: hidden; padding: 72px 0 0; background:
         radial-gradient(900px 420px at 85% -10%, rgb(20 184 166 / .16), transparent 60%),
         radial-gradient(700px 380px at 0% 10%, rgb(235 104 52 / .08), transparent 60%), #fff; }
@@ -149,7 +164,11 @@
                 <p class="lead">{{ __('عقار نوفا يجمع الوحدات والعقود والدفعات وحسابات الملاك والفوترة الإلكترونية في نظام واحد سهل، مع بوابة للملاك وأخرى للمستأجرين وموقع خاص لمؤسستك.') }}</p>
                 <div class="cta">
                     <a class="btn btn-primary btn-lg" href="{{ route('central.signup', [], false) }}">{{ __('ابدأ تجربتك المجانية') }}</a>
-                    <a class="btn btn-ghost btn-lg" href="#pricing">{{ __('شاهد الأسعار') }}</a>
+                    @if ($demoUrl)
+                        <a class="btn btn-ghost btn-lg" href="#demo">{{ __('جرّب النسخة التجريبية') }}</a>
+                    @else
+                        <a class="btn btn-ghost btn-lg" href="#pricing">{{ __('شاهد الأسعار') }}</a>
+                    @endif
                 </div>
                 <div class="note">
                     <span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __('14 يومًا مجانًا') }}</span>
@@ -208,6 +227,36 @@
         </div>
     </section>
 
+    <section id="ai" class="ai-sec">
+        <div class="container split">
+            <div>
+                <span class="eyebrow">{{ __('الذكاء الاصطناعي') }}</span>
+                <h2>{{ __('اسأل نظامك… ويجيبك بالأرقام') }}</h2>
+                <p class="lead">{{ __('مساعد ذكي داخل النظام يقرأ بيانات مؤسستك ويحللها: اسأله بالعربية عن أي شيء، واحصل على إجابة دقيقة وتوصيات عملية.') }}</p>
+                <ul class="checks">
+                    @foreach (['اسأل عن المتأخرات والعقود القريبة من الانتهاء والإشغال والأرباح', 'تحليل ذكي لأي تقرير بضغطة زر، ورؤى يومية في لوحة التحكم', 'يكتب لك الرسائل الجماعية والخطابات بالأسلوب الذي تختاره', 'للملاك والمستأجرين أيضًا: كل منهم يسأل عن بياناته فقط', 'يقرأ ويحلل فقط ولا يعدّل شيئًا، ويحترم صلاحيات كل مستخدم'] as $line)
+                        <li><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __($line) }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="ai-mock" aria-hidden="true">
+                <div class="ai-mock__q">{{ __('من المستأجرون المتأخرون هذا الشهر؟') }}</div>
+                <div class="ai-mock__a">
+                    <span class="ai-mock__mark">✦</span>
+                    <div>
+                        <p>{!! __('يوجد <b>4 أقساط متأخرة</b> بإجمالي <b>15,000 ر.س</b>، أقدمها منذ 14 يومًا:') !!}</p>
+                        <table>
+                            <tr><th>{{ __('الوحدة') }}</th><th>{{ __('المستأجر') }}</th><th>{{ __('المتبقي') }}</th></tr>
+                            <tr><td>{{ __('شقة 204') }}</td><td>{{ __('ماجد الغامدي') }}</td><td>2,833</td></tr>
+                            <tr><td>{{ __('محل تجاري 3') }}</td><td>{{ __('شركة الأفق') }}</td><td>5,417</td></tr>
+                        </table>
+                        <p class="ai-mock__tip">{{ __('أنصح بإرسال تذكير جماعي الآن، ثم متابعة من تجاوز 30 يومًا هاتفيًا.') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="portals">
         <div class="container">
             <div class="section-head">
@@ -248,6 +297,33 @@
             </div>
         </div>
     </section>
+
+    @if ($demoUrl)
+        <section id="demo" class="alt">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">{{ __('النسخة التجريبية') }}</span>
+                    <h2>{{ __('جرّب النظام الآن بدون تسجيل') }}</h2>
+                    <p>{{ __('مؤسسة تجريبية ببيانات حقيقية الشكل. ادخل بضغطة واحدة كموظف أو مالك أو مستأجر. تُعاد البيانات كل يوم ولا تُرسل أي رسائل حقيقية.') }}</p>
+                </div>
+                <div class="portals demo-cards">
+                    @foreach ([
+                        ['admin', 'building', 'لوحة المؤسسة', 'الوحدات والعقود والتحصيل والتقارير والمساعد الذكي كما يراها مدير المؤسسة.', 'admin@demo.test'],
+                        ['owner', 'scale', 'بوابة المالك', 'كشف حساب المالك ووحداته والتحصيلات القادمة.', 'owner@demo.test'],
+                        ['client', 'users', 'بوابة المستأجر', 'العقد والدفعات القادمة والسندات وطلبات الدعم.', 'client@demo.test'],
+                    ] as [$role, $icon, $title, $text, $email])
+                        <div class="portal">
+                            <div class="ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$icon] }}"/></svg></div>
+                            <h3>{{ __($title) }}</h3>
+                            <p>{{ __($text) }}</p>
+                            <a class="btn btn-light demo-btn" href="{{ $demoUrl }}/demo/{{ $role }}" target="_blank" rel="noopener">{{ __('ادخل الآن') }}</a>
+                            <small class="demo-cred" dir="ltr">{{ $email }} · {{ \App\Console\Commands\CreateDemoOffice::PASSWORD }}</small>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
 
     <section id="pricing">
         <div class="container" style="text-align:center">
@@ -304,6 +380,7 @@
                     ['هل يدعم التقويم الهجري؟', 'نعم، يمكن إنشاء العقود وجدولة الدفعات بالتقويم الهجري (أم القرى) أو الميلادي، وتظهر التواريخ بالتقويمين.'],
                     ['ماذا يحدث بعد انتهاء الفترة التجريبية؟', 'تختار الباقة المناسبة وتكمل بنفس بياناتك. لا يُحذف شيء، ولا نطلب بطاقة ائتمان عند التسجيل.'],
                     ['هل يمكنني استخدام رابط باسم مؤسستي؟', 'كل مؤسسة تحصل على رابط فرعي مجاني، وباقة المؤسسات تتيح ربط نطاقك الخاص.'],
+                    ['هل يطلع الذكاء الاصطناعي على كل بيانات مؤسستي؟', 'لا. المساعد يقرأ فقط البيانات اللازمة لكل سؤال، وبصلاحيات المستخدم الذي يسأل، ولا يعدّل أو يرسل شيئًا. والمالك والمستأجر يسألان عن بياناتهما فقط.'],
                 ] as [$q, $a])
                     <details @if ($loop->first) open @endif><summary>{{ __($q) }}</summary><p>{{ __($a) }}</p></details>
                 @endforeach

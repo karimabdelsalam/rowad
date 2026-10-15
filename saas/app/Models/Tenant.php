@@ -49,6 +49,12 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return $this->hasOne(Subscription::class)->ofMany(['starts_at' => 'max', 'id' => 'max'], fn ($query) => $query->where('status', 'active'));
     }
 
+    /** The public demo office created by `rowad:demo` (flag kept in the tenant's data column). */
+    public function isDemo(): bool
+    {
+        return ($this->getAttributes()['is_demo'] ?? false) === true;
+    }
+
     public function isAccessible(): bool
     {
         return match ($this->status) {

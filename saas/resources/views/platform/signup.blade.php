@@ -120,7 +120,10 @@
                     </div>
 
                     <div class="field full">
-                        <label class="terms"><input type="checkbox" name="terms" value="1" @checked(old('terms'))> <span>{{ __('أوافق على شروط الاستخدام وسياسة الخصوصية.') }}</span></label>
+                        <label class="terms"><input type="checkbox" name="terms" value="1" @checked(old('terms'))> <span>{!! __('أوافق على :terms و:privacy.', [
+                            'terms' => '<a href="'.e(route('central.terms', [], false)).'" target="_blank" style="color:var(--brand);font-weight:700">'.e(__('شروط الاستخدام')).'</a>',
+                            'privacy' => '<a href="'.e(route('central.privacy', [], false)).'" target="_blank" style="color:var(--brand);font-weight:700">'.e(__('سياسة الخصوصية')).'</a>',
+                        ]) !!}</span></label>
                         @error('terms')<span class="error">{{ $message }}</span>@enderror
                     </div>
 

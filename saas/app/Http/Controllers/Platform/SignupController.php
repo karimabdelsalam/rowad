@@ -17,7 +17,20 @@ class SignupController
 {
     public function home(): View
     {
-        return view('platform.home', ['plans' => $this->plans()]);
+        return view('platform.home', ['plans' => $this->plans(), 'demoUrl' => self::demoUrl()]);
+    }
+
+    /** The public demo office (created by `rowad:demo`), if this platform has one. */
+    public static function demoUrl(): ?string
+    {
+        $domain = 'demo.'.config('rowad.tenancy.base_domain');
+        $tenant = \App\Models\Tenant::whereHas('domains', fn ($q) => $q->where('domain', $domain))->first();
+        if ($tenant === null || ! $tenant->isDemo()) {
+            return null;
+        }
+        $port = in_array(request()->getPort(), [80, 443], true) ? '' : ':'.request()->getPort();
+
+        return request()->getScheme().'://'.$domain.$port;
     }
 
     public function create(Request $request): View

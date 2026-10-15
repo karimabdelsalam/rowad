@@ -41,6 +41,9 @@ Route::middleware([
 
     Route::get('/impersonate/{user}/{panel}', [\App\Http\Controllers\ImpersonationController::class, 'start'])
         ->middleware('signed')->name('portal.impersonate');
+    Route::get('/demo/{role}', \App\Http\Controllers\DemoLoginController::class)->whereIn('role', ['admin', 'owner', 'client'])
+        ->middleware('throttle:30,1')->name('demo.login');
+
     Route::get('/impersonate/stop', [\App\Http\Controllers\ImpersonationController::class, 'stop'])->name('portal.impersonate.stop');
 });
 
