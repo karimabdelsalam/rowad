@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\MeterTypes;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\MeterTypes\Pages\ManageMeterTypes;
 use App\Models\Lookups\MeterType;
 use BackedEnum;
@@ -21,7 +20,7 @@ class MeterTypeResource extends Resource
 {
     protected static ?string $model = MeterType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBolt;
 
     protected static ?string $modelLabel = 'نوع عداد';
 
@@ -29,7 +28,9 @@ class MeterTypeResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 12;
 
     public static function form(Schema $schema): Schema
     {

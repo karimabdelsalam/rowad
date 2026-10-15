@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\UnitReportCategories;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\UnitReportCategories\Pages\ManageUnitReportCategories;
 use App\Models\Lookups\UnitReportCategory;
 use BackedEnum;
@@ -21,7 +20,7 @@ class UnitReportCategoryResource extends Resource
 {
     protected static ?string $model = UnitReportCategory::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $modelLabel = 'تصنيف تقرير';
 
@@ -29,7 +28,9 @@ class UnitReportCategoryResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 13;
 
     public static function form(Schema $schema): Schema
     {

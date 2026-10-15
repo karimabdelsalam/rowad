@@ -39,6 +39,7 @@ return [
         'custom_fields' => $crud,
         'lookups' => $crud,
         'pages' => $crud,
+        'office_files' => ['view_any', 'create', 'update', 'delete'],
         'users' => [...$crud, 'manage_permissions'],
         'activity_log' => ['view_any'],
         'settings' => ['view', 'update'],

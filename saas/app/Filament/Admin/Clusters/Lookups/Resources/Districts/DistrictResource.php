@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\Districts;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\Districts\Pages\ManageDistricts;
 use App\Models\District;
 use BackedEnum;
@@ -22,7 +21,7 @@ class DistrictResource extends Resource
 {
     protected static ?string $model = District::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMap;
 
     protected static ?string $modelLabel = 'حي';
 
@@ -30,7 +29,9 @@ class DistrictResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

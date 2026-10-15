@@ -32,6 +32,10 @@ class AppServiceProvider extends ServiceProvider
         Entry::configureUsing(fn (Entry $entry) => $entry->translateLabel());
         BaseFilter::configureUsing(fn (BaseFilter $filter) => $filter->translateLabel());
 
+        // Same date look in every browser (native inputs follow the OS locale, e.g. mm/dd/yyyy); week starts on Saturday.
+        \Filament\Forms\Components\DatePicker::configureUsing(fn (\Filament\Forms\Components\DatePicker $picker) => $picker
+            ->native(false)->displayFormat('Y-m-d')->firstDayOfWeek(6)->closeOnDateSelection());
+
         // Arabic UI with Western digits (Saudi business convention, as in the legacy system).
         Table::configureUsing(fn (Table $table) => $table->defaultNumberLocale('en'));
         \App\Filament\Tables\TableExport::register();
@@ -50,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
             'client' => Models\Client::class,
             'company_partner' => Models\CompanyPartner::class,
             'contract_term' => Models\ContractTerm::class,
+            'office_file' => Models\OfficeFile::class,
             'custom_field' => Models\CustomField::class,
             'custom_field_group' => Models\CustomFieldGroup::class,
             'custom_field_value' => Models\CustomFieldValue::class,

@@ -139,6 +139,12 @@ class CreateDemoOffice extends Command
             $collector->collect($installment);
         }
 
+        // shared office files (file cloud)
+        foreach ([['صورة واجهة برج الرواد', 'tower-front.jpg', $this->photo($palette[0], 'برج الرواد')],
+            ['نموذج طلب صيانة', 'maintenance-request.txt', "نموذج طلب صيانة\nاسم المستأجر:\nرقم الوحدة:\nوصف المشكلة:\n"]] as [$title, $name, $content]) {
+            \App\Models\OfficeFile::create(['title' => $title])->addMediaFromString($content)->usingFileName($name)->toMediaCollection('file');
+        }
+
         // portal accounts
         app(PortalAccounts::class)->issue($owners[2], 'owner@demo.test', self::PASSWORD);
         app(PortalAccounts::class)->issue($clients[0], 'client@demo.test', self::PASSWORD);

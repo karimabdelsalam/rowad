@@ -924,5 +924,22 @@
     "إجمالي العقد": "Contract total",
     "طريقة السداد": "Payment method",
     "قيمة البيع": "Sale price",
-    ":done من :total": ":done of :total"
+    ":done من :total": ":done of :total",
+    "اعداد الترقيم": "Numbering",
+    "الرقم التالي لكل مستند في :year": "Next number of each document in :year",
+    "يبدأ الترقيم من جديد كل سنة. يمكن رفع الرقم فقط، ولا يمكن الرجوع لرقم مستخدم.": "Numbering restarts every year. Numbers can only be raised; a used number cannot be reused.",
+    "المستند القادم": "Next document",
+    "رفع ملف": "Upload file",
+    "الملف": "File",
+    "اسم الملف": "File name",
+    "الحجم": "Size",
+    "رفع بواسطة": "Uploaded by",
+    "تاريخ الرفع": "Uploaded at",
+    "الرابط": "Link",
+    "تم نسخ الرابط": "Link copied",
+    "تحميل": "Download",
+    "قواعد البيانات": "Reference data",
+    "لا يمكن تعيين احد اعدادات الترقيم برقم اقل من الحالي": "A number cannot be set lower than the current one",
+    "ملف": "File",
+    "سحابة الملفات": "File cloud"
 }

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\GovernmentOrganizations;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\GovernmentOrganizations\Pages\ManageGovernmentOrganizations;
 use App\Models\Lookups\GovernmentOrganization;
 use BackedEnum;
@@ -21,7 +20,7 @@ class GovernmentOrganizationResource extends Resource
 {
     protected static ?string $model = GovernmentOrganization::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 
     protected static ?string $modelLabel = 'جهة حكومية';
 
@@ -29,7 +28,9 @@ class GovernmentOrganizationResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 7;
 
     public static function form(Schema $schema): Schema
     {

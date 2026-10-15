@@ -675,6 +675,11 @@ class LegacyImporter
         ];
         $count = 0;
         foreach ($this->rows('attachments') as $r) {
+            if (($modules[$r->moduleid ?? 0] ?? null) === 'home') {
+                $count += $this->officeFile($r) ? 1 : 0; // home/upload: the file cloud
+
+                continue;
+            }
             $class = $models[$modules[$r->moduleid ?? 0] ?? ''] ?? null;
             if ($class === null || empty($r->objectid)) {
                 continue;
@@ -695,6 +700,28 @@ class LegacyImporter
             }
         }
         $this->count('attachments', $count);
+    }
+
+    /** A legacy file-cloud upload (attachments with moduleid of home) → OfficeFile. */
+    private function officeFile(object $r): bool
+    {
+        $file = $this->mediaPath.'/'.ltrim((string) $r->path, '/');
+        if (! is_file($file)) {
+            $this->warn("file cloud {$r->id}: file {$r->path} not found");
+
+            return false;
+        }
+        try {
+            $office = \App\Models\OfficeFile::create(['title' => pathinfo((string) ($r->name ?: basename($file)), PATHINFO_FILENAME),
+                'created_at' => $r->timepost ?? now(), 'updated_at' => $r->timepost ?? now()]);
+            $office->addMedia($file)->preservingOriginal()->usingFileName((string) ($r->name ?: basename($file)))->toMediaCollection('file');
+
+            return true;
+        } catch (Throwable $e) {
+            $this->warn("file cloud {$r->id}: ".Str::limit($e->getMessage(), 160));
+
+            return false;
+        }
     }
 
     // ---------------------------------------------------------------- helpers

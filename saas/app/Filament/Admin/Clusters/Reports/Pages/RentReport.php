@@ -34,7 +34,7 @@ class RentReport extends ReportPage
                 TextColumn::make('contract.number')->label(__('العقد')),
                 TextColumn::make('renters')->label(__('المستأجرون'))->state(fn ($record) => $record->contract?->clients->pluck('full_name')->join('، ')),
                 TextColumn::make('unit.title'),
-                TextColumn::make('type')->badge(),
+                TextColumn::make('type')->badge()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('amount')->numeric(2)->summarize(Sum::make('sum')->numeric(2)),
                 ...self::paidColumns(),
                 IconColumn::make('is_collected')->boolean(),

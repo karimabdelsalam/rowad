@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\ClientCategories;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\ClientCategories\Pages\ManageClientCategories;
 use App\Models\Lookups\ClientCategory;
 use BackedEnum;
@@ -21,7 +20,7 @@ class ClientCategoryResource extends Resource
 {
     protected static ?string $model = ClientCategory::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
     protected static ?string $modelLabel = 'تصنيف عميل';
 
@@ -29,7 +28,9 @@ class ClientCategoryResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

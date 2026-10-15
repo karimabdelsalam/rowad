@@ -39,6 +39,8 @@ const pages = [
   { name: 'report-rent', path: '/admin/reports/rent-report', login: 'admin@demo.test', full: true },
   { name: 'report-units', path: '/admin/reports/units-report', login: 'admin@demo.test', full: true },
   { name: 'report-profits', path: '/admin/reports/profits-report', login: 'admin@demo.test', full: true },
+  { name: 'settings-numbering', path: '/admin/numbering', login: 'admin@demo.test', full: true },
+  { name: 'office-files', path: '/admin/office-files', login: 'admin@demo.test' },
   { name: 'settings-website', path: '/admin/website-settings', login: 'admin@demo.test', full: true },
 ];
 

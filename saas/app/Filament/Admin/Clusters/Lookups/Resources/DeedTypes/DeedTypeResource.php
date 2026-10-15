@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\DeedTypes;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\DeedTypes\Pages\ManageDeedTypes;
 use App\Models\Lookups\DeedType;
 use BackedEnum;
@@ -21,7 +20,7 @@ class DeedTypeResource extends Resource
 {
     protected static ?string $model = DeedType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
 
     protected static ?string $modelLabel = 'نوع صك';
 
@@ -29,7 +28,9 @@ class DeedTypeResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 10;
 
     public static function form(Schema $schema): Schema
     {

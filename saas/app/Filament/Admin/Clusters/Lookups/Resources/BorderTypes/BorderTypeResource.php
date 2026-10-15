@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\BorderTypes;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\BorderTypes\Pages\ManageBorderTypes;
 use App\Models\Lookups\BorderType;
 use BackedEnum;
@@ -22,7 +21,7 @@ class BorderTypeResource extends Resource
 {
     protected static ?string $model = BorderType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsPointingOut;
 
     protected static ?string $modelLabel = 'نوع حد';
 
@@ -30,7 +29,9 @@ class BorderTypeResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 11;
 
     public static function form(Schema $schema): Schema
     {

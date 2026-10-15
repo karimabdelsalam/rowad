@@ -34,7 +34,7 @@ class RenterReport extends ReportPage
                 TextColumn::make('due_date')->date('Y-m-d')->sortable(),
                 TextColumn::make('contract.number')->label(__('العقد')),
                 TextColumn::make('unit.title'),
-                TextColumn::make('type')->badge(),
+                TextColumn::make('type')->badge()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('amount')->numeric(2)->summarize(Sum::make('sum')->numeric(2)),
                 ...self::paidColumns(),
                 IconColumn::make('is_collected')->boolean(),

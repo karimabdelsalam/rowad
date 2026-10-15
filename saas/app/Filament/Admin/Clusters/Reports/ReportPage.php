@@ -26,9 +26,44 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 abstract class ReportPage extends Page implements HasTable
 {
-    use InteractsWithTable;
+    use InteractsWithTable {
+        makeTable as makeBaseReportTable;
+    }
 
-    protected static ?string $cluster = ReportsCluster::class;
+    /** Sidebar order and icon per report, following the legacy reports menu. */
+    private const MENU = [
+        'taxes' => [1, Heroicon::OutlinedReceiptPercent],
+        'expenses' => [2, Heroicon::OutlinedArrowTrendingDown],
+        'renter' => [3, Heroicon::OutlinedUser],
+        'unit' => [4, Heroicon::OutlinedHome],
+        'income' => [5, Heroicon::OutlinedArrowTrendingUp],
+        'profits' => [6, Heroicon::OutlinedPresentationChartLine],
+        'banking' => [7, Heroicon::OutlinedBuildingLibrary],
+        'units' => [8, Heroicon::OutlinedChartBar],
+        'corporate_taxes' => [9, Heroicon::OutlinedScale],
+        'rent' => [10, Heroicon::OutlinedCalendarDays],
+    ];
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('التقارير');
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return self::MENU[static::$report][0] ?? null;
+    }
+
+    public static function getNavigationIcon(): Heroicon
+    {
+        return self::MENU[static::$report][1] ?? Heroicon::OutlinedDocumentChartBar;
+    }
+
+    /** Kept under /reports/... as before. */
+    public static function getSlug(?\Filament\Panel $panel = null): string
+    {
+        return 'reports/'.\Illuminate\Support\Str::kebab(class_basename(static::class));
+    }
 
     /** reports.* permission suffix in config/rowad.php */
     protected static string $report;
@@ -63,16 +98,16 @@ abstract class ReportPage extends Page implements HasTable
         return Filter::make('period')
             ->label(__($label))
             ->schema([
-                DatePicker::make('from')->label(__('من'))->default(now()->startOfYear()),
-                DatePicker::make('until')->label(__('إلى'))->default(now()),
+                DatePicker::make('from')->label(__('من'))->default(now()->startOfYear()->toDateString()),
+                DatePicker::make('until')->label(__('إلى'))->default(today()->toDateString()),
             ])
             ->columns(2)
             ->query(fn (Builder $query, array $data) => $query
-                ->when($data['from'] ?? null, fn ($q, $d) => $q->whereDate($column, '>=', $d))
-                ->when($data['until'] ?? null, fn ($q, $d) => $q->whereDate($column, '<=', $d)))
+                ->when($data['from'] ?? null, fn ($q, $d) => $q->whereDate($column, '>=', substr((string) $d, 0, 10)))
+                ->when($data['until'] ?? null, fn ($q, $d) => $q->whereDate($column, '<=', substr((string) $d, 0, 10))))
             ->indicateUsing(fn (array $data) => array_filter([
-                filled($data['from'] ?? null) ? __('من').' '.$data['from'] : null,
-                filled($data['until'] ?? null) ? __('إلى').' '.$data['until'] : null,
+                filled($data['from'] ?? null) ? __('من').' '.substr((string) $data['from'], 0, 10) : null,
+                filled($data['until'] ?? null) ? __('إلى').' '.substr((string) $data['until'], 0, 10) : null,
             ]));
     }
 
@@ -90,17 +125,21 @@ abstract class ReportPage extends Page implements HasTable
         ];
     }
 
+    /** Totals rows read "all <report>" instead of the model's English name. */
+    protected function makeTable(): Table
+    {
+        return $this->makeBaseReportTable()->modelLabel(static::title())->pluralModelLabel(static::title());
+    }
+
+    /** Excel and print come from the table's export menu (TableExport); a CSV header action stays for quick downloads. */
     protected function getHeaderActions(): array
     {
         return [
             Action::make('export')
-                ->label(__('تصدير Excel'))
+                ->label(__('CSV'))
+                ->color('gray')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->action(fn () => $this->exportCsv()),
-            Action::make('print')
-                ->label(__('طباعة'))
-                ->icon(Heroicon::OutlinedPrinter)
-                ->alpineClickHandler('window.print()'),
         ];
     }
 

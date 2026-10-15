@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\TradeOrganizations;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\TradeOrganizations\Pages\ManageTradeOrganizations;
 use App\Models\Lookups\TradeOrganization;
 use BackedEnum;
@@ -21,7 +20,7 @@ class TradeOrganizationResource extends Resource
 {
     protected static ?string $model = TradeOrganization::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;
 
     protected static ?string $modelLabel = 'جهة تجارية';
 
@@ -29,7 +28,9 @@ class TradeOrganizationResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 8;
 
     public static function form(Schema $schema): Schema
     {

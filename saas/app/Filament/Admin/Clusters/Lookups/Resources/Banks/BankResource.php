@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\Banks;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\Banks\Pages\ManageBanks;
 use App\Models\Lookups\Bank;
 use BackedEnum;
@@ -21,7 +20,7 @@ class BankResource extends Resource
 {
     protected static ?string $model = Bank::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
 
     protected static ?string $modelLabel = 'بنك';
 
@@ -29,7 +28,9 @@ class BankResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 9;
 
     public static function form(Schema $schema): Schema
     {

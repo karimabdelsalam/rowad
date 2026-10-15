@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\ExpenseTypes;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\ExpenseTypes\Pages\ManageExpenseTypes;
 use App\Models\Lookups\ExpenseType;
 use BackedEnum;
@@ -21,7 +20,7 @@ class ExpenseTypeResource extends Resource
 {
     protected static ?string $model = ExpenseType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
 
     protected static ?string $modelLabel = 'نوع مصروف';
 
@@ -29,7 +28,9 @@ class ExpenseTypeResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {

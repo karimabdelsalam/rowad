@@ -81,11 +81,7 @@ trait ConfiguresPanel
     {
         $dir = app_path('Filament/'.str_replace('\\', '/', $namespace));
 
-        foreach (glob("{$dir}/Clusters/*/Pages", GLOB_ONLYDIR) ?: [] as $clusterPages) {
-            $cluster = basename(dirname($clusterPages));
-            $panel->discoverPages(in: $clusterPages, for: "App\\Filament\\{$namespace}\\Clusters\\{$cluster}\\Pages");
-        }
-
+        // discoverClusters() also registers the pages inside each cluster
         return $panel
             ->discoverResources(in: "{$dir}/Resources", for: "App\\Filament\\{$namespace}\\Resources")
             ->discoverPages(in: "{$dir}/Pages", for: "App\\Filament\\{$namespace}\\Pages")

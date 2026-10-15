@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\TransactionTypes;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\TransactionTypes\Pages\ManageTransactionTypes;
 use App\Models\Lookups\TransactionType;
 use BackedEnum;
@@ -23,7 +22,7 @@ class TransactionTypeResource extends Resource
 {
     protected static ?string $model = TransactionType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
     protected static ?string $modelLabel = 'نوع حركة';
 
@@ -31,7 +30,9 @@ class TransactionTypeResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 6;
 
     public static function form(Schema $schema): Schema
     {

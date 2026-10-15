@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Clusters\Lookups\Resources\PropertyCategories;
 
-use App\Filament\Admin\Clusters\Lookups\LookupsCluster;
 use App\Filament\Admin\Clusters\Lookups\Resources\PropertyCategories\Pages\ManagePropertyCategories;
 use App\Models\Lookups\PropertyCategory;
 use BackedEnum;
@@ -21,7 +20,7 @@ class PropertyCategoryResource extends Resource
 {
     protected static ?string $model = PropertyCategory::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
     protected static ?string $modelLabel = 'تصنيف عقار';
 
@@ -29,7 +28,9 @@ class PropertyCategoryResource extends Resource
 
     protected static ?string $permission = 'lookups';
 
-    protected static ?string $cluster = LookupsCluster::class;
+    protected static string|\UnitEnum|null $navigationGroup = 'قواعد البيانات';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {
