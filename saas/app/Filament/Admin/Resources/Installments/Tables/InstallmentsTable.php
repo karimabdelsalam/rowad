@@ -103,6 +103,22 @@ class InstallmentsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('issueInvoice')
+                        ->label(__('إصدار فاتورة'))
+                        ->icon(Heroicon::OutlinedReceiptPercent)
+                        ->requiresConfirmation()
+                        ->visible(fn () => self::allowed('invoice'))
+                        ->action(function (Collection $records) {
+                            try {
+                                $invoice = app(\App\Services\Finance\InvoiceService::class)->fromInstallments($records->load(['unit', 'contract.clients']));
+                                Notification::make()->title(__('تم إصدار الفاتورة :number', ['number' => $invoice->number]))->success()
+                                    ->actions([\Filament\Actions\Action::make('print')->label(__('طباعة'))
+                                        ->url(route('documents.print', ['type' => 'invoice', 'id' => $invoice->id]), shouldOpenInNewTab: true)])
+                                    ->send();
+                            } catch (BusinessRuleException $e) {
+                                Notification::make()->title($e->getMessage())->danger()->send();
+                            }
+                        }),
                     BulkAction::make('collectSelected')
                         ->label(__('تحصيل المحدد'))
                         ->icon(Heroicon::OutlinedCheckCircle)

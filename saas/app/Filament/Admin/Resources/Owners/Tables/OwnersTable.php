@@ -72,6 +72,12 @@ class OwnersTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                \Filament\Actions\Action::make('print')
+                    ->label(__('طباعة'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->url(fn ($record) => route('documents.print', ['type' => 'owner_statement', 'id' => $record->getKey()]))
+                    ->openUrlInNewTab(),
+
                 self::portalAccountAction('owners'),
                 self::loginAsAction('owners', 'owner'),
                 ViewAction::make(),

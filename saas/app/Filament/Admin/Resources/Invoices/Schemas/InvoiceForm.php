@@ -2,60 +2,43 @@
 
 namespace App\Filament\Admin\Resources\Invoices\Schemas;
 
-use App\Enums\Calendar;
-use Filament\Forms\Components\DatePicker;
+use App\Models\Client;
+use App\Support\Settings;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
+/** Manual invoice (legacy invoices::create with free items). Totals and ZATCA QR are computed on save. */
 class InvoiceForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                TextInput::make('number')
-                    ->required(),
-                TextInput::make('type')
-                    ->required()
-                    ->default('simplified'),
-                Select::make('client_id')
-                    ->relationship('client', 'id'),
-                TextInput::make('customer_name'),
-                TextInput::make('customer_vat_number'),
-                Select::make('calendar')
-                    ->options(Calendar::class)
-                    ->default('gregorian')
-                    ->required(),
-                DatePicker::make('issue_date')
-                    ->required(),
-                Textarea::make('items')
-                    ->required()
-                    ->columnSpanFull(),
-                TextInput::make('subtotal')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('vat_total')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                TextInput::make('total')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('paid_amount')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Textarea::make('zatca_qr')
-                    ->columnSpanFull(),
-                TextInput::make('zatca_uuid'),
-                TextInput::make('zatca_hash'),
-                TextInput::make('zatca_status'),
-                Textarea::make('notes')
-                    ->columnSpanFull(),
-                TextInput::make('created_by')
-                    ->numeric(),
-            ]);
+        return $schema->components([
+            Section::make(__('العميل'))->columns(3)->schema([
+                Select::make('client_id')->relationship('client', 'full_name')->searchable()->preload()->live()
+                    ->afterStateUpdated(function (?string $state, Set $set) {
+                        $client = $state ? Client::find($state) : null;
+                        $set('customer_name', $client?->displayName());
+                        $set('customer_vat_number', $client?->vat_number);
+                    }),
+                TextInput::make('customer_name')->required(),
+                TextInput::make('customer_vat_number')->regex('/^3\d{13}3$/'),
+            ]),
+            Repeater::make('items')
+                ->label(__('البنود'))
+                ->columns(4)
+                ->minItems(1)
+                ->schema([
+                    TextInput::make('description')->label(__('البيان'))->required()->columnSpan(2),
+                    TextInput::make('quantity')->label(__('الكمية'))->numeric()->default(1)->minValue(0.01)->required(),
+                    TextInput::make('unit_price')->label(__('السعر قبل الضريبة'))->numeric()->minValue(0)->required(),
+                    TextInput::make('vat_percent')->label(__('نسبة الضريبة %'))->numeric()->default(fn () => Settings::get('vat_percent', 15)),
+                ]),
+            Textarea::make('notes')->rows(2),
+        ]);
     }
 }

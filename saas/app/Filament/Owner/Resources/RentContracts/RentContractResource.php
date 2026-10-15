@@ -63,7 +63,13 @@ class RentContractResource extends PortalResource
                 TextColumn::make('rent_amount')->numeric(2),
                 TextColumn::make('status')->badge(),
             ])
-            ->recordActions([ViewAction::make()]);
+            ->recordActions([
+                \Filament\Actions\Action::make('print')
+                    ->label(__('طباعة'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->url(fn ($record) => route('documents.print', ['type' => 'rent_contract', 'id' => $record->getKey()]))
+                    ->openUrlInNewTab(),
+ViewAction::make()]);
     }
 
     public static function getPages(): array

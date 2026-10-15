@@ -45,6 +45,12 @@ class ReceiptVouchersTable
                         ->when($data['until'] ?? null, fn ($q, $d) => $q->whereDate('issued_at', '<=', $d))),
                 TrashedFilter::make(),
             ])
-            ->recordActions([ViewAction::make(), EditAction::make()]);
+            ->recordActions([
+                \Filament\Actions\Action::make('print')
+                    ->label(__('طباعة'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->url(fn ($record) => route('documents.print', ['type' => 'receipt_voucher', 'id' => $record->getKey()]))
+                    ->openUrlInNewTab(),
+ViewAction::make(), EditAction::make()]);
     }
 }

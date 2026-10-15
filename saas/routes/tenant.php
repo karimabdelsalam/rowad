@@ -31,6 +31,9 @@ Route::middleware([
         return \Illuminate\Support\Facades\Storage::disk('public')->response($path, headers: ['Cache-Control' => 'public, max-age=3600']);
     })->name('site.logo');
 
+    Route::get('/print/{type}/{id}', \App\Http\Controllers\PrintController::class)->middleware('auth')->whereNumber('id')->name('documents.print');
+    Route::get('/verify/{type}/{id}', [\App\Http\Controllers\PrintController::class, 'verify'])->middleware('signed')->whereNumber('id')->name('documents.verify');
+
     Route::get('/impersonate/{user}/{panel}', [\App\Http\Controllers\ImpersonationController::class, 'start'])
         ->middleware('signed')->name('portal.impersonate');
     Route::get('/impersonate/stop', [\App\Http\Controllers\ImpersonationController::class, 'stop'])->name('portal.impersonate.stop');

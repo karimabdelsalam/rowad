@@ -8,4 +8,15 @@ use Filament\Resources\Pages\ManageRecords;
 class ManageOwnerTransactions extends ManageRecords
 {
     protected static string $resource = OwnerTransactionResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('print')
+                ->label(__('طباعة كشف الحساب'))
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                ->url(fn () => route('documents.print', ['type' => 'owner_statement', 'id' => \App\Support\Portal::owner()->getKey()]))
+                ->openUrlInNewTab(),
+        ];
+    }
 }

@@ -67,6 +67,11 @@ class RentContractsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                \Filament\Actions\Action::make('print')
+                    ->label(__('طباعة'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->url(fn ($record) => route('documents.print', ['type' => 'rent_contract', 'id' => $record->getKey()]))
+                    ->openUrlInNewTab(),
                 ViewAction::make(),
                 EditAction::make()->visible(fn (RentContract $record) => $record->status === ContractStatus::Active),
                 ActionGroup::make([

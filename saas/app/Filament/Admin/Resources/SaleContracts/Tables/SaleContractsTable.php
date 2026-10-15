@@ -62,6 +62,11 @@ class SaleContractsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                \Filament\Actions\Action::make('print')
+                    ->label(__('طباعة'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->url(fn ($record) => route('documents.print', ['type' => 'sale_contract', 'id' => $record->getKey()]))
+                    ->openUrlInNewTab(),
                 ViewAction::make(),
                 EditAction::make(),
             ])

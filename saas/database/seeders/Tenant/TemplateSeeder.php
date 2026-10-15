@@ -63,8 +63,8 @@ class TemplateSeeder extends Seeder
     private function printTemplates(): array
     {
         return [
-            'rent_contract' => ['عقد إيجار', '<h3 style="text-align:center">عقد إيجار رقم {serial}</h3><p>{number} — {doc_date}</p><p>إنه في يوم {today} الموافق {today_date} تم الاتفاق بين المؤجر: {owners} والمستأجر: {renters} على تأجير الوحدة {unit} الكائنة في {location} لمدة {period} تبدأ من {start_date} وتنتهي في {end_date} بقيمة إيجارية {rent_amount} تدفع {payment_cycle}.</p>{terms}<p>{qrcode_owner} {qrcode_renter}</p>'],
-            'sale_contract' => ['عقد بيع', '<h3 style="text-align:center">عقد بيع رقم {serial}</h3><p>تم الاتفاق بين البائع: {owners} والمشتري: {buyers} على بيع الوحدة {unit} بمبلغ إجمالي {total_amount} ({payment_type}).</p>{installments_table}{terms}'],
+            'rent_contract' => ['عقد إيجار', '<h3 style="text-align:center">عقد إيجار رقم {serial}</h3><p>{number} — {doc_date}</p><p>إنه في يوم {today} الموافق {today_date} تم الاتفاق بين المؤجر: {owners} والمستأجر: {renters} على تأجير الوحدة {unit} الكائنة في {location} لمدة {period} تبدأ من {start_date} وتنتهي في {end_date} بقيمة إيجارية {rent_amount} ({rent_amount_words}) تدفع {payment_cycle}.</p>{terms}<p>{qrcode_owner} {qrcode_renter}</p>'],
+            'sale_contract' => ['عقد بيع', '<h3 style="text-align:center">عقد بيع رقم {serial}</h3><p>تم الاتفاق بين البائع: {owners} والمشتري: {buyers} على بيع الوحدة {unit} بمبلغ إجمالي {total_amount} ({total_amount_words}) — {payment_type}.</p>{installments_table}{terms}'],
             'receipt_voucher' => ['سند قبض', '<h3 style="text-align:center">سند قبض رقم {serial}</h3><p>{doc_date}</p><p>استلمنا من: {party} مبلغ {amount} ({amount_words}) وذلك عن: {reason} — طريقة الدفع: {payment_method}</p>'],
             'payment_voucher' => ['سند صرف', '<h3 style="text-align:center">سند صرف رقم {serial}</h3><p>{doc_date}</p><p>صرفنا إلى: {party} مبلغ {amount} ({amount_words}) وذلك عن: {reason} — طريقة الدفع: {payment_method}</p>'],
             'invoice' => ['فاتورة', '<h3 style="text-align:center">فاتورة رقم {serial}</h3><p>{doc_date}</p><p>العميل: {customer}</p>{items_table}<p>الإجمالي: {total}</p>'],

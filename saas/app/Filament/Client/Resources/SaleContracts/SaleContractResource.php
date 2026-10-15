@@ -58,7 +58,13 @@ class SaleContractResource extends PortalResource
                 TextColumn::make('payment_type')->badge(),
                 TextColumn::make('status')->badge(),
             ])
-            ->recordActions([ViewAction::make()]);
+            ->recordActions([
+                \Filament\Actions\Action::make('print')
+                    ->label(__('طباعة'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->url(fn ($record) => route('documents.print', ['type' => 'sale_contract', 'id' => $record->getKey()]))
+                    ->openUrlInNewTab(),
+ViewAction::make()]);
     }
 
     public static function getPages(): array
