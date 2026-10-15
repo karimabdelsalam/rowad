@@ -36,6 +36,32 @@ abstract class AssistantPage extends Page
 
     public ?string $error = null;
 
+    /** "Ask about this" from a record page: ?about=unit:12 */
+    #[Url]
+    public ?string $about = null;
+
+    /** @var array{type: string, id: int, label: string}|null */
+    public ?array $subject = null;
+
+    /** Records staff can ask about, with the permission needed to see them and starter questions. */
+    private const SUBJECTS = [
+        'unit' => [\App\Models\Unit::class, 'units.view', 'title', 'الوحدة', ['لخص وضع هذه الوحدة', 'هل على هذه الوحدة مبالغ متأخرة؟', 'ما تاريخ عقود هذه الوحدة؟']],
+        'building' => [\App\Models\Building::class, 'buildings.view', 'title', 'المبنى', ['ما أداء هذا المبنى؟', 'ما الوحدات الشاغرة في هذا المبنى؟', 'كم المتأخرات على وحدات هذا المبنى؟']],
+        'rent_contract' => [\App\Models\RentContract::class, 'rent_contracts.view', 'number', 'عقد الإيجار', ['لخص هذا العقد', 'ما الدفعات المتبقية على هذا العقد؟', 'هل المستأجر ملتزم بالسداد؟']],
+        'owner' => [\App\Models\Owner::class, 'owners.view', 'full_name', 'المالك', ['لخص حساب هذا المالك', 'ما وحدات هذا المالك وحالتها؟', 'كم المستحق لهذا المالك؟']],
+        'client' => [\App\Models\Client::class, 'clients.view', 'full_name', 'العميل', ['لخص وضع هذا العميل', 'هل على هذا العميل متأخرات؟', 'ما عقود هذا العميل؟']],
+    ];
+
+    public static function askAboutAction(string $type): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('askAi')
+            ->label(__('اسأل المساعد عن هذا'))
+            ->icon(Heroicon::OutlinedSparkles)
+            ->color('gray')
+            ->visible(fn () => static::canAccess())
+            ->url(fn ($record) => static::getUrl(['about' => $type.':'.$record->getKey()]));
+    }
+
     /** @return list<string> starter questions for this panel */
     abstract protected function suggestions(): array;
 
@@ -69,6 +95,27 @@ abstract class AssistantPage extends Page
         if ($this->conversationId && ! $this->conversation()) {
             $this->conversationId = null;
         }
+        $this->subject = $this->about && ! $this->conversationId ? $this->resolveSubject($this->about) : null;
+    }
+
+    /** @return array{type: string, id: int, label: string}|null only records this user may open */
+    private function resolveSubject(string $about): ?array
+    {
+        [$type, $id] = array_pad(explode(':', $about, 2), 2, null);
+        $def = self::SUBJECTS[$type] ?? null;
+        $user = auth()->user();
+        if ($def === null || Assistant::panelFor($user) !== 'admin' || ! ($user->is_super_admin || $user->can($def[1]))) {
+            return null;
+        }
+        $record = $def[0]::find((int) $id);
+
+        return $record ? ['type' => $type, 'id' => $record->getKey(), 'label' => __($def[3]).' «'.$record->{$def[2]}.'»'] : null;
+    }
+
+    public function clearSubject(): void
+    {
+        $this->subject = null;
+        $this->about = null;
     }
 
     public function conversation(): ?AiConversation
@@ -97,7 +144,10 @@ abstract class AssistantPage extends Page
         }
         $assistant = app(Assistant::class);
         try {
-            $conversation = $this->conversation() ?? $assistant->startConversation(auth()->user());
+            $conversation = $this->conversation() ?? $assistant->startConversation(auth()->user(), $this->subject ? [
+                'type' => 'record',
+                'subject' => "{$this->subject['label']} ({$this->subject['type']} id {$this->subject['id']})",
+            ] : null);
             $this->conversationId = $conversation->id;
             if (! app()->runningInConsole()) {
                 set_time_limit(180); // an answer that needs several data lookups can take longer than PHP's default 30 s
@@ -125,6 +175,7 @@ abstract class AssistantPage extends Page
         $this->conversationId = null;
         $this->error = null;
         $this->question = '';
+        $this->clearSubject();
     }
 
     public function deleteConversation(int $id): void
@@ -144,7 +195,7 @@ abstract class AssistantPage extends Page
             'conversations' => AiConversation::where('user_id', auth()->id())->where('panel', Assistant::panelFor(auth()->user()))
                 ->latest('updated_at')->limit(30)->get(['id', 'title', 'updated_at', 'context']),
             'messages' => $conversation?->messages()->get() ?? collect(),
-            'suggestions' => array_map('__', $this->suggestions()),
+            'suggestions' => array_map('__', $this->subject ? self::SUBJECTS[$this->subject['type']][4] : $this->suggestions()),
             // the office's quota is its business, not its owners' or tenants'
             'remaining' => $limit === null || Assistant::panelFor(auth()->user()) !== 'admin' ? null : max(0, $limit - (int) PlanLimits::used('ai')),
             'intro' => __($this->intro()),

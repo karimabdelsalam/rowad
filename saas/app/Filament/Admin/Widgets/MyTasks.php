@@ -15,7 +15,7 @@ class MyTasks extends TableWidget
 {
     protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 6];
 
-    protected static ?int $sort = 8;
+    protected static ?int $sort = 9;
 
     public function table(Table $table): Table
     {

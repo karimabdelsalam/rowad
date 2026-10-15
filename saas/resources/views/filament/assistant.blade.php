@@ -68,6 +68,8 @@
         .ai-send svg { width: 20px; height: 20px; }
         [dir=rtl] .ai-send svg { transform: scaleX(-1); }
         .ai-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: .75rem; color: var(--rowad-muted); }
+        .ai-subject { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 4px 10px; border-radius: 999px; font-size: .82rem;
+            background: rgb(15 118 110 / .08); color: var(--rowad-brand-dark); }
         .ai-notice { margin-top: 18px; padding: 12px 16px; border-radius: 12px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: .9rem; font-weight: 600; }
     </style>
 
@@ -154,6 +156,13 @@
             </div>
 
             <form class="ai-composer" wire:submit="send()">
+                @if ($subject && $messages->isEmpty())
+                    <div class="ai-subject">
+                        <x-filament::icon icon="heroicon-o-link" class="h-4 w-4" />
+                        <span>{{ __('تسأل عن:') }} <b>{{ $subject['label'] }}</b></span>
+                        <button type="button" wire:click="clearSubject" title="{{ __('إلغاء') }}"><x-filament::icon icon="heroicon-m-x-mark" class="h-4 w-4" /></button>
+                    </div>
+                @endif
                 <div class="ai-input">
                     <textarea wire:model="question" rows="1" maxlength="4000" placeholder="{{ $example }}"
                         x-data x-on:input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"

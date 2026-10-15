@@ -11,7 +11,7 @@ class CollectionsChart extends ChartWidget
 {
     use StyledChart;
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 8];
 

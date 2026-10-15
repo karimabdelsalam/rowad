@@ -141,6 +141,11 @@ abstract class ReportPage extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('analyze')
+                ->label(__('تحليل ذكي'))
+                ->icon(Heroicon::OutlinedSparkles)
+                ->visible(fn () => \App\Filament\Admin\Pages\Assistant::canAccess())
+                ->action(fn () => $this->analyzeWithAi()),
             Action::make('export')
                 ->label(__('CSV'))
                 ->color('gray')
@@ -155,27 +160,79 @@ abstract class ReportPage extends Page implements HasTable
         return $this->getTable()->hasQuery() ? $this->getFilteredSortedTableQuery()->get() : $this->getTableRecords();
     }
 
-    /** CSV with a UTF-8 BOM so Excel shows Arabic correctly; uses the current filters and sort. */
-    public function exportCsv(): StreamedResponse
+    /**
+     * The report as plain rows with the current filters and sort: what the CSV export writes and what the AI analysis reads.
+     *
+     * @return array{0: list<string>, 1: \Generator<list<string>>}
+     */
+    protected function reportRows(): array
     {
-        $table = $this->getTable();
-        $columns = collect($table->getColumns())->filter(fn (Column $c) => ! $c->isHidden() && ! $c->isToggledHidden());
+        $columns = collect($this->getTable()->getColumns())->filter(fn (Column $c) => ! $c->isHidden() && ! $c->isToggledHidden());
         $records = $this->exportRecords();
-
-        return response()->streamDownload(function () use ($columns, $records) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, $columns->map(fn (Column $c) => strip_tags((string) $c->getLabel()))->all());
+        $rows = (function () use ($columns, $records) {
             foreach ($records as $record) {
-                fputcsv($out, $columns->map(function (Column $c) use ($record) {
+                yield $columns->map(function (Column $c) use ($record) {
                     $state = $c->record($record)->getState();
                     $state = $state instanceof \BackedEnum && method_exists($state, 'getLabel') ? $state->getLabel() : $state;
                     $state = $state instanceof \DateTimeInterface ? $state->format('Y-m-d') : $state;
 
                     return is_array($state) ? implode('، ', $state) : (string) $state;
-                })->all());
+                })->values()->all();
+            }
+        })();
+
+        return [$columns->map(fn (Column $c) => strip_tags((string) $c->getLabel()))->values()->all(), $rows];
+    }
+
+    /** CSV with a UTF-8 BOM so Excel shows Arabic correctly; uses the current filters and sort. */
+    public function exportCsv(): StreamedResponse
+    {
+        [$header, $rows] = $this->reportRows();
+
+        return response()->streamDownload(function () use ($header, $rows) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, $header);
+            foreach ($rows as $row) {
+                fputcsv($out, $row);
             }
             fclose($out);
         }, static::$report.'-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** Rows sent to the AI analysis; enough for trends without an oversized request. */
+    private const ANALYSIS_ROWS = 400;
+
+    /** "تحليل ذكي": the AI reads the report as filtered on screen, and the analysis opens in the assistant for follow-up questions. */
+    public function analyzeWithAi(): void
+    {
+        [$header, $rows] = $this->reportRows();
+        $data = [];
+        $total = 0;
+        foreach ($rows as $row) {
+            if (++$total <= self::ANALYSIS_ROWS) {
+                $data[] = array_combine(array_map(fn ($h, $i) => $h !== '' ? $h : 'col'.$i, $header, array_keys($header)), $row);
+            }
+        }
+        $filters = collect($this->tableFilters ?? [])->map(fn ($f) => array_filter((array) $f, fn ($v) => filled($v)))->filter()->all();
+
+        try {
+            $answer = app(\App\Services\Ai\Assistant::class)->analyze(auth()->user(), __('تحليل :report', ['report' => static::title()]), [
+                'report' => static::title(),
+                'filters' => $filters ?: __('بدون تصفية'),
+                'rows_total' => $total,
+                'rows_included' => count($data),
+                'rows' => $data,
+            ], 'Analyse this report for the office manager: key totals, trends over time, the biggest and the unusual items, risks '
+                .'(late payments, vacancies, expenses growing faster than income) and 3-5 concrete recommendations. '
+                .($total > self::ANALYSIS_ROWS ? 'Only the first '.self::ANALYSIS_ROWS." of {$total} rows are included; say so when it matters. " : '')
+                .'Use tables where helpful.');
+        } catch (\App\Services\Ai\AiUnavailable $e) {
+            \Filament\Notifications\Notification::make()->title($e->getMessage())->warning()->send();
+
+            return;
+        }
+
+        $this->redirect(\App\Filament\Admin\Pages\Assistant::getUrl(['c' => $answer->ai_conversation_id]));
     }
 }

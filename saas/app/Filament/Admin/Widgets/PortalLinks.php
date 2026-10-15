@@ -10,7 +10,7 @@ class PortalLinks extends Widget
 {
     protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 4];
 
-    protected static ?int $sort = 10;
+    protected static ?int $sort = 11;
 
     protected string $view = 'filament.widgets.portal-links';
 

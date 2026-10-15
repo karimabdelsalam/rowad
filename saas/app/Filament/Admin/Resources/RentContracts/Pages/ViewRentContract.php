@@ -15,6 +15,7 @@ class ViewRentContract extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            \App\Filament\Admin\Pages\Assistant::askAboutAction('rent_contract'),
             Action::make('print')
                 ->label(__('طباعة العقد'))
                 ->icon(Heroicon::OutlinedPrinter)

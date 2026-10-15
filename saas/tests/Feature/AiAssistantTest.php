@@ -274,4 +274,80 @@ class AiAssistantTest extends TestCase
         $this->tenant->unsetRelation('plan');
         $this->assertFalse(\App\Filament\Admin\Pages\Assistant::canAccess());
     }
+
+    /** Fake API that answers any one-shot analysis with fixed text and records the request. */
+    private function fakeAnalysis(string $answer = 'تحليل'): void
+    {
+        Http::fake(['api.anthropic.com/*' => function (Request $request) use ($answer) {
+            $this->sent[] = $request->data();
+
+            return Http::response(['content' => [['type' => 'text', 'text' => $answer]], 'stop_reason' => 'end_turn', 'usage' => ['input_tokens' => 10, 'output_tokens' => 5]]);
+        }]);
+    }
+
+    public function test_report_analysis_reads_the_filtered_report_and_opens_in_the_assistant(): void
+    {
+        \App\Models\ReceiptVoucher::create(['issued_at' => '2026-04-01', 'amount' => 777, 'party_name' => 'مستأجر التقرير']);
+        $this->fakeAnalysis('## الدخل ممتاز');
+        $this->actingAs($this->staff());
+        \Filament\Facades\Filament::setCurrentPanel('admin');
+
+        $page = \Livewire\Livewire::test(\App\Filament\Admin\Clusters\Reports\Pages\IncomeReport::class)
+            ->callAction('analyze');
+
+        $conversation = \App\Models\AiConversation::sole();
+        $page->assertRedirect(\App\Filament\Admin\Pages\Assistant::getUrl(['c' => $conversation->id]));
+        $this->assertSame('report', $conversation->context['type']);
+        $this->assertStringContainsString('777', $this->sent[0]['messages'][0]['content']);
+        $this->assertArrayNotHasKey('tools', $this->sent[0]);
+        $this->assertSame(['user', 'assistant'], $conversation->messages->pluck('role')->all());
+        $this->assertStringStartsWith('تحليل', $conversation->messages[0]->content); // readable, not the internal instruction
+    }
+
+    public function test_dashboard_insights_are_generated_once_and_shared(): void
+    {
+        $this->fakeAnalysis('- **الإشغال** 50%');
+        $this->actingAs($this->staff());
+        \Filament\Facades\Filament::setCurrentPanel('admin');
+
+        \Livewire\Livewire::test(\App\Filament\Admin\Widgets\AiInsights::class)
+            ->assertSee('توليد الرؤى')
+            ->call('generate')
+            ->assertSee('<strong>الإشغال</strong>', false)
+            ->assertSee('تحديث الرؤى');
+
+        $this->assertStringContainsString('"occupancy"', $this->sent[0]['messages'][0]['content']);
+        $this->actingAs($this->staff('accountant'));
+        \Livewire\Livewire::test(\App\Filament\Admin\Widgets\AiInsights::class)->assertSee('<strong>الإشغال</strong>', false);
+        $this->assertCount(1, $this->sent);
+
+        $this->actingAs($this->staff('agent')); // no reports permission
+        $this->assertFalse(\App\Filament\Admin\Widgets\AiInsights::canView());
+    }
+
+    public function test_asking_about_a_record_carries_it_as_context(): void
+    {
+        $unit = $this->makeUnit([[100, 100]], ['title' => 'شقة السياق']);
+        $this->fakeApi('unit_details', ['unit_id' => $unit->id]);
+        $this->actingAs($this->staff());
+        \Filament\Facades\Filament::setCurrentPanel('admin');
+
+        \Livewire\Livewire::withQueryParams(['about' => 'unit:'.$unit->id])
+            ->test(\App\Filament\Admin\Pages\Assistant::class)
+            ->assertSee('شقة السياق')
+            ->assertSee('لخص وضع هذه الوحدة')
+            ->call('send', 'لخص وضع هذه الوحدة')
+            ->call('answer');
+
+        $this->assertStringContainsString("unit id {$unit->id}", $this->sent[0]['messages'][0]['content']);
+        $this->assertSame('شقة السياق', $this->toolResult()['title']);
+
+        // A portal user cannot use ?about to reach office records.
+        $owner = app(PortalAccounts::class)->issue($unit->owners()->first(), 'own@office.test', 'secret-pass-1')['user'];
+        $this->actingAs($owner);
+        \Filament\Facades\Filament::setCurrentPanel('owner');
+        \Livewire\Livewire::withQueryParams(['about' => 'unit:'.$unit->id])
+            ->test(\App\Filament\Owner\Pages\Assistant::class)
+            ->assertSet('subject', null);
+    }
 }

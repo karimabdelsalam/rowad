@@ -13,6 +13,7 @@ class ViewClient extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            \App\Filament\Admin\Pages\Assistant::askAboutAction('client'),
             EditAction::make(),
         ];
     }

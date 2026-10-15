@@ -134,7 +134,8 @@ class Assistant
         self::ensureAvailable();
         $conversation = $this->startConversation($user, ['type' => $kind, 'title' => $title]);
         $conversation->update(['title' => $title]);
-        $conversation->messages()->create(['role' => 'user', 'content' => $instruction, 'kind' => $kind]);
+        // What the user sees as their request; the instruction to the model stays internal.
+        $conversation->messages()->create(['role' => 'user', 'content' => $title, 'kind' => $kind]);
 
         $response = $this->client->message($this->systemPrompt($user), [[
             'role' => 'user',

@@ -16,7 +16,7 @@ class PersonalNotes extends TableWidget
 {
     protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 6];
 
-    protected static ?int $sort = 9;
+    protected static ?int $sort = 10;
 
     public function table(Table $table): Table
     {
