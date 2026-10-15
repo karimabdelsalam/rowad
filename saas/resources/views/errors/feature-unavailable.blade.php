@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@php($ar = app()->getLocale() !== 'en')
+@section('code', $ar ? 'غير متاح' : 'Not available')
+@section('title', $ar ? 'غير متاح في الباقة الحالية' : 'Not in the current plan')
+@section('message', $message.' '.($ar ? 'تواصل مع المؤسسة لمزيد من المعلومات.' : 'Please contact the organisation.'))

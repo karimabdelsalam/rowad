@@ -1,0 +1,176 @@
+<?php
+
+namespace App\Filament\Admin\Pages;
+
+use App\Jobs\SendOutgoingMessage;
+use App\Models\Plan;
+use App\Models\Tenant;
+use App\Support\PlanLimits;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
+use UnitEnum;
+
+/** The organisation's plan, what it has used of it, and a way to ask for an upgrade (legacy updatecore plan page). */
+class Subscription extends Page
+{
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
+
+    protected static string|UnitEnum|null $navigationGroup = 'الإعدادات';
+
+    protected static ?int $navigationSort = 9;
+
+    protected static ?string $slug = 'subscription';
+
+    protected string $view = 'filament.admin.subscription';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('الاشتراك');
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __(static::$navigationGroup);
+    }
+
+    public function getTitle(): string
+    {
+        return __('الاشتراك');
+    }
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        return tenancy()->initialized && $user !== null && ($user->is_super_admin || $user->can('settings.update'));
+    }
+
+    protected function getViewData(): array
+    {
+        /** @var Tenant $office */
+        $office = tenant();
+        $plan = PlanLimits::plan();
+        $subscription = $office->activeSubscription;
+        $ar = app()->getLocale() === 'ar';
+
+        $quotas = collect(PlanLimits::QUOTAS)->map(function (array $quota, string $key) {
+            $limit = PlanLimits::limit($key);
+            $used = PlanLimits::used($key);
+
+            return [
+                'label' => __($quota[1]),
+                'used' => $used,
+                'limit' => $limit,
+                'percent' => $limit ? min(100, (int) round($used / $limit * 100)) : null,
+                'level' => $limit === null ? 'ok' : ($used >= $limit ? 'full' : ($used >= $limit * 0.8 ? 'near' : 'ok')),
+            ];
+        })->all();
+
+        return [
+            'office' => $office,
+            'plan' => $plan,
+            'planName' => $plan ? ($ar ? $plan->name_ar : $plan->name_en) : __('غير محدودة'),
+            'status' => self::statusLabel($office),
+            'statusColor' => match ($office->status) {
+                Tenant::STATUS_ACTIVE => 'success',
+                Tenant::STATUS_TRIAL => 'info',
+                Tenant::STATUS_PAST_DUE => 'warning',
+                default => 'danger',
+            },
+            'endsAt' => $office->status === Tenant::STATUS_TRIAL ? $office->trial_ends_at : $subscription?->ends_at,
+            'endsLabel' => $office->status === Tenant::STATUS_TRIAL ? __('تنتهي التجربة المجانية') : __('ينتهي الاشتراك'),
+            'quotas' => $quotas,
+            'features' => collect(PlanLimits::FEATURES)->map(fn ($label, $key) => ['label' => __($label), 'on' => PlanLimits::allows($key)])->all(),
+            'request' => $office->upgrade_request ? [
+                'plan' => ($requested = Plan::find($office->upgrade_request['plan_id'] ?? null)) ? ($ar ? $requested->name_ar : $requested->name_en) : '-',
+                'at' => $office->upgrade_request['at'],
+            ] : null,
+            'storageMeasuredAt' => $office->usage['recorded_at'] ?? null,
+        ];
+    }
+
+    public static function statusLabel(Tenant $office): string
+    {
+        return __(match ($office->status) {
+            Tenant::STATUS_TRIAL => 'فترة تجريبية',
+            Tenant::STATUS_ACTIVE => 'نشط',
+            Tenant::STATUS_PAST_DUE => 'متأخر السداد',
+            Tenant::STATUS_SUSPENDED => 'موقوف',
+            default => 'ملغي',
+        });
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('requestUpgrade')
+                ->label(__('طلب ترقية الباقة'))
+                ->icon(Heroicon::OutlinedArrowTrendingUp)
+                ->visible(fn () => self::upgradeOptions() !== [])
+                ->modalHeading(__('طلب ترقية الباقة'))
+                ->modalDescription(__('يصل طلبك لفريق عقار نوفا ويتواصل معك لإتمام الترقية. لا يتغير شيء في حسابك قبل الموافقة.'))
+                ->modalSubmitActionLabel(__('إرسال الطلب'))
+                ->schema([
+                    Radio::make('plan_id')
+                        ->label(__('الباقة المطلوبة'))
+                        ->options(fn () => self::upgradeOptions())
+                        ->required(),
+                    Textarea::make('note')->label(__('ملاحظات'))->rows(3)->maxLength(1000),
+                ])
+                ->action(fn (array $data) => $this->requestUpgrade((int) $data['plan_id'], $data['note'] ?? null)),
+        ];
+    }
+
+    /** @return array<int, string> */
+    public static function upgradeOptions(): array
+    {
+        $ar = app()->getLocale() === 'ar';
+        $current = PlanLimits::plan();
+
+        return Plan::query()->where('is_active', true)
+            ->when($current, fn ($q) => $q->whereKeyNot($current->getKey())->where('monthly_price', '>', $current->monthly_price))
+            ->orderBy('monthly_price')->get()
+            ->mapWithKeys(fn (Plan $plan) => [$plan->id => sprintf('%s — %s %s', $ar ? $plan->name_ar : $plan->name_en,
+                number_format((float) $plan->monthly_price), __('ر.س / شهريًا'))])
+            ->all();
+    }
+
+    public function requestUpgrade(int $planId, ?string $note): void
+    {
+        abort_unless(array_key_exists($planId, self::upgradeOptions()), 422);
+        $plan = Plan::findOrFail($planId);
+        /** @var Tenant $office */
+        $office = tenant();
+        $user = auth()->user();
+
+        $office->forceFill(['upgrade_request' => [
+            'plan_id' => $plan->id,
+            'plan' => $plan->name_ar,
+            'note' => $note,
+            'by' => $user->name,
+            'email' => $user->email,
+            'at' => now()->toIso8601String(),
+        ]])->save();
+
+        $to = config('rowad.platform_admin.email');
+        if (filled($to)) {
+            $body = sprintf("<p>طلبت <b>%s</b> الترقية من باقة <b>%s</b> إلى <b>%s</b>.</p><p>مقدم الطلب: %s (%s)</p>%s",
+                e($office->name), e(PlanLimits::plan()?->name_ar ?? '-'), e($plan->name_ar), e($user->name), e($user->email),
+                filled($note) ? '<p>'.nl2br(e($note)).'</p>' : '');
+            try {
+                Mail::html(SendOutgoingMessage::layout('طلب ترقية باقة', $body), fn ($mail) => $mail->to($to)->subject('طلب ترقية باقة — '.$office->name));
+            } catch (Throwable $e) {
+                report($e); // the request is saved and shows on the platform panel even if mail is down
+            }
+        }
+
+        Notification::make()->title(__('تم إرسال طلب الترقية. سنتواصل معك قريبًا.'))->success()->send();
+    }
+}

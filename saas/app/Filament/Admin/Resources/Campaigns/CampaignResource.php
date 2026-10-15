@@ -32,6 +32,11 @@ class CampaignResource extends Resource
 
     protected static ?string $permission = 'campaigns';
 
+    public static function canAccess(): bool
+    {
+        return \App\Support\PlanLimits::allows('campaigns') && parent::canAccess();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return CampaignForm::configure($schema);

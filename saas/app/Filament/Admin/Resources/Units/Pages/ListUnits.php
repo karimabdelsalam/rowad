@@ -13,7 +13,7 @@ class ListUnits extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateUnit::quotaAwareCreateAction('units'),
         ];
     }
 }

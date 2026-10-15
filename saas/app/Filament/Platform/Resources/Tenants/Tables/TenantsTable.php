@@ -32,6 +32,10 @@ class TenantsTable
                         Tenant::STATUS_PAST_DUE => 'warning',
                         default => 'danger',
                     }),
+                TextColumn::make('upgrade_request.plan')->label(__('طلب ترقية'))->badge()->color('warning')
+                    ->icon(Heroicon::OutlinedArrowTrendingUp)
+                    ->tooltip(fn (Tenant $record) => $record->upgrade_request['note'] ?? null)
+                    ->placeholder('-'),
                 TextColumn::make('trial_ends_at')->dateTime('Y-m-d')->sortable(),
                 TextColumn::make('email')->toggleable(),
                 TextColumn::make('created_at')->dateTime('Y-m-d')->sortable(),
@@ -46,6 +50,13 @@ class TenantsTable
                     ->label(__('فتح لوحة المؤسسة'))
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->url(fn (Tenant $record) => request()->getScheme().'://'.$record->domains->first()?->domain.'/admin', shouldOpenInNewTab: true),
+                Action::make('upgradeHandled')
+                    ->label(__('تمت معالجة طلب الترقية'))
+                    ->icon(Heroicon::OutlinedCheckCircle)
+                    ->visible(fn (Tenant $record) => filled($record->upgrade_request))
+                    ->requiresConfirmation()
+                    ->modalDescription(__('غيّر الباقة من تعديل المؤسسة أولًا، ثم أزل الطلب من القائمة.'))
+                    ->action(fn (Tenant $record) => $record->forceFill(['upgrade_request' => null])->save()),
                 Action::make('suspend')
                     ->label(__('إيقاف'))
                     ->color('danger')

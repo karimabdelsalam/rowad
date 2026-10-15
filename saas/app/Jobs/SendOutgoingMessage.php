@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\MessageChannel;
 use App\Models\OutgoingMessage;
 use App\Services\Messaging\SmsGateway;
+use App\Support\PlanLimits;
 use App\Support\Settings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -33,6 +34,12 @@ class SendOutgoingMessage implements ShouldQueue
         }
 
         if ($message->channel === MessageChannel::Sms) {
+            if (PlanLimits::reached('sms')) {
+                $message->update(['status' => 'failed', 'error' => __('تم بلوغ حد رسائل SMS الشهري في باقة المؤسسة.')]);
+                $message->campaign?->increment('failed_count');
+
+                return;
+            }
             $result = $sms->send($message->recipient, $message->body);
             $message->update($result->ok
                 ? ['status' => 'sent', 'sent_at' => now(), 'provider' => Settings::get('sms_provider'), 'error' => null]

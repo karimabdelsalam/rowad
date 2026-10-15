@@ -10,6 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateUnit extends CreateRecord
 {
+    use \App\Filament\Concerns\EnforcesPlanQuota;
+
+    protected static function planQuota(): string
+    {
+        return 'units';
+    }
+
     use SavesUnitExtras;
 
     protected static string $resource = UnitResource::class;

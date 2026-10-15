@@ -50,4 +50,5 @@ Route::prefix('api/v1')->name('api.v1.')->middleware([
     PreventAccessFromCentralDomains::class,
     \App\Http\Middleware\EnsureOfficeIsAccessible::class,
     \App\Http\Middleware\SetLocale::class,
+    \App\Http\Middleware\EnsurePlanFeature::class.':api',
 ])->group(base_path('routes/tenant-api.php'));

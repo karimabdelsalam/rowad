@@ -17,7 +17,11 @@ class PortalLinks extends Widget
     /** @return list<array{label: string, url: string, qr: string, prompt: string, print: string}> */
     public function getLinks(): array
     {
-        $kinds = ['owner', 'client', ...(\App\Support\Website::enabled() ? ['site'] : [])];
+        $kinds = array_values(array_filter([
+            \App\Support\PlanLimits::allows('owner_portal') ? 'owner' : null,
+            \App\Support\PlanLimits::allows('client_portal') ? 'client' : null,
+            \App\Support\Website::enabled() ? 'site' : null,
+        ]));
 
         return array_map(fn (string $kind) => self::link($kind) + ['print' => route('documents.qr', $kind)], $kinds);
     }
