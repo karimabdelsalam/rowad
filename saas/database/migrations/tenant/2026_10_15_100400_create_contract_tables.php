@@ -29,12 +29,13 @@ return new class extends Migration
             $table->string('period_unit', 10);                   // day, month, year (legacy period)
             $table->unsignedSmallInteger('period_count');        // periodnum
             $table->string('payment_cycle', 12);                 // day, month, quarter, half_year, year
-            $table->decimal('rent_amount', 14, 2);               // amount per payment cycle (rentvalue)
+            $table->decimal('rent_amount', 14, 2);               // amount per payment cycle incl. VAT (rentvalue)
             $table->decimal('yearly_rent', 14, 2)->nullable();
             $table->decimal('commission', 14, 2)->default(0);
             $table->string('commission_cycle', 12)->nullable();  // once, day, month, quarter, half_year, year
             $table->boolean('vat_applicable')->default(false);
             $table->decimal('vat_percent', 5, 2)->default(0);
+            $table->decimal('vat_amount', 14, 2)->default(0);     // VAT included in each rent_amount (legacy tax)
             $table->string('usage', 20)->nullable();             // residential, commercial (usein)
             $table->json('meter_readings')->nullable();          // meters at handover
             $table->longText('extra_terms')->nullable();         // extrarights

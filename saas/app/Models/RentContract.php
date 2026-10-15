@@ -39,6 +39,7 @@ class RentContract extends Model implements HasMedia
             'commission_cycle' => PaymentCycle::class,
             'vat_applicable' => 'boolean',
             'vat_percent' => 'decimal:2',
+            'vat_amount' => 'decimal:2',
             'usage' => UnitUsage::class,
             'meter_readings' => 'array',
             'next_payment_date' => 'date',
