@@ -59,6 +59,8 @@ trait ConfiguresPanel
             ]);
 
         if ($tenant) {
+            $panel->renderHook(PanelsRenderHook::BODY_START, fn () => session()->has('impersonator_id') ? view('filament.impersonation-banner') : '');
+
             // Persistent so Livewire update requests are also resolved to the office's database.
             $panel->middleware([
                 InitializeTenancyByDomain::class,

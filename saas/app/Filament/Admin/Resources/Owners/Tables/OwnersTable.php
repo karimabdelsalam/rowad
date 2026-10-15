@@ -14,6 +14,8 @@ use Filament\Tables\Table;
 
 class OwnersTable
 {
+    use \App\Filament\Concerns\PortalAccountActions;
+
     public static function configure(Table $table): Table
     {
         return $table
@@ -70,6 +72,8 @@ class OwnersTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                self::portalAccountAction('owners'),
+                self::loginAsAction('owners', 'owner'),
                 ViewAction::make(),
                 EditAction::make(),
             ])

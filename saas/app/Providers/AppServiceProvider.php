@@ -6,7 +6,9 @@ use App\Models;
 use Filament\Forms\Components\Field;
 use Filament\Infolists\Components\Entry;
 use Filament\Tables\Columns\Column;
+use Filament\Schemas\Schema;
 use Filament\Tables\Filters\BaseFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
         Column::configureUsing(fn (Column $column) => $column->translateLabel());
         Entry::configureUsing(fn (Entry $entry) => $entry->translateLabel());
         BaseFilter::configureUsing(fn (BaseFilter $filter) => $filter->translateLabel());
+
+        // Arabic UI with Western digits (Saudi business convention, as in the legacy system).
+        Table::configureUsing(fn (Table $table) => $table->defaultNumberLocale('en'));
+        Schema::configureUsing(fn (Schema $schema) => $schema->defaultNumberLocale('en'));
 
         // Stable aliases stored in *_type columns (vouchers.party, installments.contract,
         // media, activity log, permissions) so class renames never break stored data.

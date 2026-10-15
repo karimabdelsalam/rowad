@@ -19,7 +19,15 @@ class DocumentNumberGenerator
     {
         $year ??= (int) now()->format('Y');
 
-        $number = DB::transaction(function () use ($key, $year) {
+        return sprintf('%s-%d-%05d', self::PREFIXES[$key] ?? strtoupper($key), $year, $this->sequence($key, $year));
+    }
+
+    /** Raw next sequence value for a key and year. */
+    public function sequence(string $key, ?int $year = null): int
+    {
+        $year ??= (int) now()->format('Y');
+
+        return DB::transaction(function () use ($key, $year) {
             $table = DB::table('document_sequences');
             $row = $table->where(['key' => $key, 'year' => $year])->lockForUpdate()->first();
 
@@ -33,7 +41,5 @@ class DocumentNumberGenerator
 
             return $row->last_number + 1;
         });
-
-        return sprintf('%s-%d-%05d', self::PREFIXES[$key] ?? strtoupper($key), $year, $number);
     }
 }

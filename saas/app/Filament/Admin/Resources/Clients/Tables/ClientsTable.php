@@ -14,6 +14,8 @@ use Filament\Tables\Table;
 
 class ClientsTable
 {
+    use \App\Filament\Concerns\PortalAccountActions;
+
     public static function configure(Table $table): Table
     {
         return $table
@@ -87,6 +89,8 @@ class ClientsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                self::portalAccountAction('clients'),
+                self::loginAsAction('clients', 'client'),
                 ViewAction::make(),
                 EditAction::make(),
             ])
