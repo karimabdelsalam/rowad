@@ -9,6 +9,7 @@ use App\Models\OutgoingMessage;
 use App\Models\Plan;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\Licensing\LicenseClient;
 
 /**
  * The organisation's plan: feature switches and quotas (legacy updatecore plan checks).
@@ -44,6 +45,11 @@ class PlanLimits
 
     public static function allows(string $feature): bool
     {
+        // A self-hosted copy can only use what its license includes.
+        $licensed = LicenseClient::selfHosted() ? app(LicenseClient::class)->features() : null;
+        if ($licensed !== null && ! in_array($feature, $licensed, true)) {
+            return false;
+        }
         $plan = self::plan();
 
         return $plan === null || $plan->hasFeature($feature);
@@ -53,8 +59,15 @@ class PlanLimits
     public static function limit(string $quota): ?int
     {
         $value = self::plan()?->{self::QUOTAS[$quota][0]};
+        $value = $value === null ? null : (int) $value;
 
-        return $value === null ? null : (int) $value;
+        // On a self-hosted copy the license caps units and users too (the smaller limit wins).
+        if (LicenseClient::selfHosted() && in_array($quota, ['units', 'users'], true)
+            && ($licensed = app(LicenseClient::class)->limit($quota)) !== null) {
+            $value = $value === null ? $licensed : min($value, $licensed);
+        }
+
+        return $value;
     }
 
     public static function used(string $quota): float

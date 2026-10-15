@@ -36,6 +36,12 @@ class OfficeProvisioner
 
         $plan = isset($data['plan_id']) ? Plan::findOrFail($data['plan_id']) : null;
 
+        // A self-hosted copy may hold only as many offices as its license allows.
+        if (\App\Services\Licensing\LicenseClient::selfHosted()
+            && ($max = app(\App\Services\Licensing\LicenseClient::class)->limit('offices')) !== null && Tenant::count() >= $max) {
+            throw new BusinessRuleException(__('وصلت إلى عدد المؤسسات المسموح في الترخيص (:max). تواصل مع عقار نوفا لزيادته.', ['max' => $max]));
+        }
+
         // A known id lets a half-created office be removed if any step fails (e.g. the host's database quota is full).
         $id = (string) Str::uuid();
         try {

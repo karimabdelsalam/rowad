@@ -121,6 +121,19 @@ return [
     // Rebuild the public demo office (demo.<base-domain>) every night at 04:00.
     'demo_reset_daily' => (bool) env('DEMO_RESET_DAILY', false),
 
+    // Licensing. On aqarnova.com (mode "saas") the platform issues licenses and signs tokens with
+    // LICENSE_SIGNING_KEY. A copy installed on a customer's server runs with mode "self_hosted":
+    // it activates LICENSE_KEY against LICENSE_SERVER and verifies tokens with LICENSE_PUBLIC_KEY.
+    'license' => [
+        'mode' => env('LICENSE_MODE', 'saas'),
+        'signing_key' => env('LICENSE_SIGNING_KEY'),
+        'public_key' => env('LICENSE_PUBLIC_KEY'),
+        'key' => env('LICENSE_KEY'),
+        'server' => rtrim((string) env('LICENSE_SERVER', 'https://aqarnova.com'), '/'),
+        'token_days' => 7,   // a token is good this long without contacting the server
+        'grace_days' => 14,  // after that, keeps working this long if the server cannot be reached
+    ],
+
     // Hosts without a Cron Jobs feature: an external pinger (cron-job.org etc.) hits
     // https://<domain>/system-cron/<token> every minute to run the scheduler.
     'cron_token' => env('CRON_TOKEN'),

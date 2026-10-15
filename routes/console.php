@@ -16,3 +16,8 @@ Schedule::command('rowad:demo --fresh')->dailyAt('04:00')->when(fn () => config(
 if (config('rowad.queue_via_scheduler')) {
     Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')->everyMinute()->withoutOverlapping(5);
 }
+
+// Self-hosted installations check their license every day (and the token stays valid for a week offline).
+if (config('rowad.license.mode') === 'self_hosted') {
+    Schedule::command('rowad:license:check')->dailyAt('05:17')->withoutOverlapping();
+}
