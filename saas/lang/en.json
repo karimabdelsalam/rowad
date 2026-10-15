@@ -941,5 +941,12 @@
     "قواعد البيانات": "Reference data",
     "لا يمكن تعيين احد اعدادات الترقيم برقم اقل من الحالي": "A number cannot be set lower than the current one",
     "ملف": "File",
-    "سحابة الملفات": "File cloud"
+    "سحابة الملفات": "File cloud",
+    "نوع العميل": "Client type",
+    "اسم المفوض": "Authorized person",
+    "الهوية": "Identity",
+    "ملاحظات ومرفقات": "Notes & attachments",
+    "حساب الدخول": "Login account",
+    "يصل تنبيه قبل انتهاء الهوية بـ 15 يومًا": "A reminder is sent 15 days before the ID expires",
+    "الوظيفة والعمولات": "Job & commissions"
 }

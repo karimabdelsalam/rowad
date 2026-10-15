@@ -32,6 +32,8 @@ const pages = [
   { name: 'form-sale-contract', path: '/admin/sale-contracts/create', login: 'admin@demo.test', full: true },
   { name: 'form-receipt', path: '/admin/receipt-vouchers/create', login: 'admin@demo.test', full: true },
   { name: 'form-owner', path: '/admin/owners/create', login: 'admin@demo.test', full: true },
+  { name: 'form-client', path: '/admin/clients/create', login: 'admin@demo.test', full: true },
+  { name: 'form-employee', path: '/admin/employees/create', login: 'admin@demo.test', full: true },
   { name: 'view-unit', path: '/admin/units/6', login: 'admin@demo.test', full: true },
   { name: 'view-rent-contract', path: '/admin/rent-contracts/1', login: 'admin@demo.test', full: true },
   { name: 'view-sale-contract', path: '/admin/sale-contracts/1', login: 'admin@demo.test', full: true },

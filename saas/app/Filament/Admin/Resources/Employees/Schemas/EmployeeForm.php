@@ -3,70 +3,41 @@
 namespace App\Filament\Admin\Resources\Employees\Schemas;
 
 use App\Enums\Calendar;
-use App\Enums\IdType;
+use App\Filament\Admin\Resources\Concerns\PersonFormSections;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 class EmployeeForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
-                Select::make('user_id')
-                    ->relationship('user', 'name'),
-                TextInput::make('first_name')
-                    ->required(),
-                TextInput::make('father_name'),
-                TextInput::make('grandfather_name'),
-                TextInput::make('family_name'),
-                TextInput::make('full_name')
-                    ->required(),
-                Select::make('id_type')
-                    ->options(IdType::class),
-                TextInput::make('id_number'),
-                TextInput::make('id_source'),
-                DatePicker::make('id_issue_date'),
-                TextInput::make('nationality'),
-                TextInput::make('mobile'),
-                TextInput::make('email')
-                    ->label('Email address')
-                    ->email(),
-                TextInput::make('home_phone')
-                    ->tel(),
-                TextInput::make('work'),
-                TextInput::make('work_phone')
-                    ->tel(),
-                Textarea::make('address')
-                    ->columnSpanFull(),
-                DatePicker::make('id_expiry_date'),
-                TextInput::make('mobile2'),
-                Textarea::make('address2')
-                    ->columnSpanFull(),
-                TextInput::make('education'),
-                TextInput::make('marital_status'),
-                TextInput::make('salary')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                TextInput::make('rent_commission')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                TextInput::make('sale_commission')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                DatePicker::make('start_date'),
-                Select::make('calendar')
-                    ->options(Calendar::class)
-                    ->default('gregorian')
-                    ->required(),
-                SpatieMediaLibraryFileUpload::make('attachments')->label(__('المرفقات'))->collection('attachments')->multiple()->downloadable()->columnSpanFull(),
+                PersonFormSections::name(),
+                PersonFormSections::identity([
+                    DatePicker::make('id_expiry_date')->helperText(__('يصل تنبيه قبل انتهاء الهوية بـ 15 يومًا')),
+                ]),
+                PersonFormSections::contact([
+                    TextInput::make('mobile2')->tel()->maxLength(30),
+                    Textarea::make('address2')->rows(2)->columnSpanFull(),
+                ]),
+                Section::make(__('الوظيفة والعمولات'))->icon(Heroicon::OutlinedBriefcase)->columns(['default' => 1, 'sm' => 2, 'lg' => 3])->schema([
+                    DatePicker::make('start_date'),
+                    TextInput::make('salary')->required()->numeric()->minValue(0)->default(0),
+                    Select::make('calendar')->options(Calendar::class)->default('gregorian')->required(),
+                    TextInput::make('rent_commission')->required()->numeric()->minValue(0)->default(0),
+                    TextInput::make('sale_commission')->required()->numeric()->minValue(0)->default(0),
+                    TextInput::make('education')->maxLength(190),
+                    TextInput::make('marital_status')->maxLength(50),
+                ]),
+                PersonFormSections::notesAndFiles(notes: false),
+                PersonFormSections::account(),
             ]);
     }
 }
