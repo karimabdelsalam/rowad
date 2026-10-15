@@ -48,7 +48,14 @@ class AdminPanelSmokeTest extends TestCase
         $panel = Filament::getPanel('admin');
         $this->assertNotEmpty($panel->getResources());
 
+        $permissions = config('rowad.permissions');
+        $permissionOf = fn (string $resource) => (new \ReflectionProperty($resource, 'permission'))->getValue();
+
         foreach ($panel->getResources() as $resource) {
+            // A create page exists exactly when the role system has a create permission for it.
+            $creatable = in_array('create', $permissions[$permissionOf($resource)] ?? ['create'], true);
+            $this->assertSame($creatable, $resource::hasPage('create'), "{$resource} create page");
+
             foreach (['index', 'create'] as $page) {
                 if (! $resource::hasPage($page)) {
                     continue;

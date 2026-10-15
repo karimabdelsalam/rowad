@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Resources\SupportTickets;
 
-use App\Filament\Admin\Resources\SupportTickets\Pages\CreateSupportTicket;
 use App\Filament\Admin\Resources\SupportTickets\Pages\EditSupportTicket;
 use App\Filament\Admin\Resources\SupportTickets\Pages\ListSupportTickets;
 use App\Filament\Admin\Resources\SupportTickets\Pages\ViewSupportTicket;
@@ -58,7 +57,6 @@ class SupportTicketResource extends Resource
     {
         return [
             'index' => ListSupportTickets::route('/'),
-            'create' => CreateSupportTicket::route('/create'),
             'view' => ViewSupportTicket::route('/{record}'),
             'edit' => EditSupportTicket::route('/{record}/edit'),
         ];

@@ -3,7 +3,6 @@
 namespace App\Filament\Admin\Resources\PrintTemplates\Pages;
 
 use App\Filament\Admin\Resources\PrintTemplates\PrintTemplateResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListPrintTemplates extends ListRecords
@@ -13,7 +12,6 @@ class ListPrintTemplates extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
         ];
     }
 }

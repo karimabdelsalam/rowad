@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Resources\MessageTemplates;
 
-use App\Filament\Admin\Resources\MessageTemplates\Pages\CreateMessageTemplate;
 use App\Filament\Admin\Resources\MessageTemplates\Pages\EditMessageTemplate;
 use App\Filament\Admin\Resources\MessageTemplates\Pages\ListMessageTemplates;
 use App\Filament\Admin\Resources\MessageTemplates\Pages\ViewMessageTemplate;
@@ -58,7 +57,6 @@ class MessageTemplateResource extends Resource
     {
         return [
             'index' => ListMessageTemplates::route('/'),
-            'create' => CreateMessageTemplate::route('/create'),
             'view' => ViewMessageTemplate::route('/{record}'),
             'edit' => EditMessageTemplate::route('/{record}/edit'),
         ];

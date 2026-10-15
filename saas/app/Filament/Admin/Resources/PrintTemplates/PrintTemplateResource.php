@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Resources\PrintTemplates;
 
-use App\Filament\Admin\Resources\PrintTemplates\Pages\CreatePrintTemplate;
 use App\Filament\Admin\Resources\PrintTemplates\Pages\EditPrintTemplate;
 use App\Filament\Admin\Resources\PrintTemplates\Pages\ListPrintTemplates;
 use App\Filament\Admin\Resources\PrintTemplates\Pages\ViewPrintTemplate;
@@ -58,7 +57,6 @@ class PrintTemplateResource extends Resource
     {
         return [
             'index' => ListPrintTemplates::route('/'),
-            'create' => CreatePrintTemplate::route('/create'),
             'view' => ViewPrintTemplate::route('/{record}'),
             'edit' => EditPrintTemplate::route('/{record}/edit'),
         ];
