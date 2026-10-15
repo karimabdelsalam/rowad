@@ -1095,5 +1095,6 @@
     "مرحبًا بك في بوابتك لدى :org": "Welcome to your portal at :org",
     "طباعة عقدي": "Print my contract",
     "طلب صيانة": "Maintenance request",
-    "دفعاتك القادمة": "Your upcoming payments"
+    "دفعاتك القادمة": "Your upcoming payments",
+    "{0} لا توجد أقساط متأخرة|{1} قسط واحد متأخر|[2,*] :count أقساط متأخرة": "{0} No overdue installments|{1} One overdue installment|[2,*] :count overdue installments"
 }

@@ -32,7 +32,7 @@ class BilingualTest extends TestCase
                 if (! str_ends_with($file->getFilename(), '.php')) {
                     continue;
                 }
-                preg_match_all("/__\\(\\s*'((?:\\\\'|[^'])*)'/u", file_get_contents($file->getPathname()), $matches);
+                preg_match_all("/(?:__|trans_choice)\\(\\s*'((?:\\\\'|[^'])*)'/u", file_get_contents($file->getPathname()), $matches);
                 foreach ($matches[1] as $string) {
                     $string = str_replace("\\'", "'", $string);
                     if (preg_match('/\p{Arabic}/u', $string) && ! array_key_exists($string, $english)) {

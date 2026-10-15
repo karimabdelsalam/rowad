@@ -67,7 +67,7 @@ class SendOutgoingMessage implements ShouldQueue
         return view('mail.layout', [
             'subject' => $subject,
             'body' => $html,
-            'org' => (string) Settings::get('site_name', tenancy()->initialized ? tenant('name') : config('app.name')),
+            'org' => tenancy()->initialized ? \App\Support\Website::name() : (string) config('app.name'),
             'logo' => $domain && filled(Settings::get('logo')) ? $scheme.'://'.$domain.route('site.logo', [], false) : null,
             'contact' => [trim(Settings::get('address1').' — '.Settings::get('address2'), ' —'), Settings::get('phone'), Settings::get('email')],
             'locale' => (string) Settings::get('locale', 'ar'),

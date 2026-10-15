@@ -16,7 +16,7 @@ class OwnerPanelProvider extends PanelProvider
     {
         return $this->discoverIn($this->basePanel($panel, 'owner', 'owner'), 'Owner')
             // the organisation's own name and colours; the banner says which portal this is
-            ->brandName(fn () => \App\Support\Settings::get('site_name', tenant('name')) ?? __('بوابة الملاك'))
+            ->brandName(fn () => \App\Support\Website::name() ?: __('بوابة الملاك'))
             ->pages([PortalDashboard::class]);
     }
 }

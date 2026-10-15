@@ -29,7 +29,7 @@ abstract class PortalWelcomeBanner extends Widget
             'name' => (string) auth()->user()?->name,
             'gregorian' => now()->locale(app()->getLocale())->translatedFormat('l، j F Y'),
             'hijri' => Hijri::toString(now()).' هـ',
-            'subtitle' => __('مرحبًا بك في بوابتك لدى :org', ['org' => Settings::get('site_name', tenant('name'))]),
+            'subtitle' => __('مرحبًا بك في بوابتك لدى :org', ['org' => \App\Support\Website::name()]),
             'actions' => $this->actions(),
         ];
     }

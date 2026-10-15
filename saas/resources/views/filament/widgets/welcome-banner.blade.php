@@ -2,7 +2,7 @@
     <div class="rowad-welcome">
         <div>
             <p class="rowad-welcome__date">{{ $gregorian }} <span>·</span> {{ $hijri }}</p>
-            <h2 class="rowad-welcome__title">{{ $greeting }}، {{ $name }}</h2>
+            <h2 class="rowad-welcome__title">{{ $greeting }}{{ app()->getLocale() === 'ar' ? '،' : ',' }} {{ $name }}</h2>
             <p class="rowad-welcome__sub">{{ $subtitle }}</p>
         </div>
         @if ($actions)

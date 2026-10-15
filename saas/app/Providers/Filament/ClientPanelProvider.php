@@ -16,7 +16,7 @@ class ClientPanelProvider extends PanelProvider
     {
         return $this->discoverIn($this->basePanel($panel, 'client', 'client'), 'Client')
             // the organisation's own name and colours; the banner says which portal this is
-            ->brandName(fn () => \App\Support\Settings::get('site_name', tenant('name')) ?? __('بوابة العملاء'))
+            ->brandName(fn () => \App\Support\Website::name() ?: __('بوابة العملاء'))
             ->pages([PortalDashboard::class]);
     }
 }

@@ -19,7 +19,7 @@
 </head>
 <body>
     <header>
-        <h1>{{ \App\Support\Settings::get('site_name') ?? tenant('name') }} — {{ $title }}</h1>
+        <h1>{{ \App\Support\Website::name() }} — {{ $title }}</h1>
         <span class="muted">{{ now()->format('Y-m-d H:i') }} · {{ count($rows) }}</span>
     </header>
     <table>
