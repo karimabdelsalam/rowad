@@ -13,7 +13,8 @@ class EditPlan extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            // A plan in use stays (offices and their payment history point to it); switch it off instead.
+            DeleteAction::make()->visible(fn () => ! $this->record->tenants()->exists() && ! $this->record->subscriptions()->exists()),
         ];
     }
 }

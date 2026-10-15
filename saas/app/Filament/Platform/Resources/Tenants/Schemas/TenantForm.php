@@ -29,7 +29,7 @@ class TenantForm
                 TextInput::make('name')->label(__('اسم المؤسسة'))->required()->maxLength(150),
                 TextInput::make('email')->email(),
                 TextInput::make('phone')->tel(),
-                Select::make('plan_id')->relationship('plan', 'name_ar')->preload(),
+                Select::make('plan_id')->label(__('الباقة'))->relationship('plan', 'name_ar')->preload(),
                 TextInput::make('subdomain')
                     ->label(__('النطاق الفرعي'))
                     ->required()

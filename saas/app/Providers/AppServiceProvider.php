@@ -17,6 +17,14 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Arabic plurals stay Arabic (see App\Support\Translation\Translator).
+        $this->app->extend('translator', function (\Illuminate\Translation\Translator $base, $app) {
+            $translator = new \App\Support\Translation\Translator($app['translation.loader'], $base->getLocale());
+            $translator->setFallback($base->getFallback());
+
+            return $translator;
+        });
+
         //
     }
 

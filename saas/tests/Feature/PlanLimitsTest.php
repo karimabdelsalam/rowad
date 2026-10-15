@@ -156,4 +156,16 @@ class PlanLimitsTest extends TestCase
         $upload()->assertHasActionErrors(['file']);
         $this->assertSame(1, \App\Models\OfficeFile::count());
     }
+
+    public function test_admins_are_told_when_the_trial_is_about_to_end(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get("{$this->host}/admin")->assertOk()->assertDontSee('تنتهي الفترة التجريبية');
+
+        $this->tenant->update(['trial_ends_at' => now()->addDays(3)->addHour()]);
+        $this->actingAs($admin)->get("{$this->host}/admin")->assertOk()->assertSee('تنتهي الفترة التجريبية بعد 3 أيام');
+
+        $this->tenant->update(['status' => \App\Models\Tenant::STATUS_PAST_DUE]);
+        $this->actingAs($admin)->get("{$this->host}/admin")->assertSee('انتهت فترة اشتراك المؤسسة');
+    }
 }

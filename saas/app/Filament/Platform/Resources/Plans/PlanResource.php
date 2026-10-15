@@ -22,9 +22,9 @@ class PlanResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $modelLabel = 'خطة';
+    protected static ?string $modelLabel = 'باقة';
 
-    protected static ?string $pluralModelLabel = 'خطط الاشتراك';
+    protected static ?string $pluralModelLabel = 'الباقات';
 
     public static function form(Schema $schema): Schema
     {

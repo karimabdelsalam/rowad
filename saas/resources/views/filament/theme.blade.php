@@ -49,4 +49,11 @@
     .rowad-credit--compact { padding: 14px 0 0; }
     .rowad-credit a { color: var(--rowad-brand); font-weight: 700; }
     .rowad-credit a:hover { text-decoration: underline; }
+    .rowad-plan-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 16px 0 4px; padding: 12px 16px; border-radius: 14px; font-weight: 600; font-size: .92rem; border: 1px solid; }
+    .rowad-plan-notice--warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .rowad-plan-notice--danger { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    .dark .rowad-plan-notice--warning { background: rgb(245 158 11 / .12); border-color: rgb(245 158 11 / .3); color: #fcd34d; }
+    .dark .rowad-plan-notice--danger { background: rgb(239 68 68 / .12); border-color: rgb(239 68 68 / .3); color: #fca5a5; }
+    .rowad-plan-notice__icon { width: 20px; height: 20px; flex: none; }
+    .rowad-plan-notice a { margin-inline-start: auto; text-decoration: underline; font-weight: 700; }
 </style>

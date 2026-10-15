@@ -45,7 +45,8 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
     public function activeSubscription(): HasOne
     {
-        return $this->hasOne(Subscription::class)->where('status', 'active')->latestOfMany('starts_at');
+        // The status filter must go inside ofMany(): a plain where() is applied after "latest" is picked among all rows.
+        return $this->hasOne(Subscription::class)->ofMany(['starts_at' => 'max', 'id' => 'max'], fn ($query) => $query->where('status', 'active'));
     }
 
     public function isAccessible(): bool

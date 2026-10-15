@@ -27,7 +27,7 @@ class OfficeStatsOverview extends StatsOverviewWidget
         $s = $stats->office();
         $trend = $stats->recentMonths(6);
         $attention = $stats->attention();
-        $money = fn (float $v) => number_format($v, 0).' '.\App\Support\Settings::get('currency', 'SAR');
+        $money = fn (float $v) => number_format($v, 0).' '.\App\Support\Settings::currencyLabel();
         $lastMonth = $trend['collected'][4] ?? 0;
         $change = $lastMonth > 0 ? round(($s['collected_this_month'] - $lastMonth) / $lastMonth * 100) : null;
 

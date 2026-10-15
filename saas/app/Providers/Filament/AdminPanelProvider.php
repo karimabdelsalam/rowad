@@ -16,6 +16,7 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $this->discoverIn($this->basePanel($panel, 'admin', 'admin'), 'Admin')
+            ->renderHook(\Filament\View\PanelsRenderHook::CONTENT_START, fn () => view('filament.subscription-notice', ['notice' => \App\Filament\Admin\Pages\Subscription::notice()]))
             ->default()
             ->brandName(fn () => tenancy()->initialized ? \App\Support\Website::name() : config('app.name'))
             ->pages([Dashboard::class])

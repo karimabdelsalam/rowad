@@ -77,4 +77,15 @@ class BilingualTest extends TestCase
         // the page title is computed per request.
         $this->get("{$host}/admin/units")->assertSee('dir="rtl"', false)->assertSee('<title>', false)->assertSee('الوحدات');
     }
+
+    public function test_plurals_stay_in_the_language_of_the_page(): void
+    {
+        $key = '{0} لا توجد طلبات ترقية|{1} طلب ترقية بانتظارك|[2,*] :count طلبات ترقية بانتظارك';
+
+        app()->setLocale('ar');
+        $this->assertSame('3 طلبات ترقية بانتظارك', trans_choice($key, 3));
+
+        app()->setLocale('en');
+        $this->assertSame('3 upgrade requests waiting', trans_choice($key, 3));
+    }
 }

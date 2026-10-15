@@ -71,10 +71,14 @@ class SendOutgoingMessage implements ShouldQueue
         $domain = tenancy()->initialized ? tenant()->domains()->value('domain') : null;
         $scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME) ?: 'https';
 
+        if (! tenancy()->initialized) { // platform emails (subscription reminders, upgrade requests)
+            return view('mail.layout', ['subject' => $subject, 'body' => $html, 'org' => __('عقار نوفا'), 'logo' => null, 'contact' => [], 'locale' => app()->getLocale()])->render();
+        }
+
         return view('mail.layout', [
             'subject' => $subject,
             'body' => $html,
-            'org' => tenancy()->initialized ? \App\Support\Website::name() : (string) config('app.name'),
+            'org' => \App\Support\Website::name(),
             'logo' => $domain && filled(Settings::get('logo')) ? $scheme.'://'.$domain.route('site.logo', [], false) : null,
             'contact' => [trim(Settings::get('address1').' — '.Settings::get('address2'), ' —'), Settings::get('phone'), Settings::get('email')],
             'locale' => (string) Settings::get('locale', 'ar'),

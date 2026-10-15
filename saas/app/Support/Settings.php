@@ -50,6 +50,17 @@ final class Settings
         return (float) self::get($key, 0);
     }
 
+    /** The office currency as shown in the UI: Saudi riyal reads "ر.س" in Arabic and "SAR" in English, whatever way it was typed. */
+    public static function currencyLabel(): string
+    {
+        $currency = trim((string) self::get('currency', 'SAR'));
+        if (in_array(mb_strtolower($currency), ['sar', 'ر.س', 'ر.س.', 'ريال', 'ريال سعودي', 'رس'], true)) {
+            return app()->getLocale() === 'ar' ? 'ر.س' : 'SAR';
+        }
+
+        return $currency;
+    }
+
     /** @return array<string, mixed> */
     public static function all(): array
     {

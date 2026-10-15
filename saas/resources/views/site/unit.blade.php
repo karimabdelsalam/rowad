@@ -30,7 +30,7 @@
             </div>
             @if ($unit->show_price && $unit->rent_amount)
                 @php($per = ['year' => __('سنويًا'), 'month' => __('شهريًا'), 'day' => __('يوميًا')][$unit->rent_period?->value] ?? null)
-                <div class="price">{{ number_format((float) $unit->rent_amount) }} {{ __(\App\Support\Settings::get('currency', 'SAR')) }}
+                <div class="price">{{ number_format((float) $unit->rent_amount) }} {{ \App\Support\Settings::currencyLabel() }}
                     @if ($per)<small>/ {{ $per }}</small>@endif
                     @if ($unit->rent_payment_cycle)<div class="cycle">{{ __('الدفع') }}: {{ $unit->rent_payment_cycle->getLabel() }}</div>@endif</div>
             @endif

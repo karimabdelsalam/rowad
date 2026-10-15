@@ -96,6 +96,40 @@ class Subscription extends Page
         ];
     }
 
+    /**
+     * A notice at the top of every admin page while the office has to act: trial or paid period ending
+     * within a week, or payment overdue. Shown to those who manage settings (they can pay or upgrade).
+     *
+     * @return array{level: string, text: string, url: string}|null
+     */
+    public static function notice(): ?array
+    {
+        if (! tenancy()->initialized || ! static::canAccess()) {
+            return null;
+        }
+        /** @var Tenant $office */
+        $office = tenant();
+        $url = static::getUrl();
+
+        if ($office->status === Tenant::STATUS_PAST_DUE) {
+            return ['level' => 'danger', 'url' => $url, 'text' => __('انتهت فترة اشتراك المؤسسة. الخدمة مستمرة لفترة سماح قصيرة ثم تتوقف حتى التجديد.')];
+        }
+
+        $endsAt = match ($office->status) {
+            Tenant::STATUS_TRIAL => $office->trial_ends_at,
+            Tenant::STATUS_ACTIVE => ($end = $office->subscriptions()->where('status', 'active')->max('ends_at')) ? \Illuminate\Support\Carbon::parse($end) : null,
+            default => null,
+        };
+        if ($endsAt === null || $endsAt->isPast() || $endsAt->gt(now()->addDays(7))) {
+            return null;
+        }
+        $days = max(1, (int) today()->diffInDays($endsAt->copy()->startOfDay()));
+
+        return ['level' => 'warning', 'url' => $url, 'text' => $office->status === Tenant::STATUS_TRIAL
+            ? trans_choice('{1} تنتهي الفترة التجريبية غدًا. اختر باقتك لتستمر الخدمة.|[2,*] تنتهي الفترة التجريبية بعد :count أيام. اختر باقتك لتستمر الخدمة.', $days)
+            : trans_choice('{1} ينتهي اشتراك المؤسسة غدًا. جدّد لتستمر الخدمة دون انقطاع.|[2,*] ينتهي اشتراك المؤسسة بعد :count أيام. جدّد لتستمر الخدمة دون انقطاع.', $days)];
+    }
+
     public static function statusLabel(Tenant $office): string
     {
         return __(match ($office->status) {

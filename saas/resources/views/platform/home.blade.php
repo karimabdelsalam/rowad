@@ -28,10 +28,7 @@
         ['chat', 'الرسائل والتنبيهات', 'رسائل SMS وبريد للمستأجرين والملاك، رسائل جماعية، وقوالب إشعارات قابلة للتعديل.'],
         ['globe', 'موقع خاص لمؤسستك', 'صفحة عامة لعرض وحداتك المتاحة واستقبال طلبات المعاينة مباشرة في صندوق الوارد.'],
     ];
-    $featureLabels = [
-        'owner_portal' => 'بوابة الملاك', 'client_portal' => 'بوابة المستأجرين والمشترين', 'zatca' => 'الفوترة الإلكترونية (زاتكا)',
-        'campaigns' => 'الرسائل الجماعية', 'api' => 'تطبيق الجوال وواجهة API', 'custom_domain' => 'نطاق خاص باسم مؤسستك', 'landing_page' => 'موقع المؤسسة العام',
-    ];
+    $featureLabels = \App\Support\PlanLimits::FEATURES;
     $allFeatures = array_keys($featureLabels);
     $limit = fn ($value, string $unit) => $value === null ? __('غير محدود') : number_format($value).' '.__($unit);
 @endphp

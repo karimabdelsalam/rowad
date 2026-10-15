@@ -125,7 +125,7 @@ class DomainNotifications
 
     private function money(mixed $amount): string
     {
-        return number_format((float) $amount, 2).' '.Settings::get('currency', 'SAR');
+        return number_format((float) $amount, 2).' '.Settings::currencyLabel();
     }
 
     private function date(?CarbonInterface $date, ?string $calendar): string

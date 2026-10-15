@@ -47,7 +47,7 @@
         <div class="sub-hero__facts">
             @if ($endsAt)
                 <div class="sub-hero__fact"><span>{{ $endsLabel }}</span><b>{{ $endsAt->format('Y-m-d') }}</b>
-                    @if ($endsAt->isFuture())<span>{{ trans_choice('{1} بعد يوم واحد|[2,*] بعد :count يومًا', max(1, (int) ceil(now()->diffInDays($endsAt))), ['count' => max(1, (int) ceil(now()->diffInDays($endsAt)))]) }}</span>@endif
+                    @if ($endsAt->isFuture())<span>{{ trans_choice('{1} بعد يوم واحد|[2,*] بعد :count يومًا', max(1, (int) today()->diffInDays($endsAt->copy()->startOfDay())), ['count' => max(1, (int) today()->diffInDays($endsAt->copy()->startOfDay()))]) }}</span>@endif
                 </div>
             @endif
             @if ($plan)
