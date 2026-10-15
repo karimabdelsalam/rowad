@@ -3,103 +3,169 @@
 namespace App\Filament\Admin\Resources\Units\Schemas;
 
 use App\Enums\Calendar;
+use App\Enums\CustomFieldType;
 use App\Enums\OfferType;
 use App\Enums\PaymentCycle;
 use App\Enums\RentPeriodUnit;
 use App\Enums\UnitStatus;
+use App\Models\CustomField;
+use App\Models\District;
+use App\Models\Owner;
+use App\Models\Lookups\BorderType;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
+/** Legacy building add/edit form. */
 class UnitForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                Select::make('building_id')
-                    ->relationship('building', 'title'),
-                TextInput::make('title')
-                    ->required(),
-                Select::make('offer_type')
-                    ->options(OfferType::class)
-                    ->default('rent')
-                    ->required(),
-                Select::make('status')
-                    ->options(UnitStatus::class)
-                    ->default('available')
-                    ->required(),
-                Toggle::make('is_active')
-                    ->required(),
-                TextInput::make('property_category_id')
-                    ->numeric(),
-                Select::make('client_category_id')
-                    ->relationship('clientCategory', 'title'),
-                TextInput::make('number'),
-                TextInput::make('floor'),
-                TextInput::make('rooms')
-                    ->numeric(),
-                TextInput::make('area')
-                    ->numeric(),
-                Toggle::make('is_furnished')
-                    ->required(),
-                TextInput::make('max_occupants')
-                    ->numeric(),
-                Select::make('deed_type_id')
-                    ->relationship('deedType', 'title'),
-                TextInput::make('deed_number'),
-                TextInput::make('plan_number'),
-                TextInput::make('plot_number'),
-                TextInput::make('plots'),
-                TextInput::make('zone'),
-                TextInput::make('street'),
-                Select::make('city_id')
-                    ->relationship('city', 'name'),
-                Select::make('district_id')
-                    ->relationship('district', 'name'),
-                TextInput::make('address'),
-                Textarea::make('address_details')
-                    ->columnSpanFull(),
-                TextInput::make('latitude')
-                    ->numeric(),
-                TextInput::make('longitude')
-                    ->numeric(),
-                Textarea::make('borders')
-                    ->columnSpanFull(),
-                Textarea::make('details')
-                    ->columnSpanFull(),
-                TextInput::make('rent_amount')
-                    ->numeric(),
-                TextInput::make('daily_rent')
-                    ->numeric(),
-                TextInput::make('monthly_rent')
-                    ->numeric(),
-                Select::make('rent_period')
-                    ->options(RentPeriodUnit::class),
-                Select::make('rent_payment_cycle')
-                    ->options(PaymentCycle::class),
-                TextInput::make('rent_commission')
-                    ->numeric(),
-                TextInput::make('sale_commission')
-                    ->numeric(),
-                Toggle::make('vat_applicable')
-                    ->required(),
-                TextInput::make('management_fee')
-                    ->numeric(),
-                Select::make('management_fee_cycle')
-                    ->options(PaymentCycle::class),
-                DatePicker::make('management_fee_start_date'),
-                DatePicker::make('management_fee_next_date'),
-                Select::make('calendar')
-                    ->options(Calendar::class)
-                    ->default('gregorian')
-                    ->required(),
-                TextInput::make('current_contract_type'),
-                TextInput::make('current_contract_id')
-                    ->numeric(),
-            ]);
+        return $schema->components([
+            Tabs::make()->columnSpanFull()->persistTabInQueryString()->tabs([
+                Tab::make(__('البيانات الأساسية'))->columns(3)->schema([
+                    TextInput::make('title')->required()->maxLength(255),
+                    Select::make('building_id')->relationship('building', 'title')->searchable()->preload(),
+                    Select::make('property_category_id')->relationship('category', 'title')->searchable()->preload()->live(),
+                    Select::make('offer_type')->options(OfferType::class)->default('rent')->required()->live(),
+                    Select::make('status')->options(UnitStatus::class)->default('available')->required(),
+                    Select::make('client_category_id')->relationship('clientCategory', 'title'),
+                    TextInput::make('number'),
+                    TextInput::make('floor'),
+                    TextInput::make('rooms')->numeric()->integer()->minValue(0),
+                    TextInput::make('area')->numeric()->minValue(0),
+                    TextInput::make('max_occupants')->numeric()->integer()->minValue(0),
+                    Select::make('calendar')->options(Calendar::class)->default('gregorian')->required(),
+                    Toggle::make('is_furnished'),
+                    Toggle::make('is_active')->default(true),
+                    Textarea::make('details')->columnSpanFull()->rows(3),
+                ]),
+
+                Tab::make(__('الملاك'))->schema([
+                    Repeater::make('owner_shares')
+                        ->hiddenLabel()
+                        ->columns(3)
+                        ->minItems(1)
+                        ->default([['owner_id' => null, 'share_percent' => 100, 'expenses_percent' => 100]])
+                        ->addActionLabel(__('إضافة مالك'))
+                        ->schema([
+                            Select::make('owner_id')
+                                ->label(__('المالك'))
+                                ->options(fn () => Owner::query()->orderBy('full_name')->pluck('full_name', 'id'))
+                                ->searchable()
+                                ->required()
+                                ->distinct(),
+                            TextInput::make('share_percent')->label(__('نسبة الملكية'))->numeric()->suffix('%')->minValue(0)->maxValue(100)->required(),
+                            TextInput::make('expenses_percent')->label(__('نسبة تحمل المصروفات'))->numeric()->suffix('%')->minValue(0)->maxValue(100)->default(100)->required(),
+                        ]),
+                ]),
+
+                Tab::make(__('الموقع'))->columns(3)->schema([
+                    Select::make('city_id')->relationship('city', 'name')->searchable()->preload()->live(),
+                    Select::make('district_id')
+                        ->label(__('الحي'))
+                        ->options(fn (Get $get) => District::query()
+                            ->when($get('city_id'), fn ($q, $city) => $q->where('city_id', $city))
+                            ->pluck('name', 'id'))
+                        ->searchable(),
+                    TextInput::make('street'),
+                    TextInput::make('zone'),
+                    TextInput::make('address')->columnSpan(2),
+                    Textarea::make('address_details')->columnSpanFull(),
+                    TextInput::make('latitude')->numeric(),
+                    TextInput::make('longitude')->numeric(),
+                ]),
+
+                Tab::make(__('الصك والحدود'))->columns(3)->schema([
+                    Select::make('deed_type_id')->relationship('deedType', 'title'),
+                    TextInput::make('deed_number'),
+                    TextInput::make('plan_number'),
+                    TextInput::make('plot_number'),
+                    TextInput::make('plots'),
+                    KeyValue::make('borders')
+                        ->columnSpanFull()
+                        ->keyLabel(__('الحد'))
+                        ->valueLabel(__('الوصف / الطول'))
+                        ->default(fn () => BorderType::query()->pluck('title')->mapWithKeys(fn ($t) => [$t => ''])->all()),
+                    Repeater::make('meters')
+                        ->relationship()
+                        ->columnSpanFull()
+                        ->columns(2)
+                        ->defaultItems(0)
+                        ->addActionLabel(__('إضافة عداد'))
+                        ->schema([
+                            Select::make('meter_type_id')->relationship('meterType', 'title')->required(),
+                            TextInput::make('number')->label(__('رقم العداد'))->required(),
+                        ]),
+                ]),
+
+                Tab::make(__('الأسعار والعمولات'))->columns(3)->schema([
+                    TextInput::make('rent_amount')->numeric()->minValue(0),
+                    TextInput::make('monthly_rent')->numeric()->minValue(0),
+                    TextInput::make('daily_rent')->numeric()->minValue(0),
+                    Select::make('rent_period')->options(RentPeriodUnit::class),
+                    Select::make('rent_payment_cycle')->options(PaymentCycle::class),
+                    Toggle::make('vat_applicable'),
+                    TextInput::make('rent_commission')->numeric()->minValue(0),
+                    TextInput::make('sale_commission')->numeric()->minValue(0),
+                ]),
+
+                Tab::make(__('رسوم الإدارة'))->columns(3)->schema([
+                    TextInput::make('management_fee')->numeric()->minValue(0),
+                    Select::make('management_fee_cycle')->options(PaymentCycle::class),
+                    DatePicker::make('management_fee_start_date'),
+                ]),
+
+                Tab::make(__('حقول إضافية'))
+                    ->visible(fn (Get $get) => self::customFields($get('property_category_id'))->isNotEmpty())
+                    ->columns(2)
+                    ->schema(fn (Get $get) => self::customFields($get('property_category_id'))->map(function (CustomField $field) {
+                        $name = "custom_fields.{$field->id}";
+                        $component = match ($field->type) {
+                            CustomFieldType::Checkbox => Toggle::make($name),
+                            CustomFieldType::Number => TextInput::make($name)->numeric()->suffix($field->suffix),
+                            CustomFieldType::Date => DatePicker::make($name),
+                            CustomFieldType::Select => Select::make($name)->options(array_combine($field->options ?? [], $field->options ?? [])),
+                            default => TextInput::make($name)->suffix($field->suffix),
+                        };
+
+                        return $component->label($field->title)->helperText($field->description)->required($field->is_required);
+                    })->all()),
+
+                Tab::make(__('المرفقات'))->schema([
+                    SpatieMediaLibraryFileUpload::make('attachments')
+                        ->hiddenLabel()
+                        ->collection('attachments')
+                        ->multiple()
+                        ->downloadable()
+                        ->maxSize(20 * 1024),
+                    SpatieMediaLibraryFileUpload::make('photos')
+                        ->label(__('الصور'))
+                        ->collection('photos')
+                        ->image()
+                        ->multiple()
+                        ->reorderable(),
+                ]),
+            ]),
+        ]);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, CustomField> */
+    private static function customFields(mixed $categoryId)
+    {
+        return CustomField::query()
+            ->whereHas('group', fn ($q) => $q->whereNull('property_category_id')->when($categoryId, fn ($q) => $q->orWhere('property_category_id', $categoryId)))
+            ->orderBy('sort_order')
+            ->get();
     }
 }
