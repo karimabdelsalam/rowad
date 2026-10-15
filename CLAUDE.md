@@ -1,7 +1,7 @@
 # Aqar Nova — Working Rules
 
 Product name: **عقار نوفا** in Arabic, **Aqar Nova** in English. "رواد/Rowad" now only
-refers to the legacy system being replaced; internal identifiers (`config/rowad.php`, `rowad:*` commands) stay.
+refers to the legacy system being replaced. Production domain: **aqarnova.com** (offices at `<name>.aqarnova.com`); internal identifiers (`config/rowad.php`, `rowad:*` commands) stay.
 
 ## Rule #1: Keep going without stopping
 The owner asked for continuous, uninterrupted progress on the Laravel/SaaS rewrite.

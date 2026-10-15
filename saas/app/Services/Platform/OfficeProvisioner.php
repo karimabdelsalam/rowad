@@ -18,7 +18,8 @@ use Stancl\Tenancy\Database\Models\Domain;
  */
 class OfficeProvisioner
 {
-    public const RESERVED_SUBDOMAINS = ['www', 'admin', 'platform', 'api', 'app', 'mail', 'static', 'cdn', 'help', 'support'];
+    public const RESERVED_SUBDOMAINS = ['www', 'admin', 'platform', 'api', 'app', 'mail', 'webmail', 'smtp', 'ftp', 'ns1', 'ns2', 'static', 'cdn', 'assets', 'media',
+        'help', 'support', 'docs', 'blog', 'status', 'billing', 'pay', 'login', 'account', 'secure', 'dev', 'staging', 'aqarnova'];
 
     /**
      * @param array{name:string, email?:?string, phone?:?string, subdomain:string, plan_id?:?int,

@@ -92,7 +92,7 @@ return [
     ],
 
     'tenancy' => [
-        // Subdomains are created under this host, e.g. office1.rowad.app
+        // Subdomains are created under this host, e.g. alrowad.aqarnova.com
         'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),
     ],
 ];

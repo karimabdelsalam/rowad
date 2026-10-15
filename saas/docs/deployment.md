@@ -1,7 +1,7 @@
 # دليل التشغيل على السيرفر
 
-دليل تشغيل Aqar Nova على سيرفر Linux واحد (Ubuntu 24.04). المنصة على نطاق رئيسي (مثل `aqarnova.sa` — مثال، يُستبدل بالنطاق الفعلي)، وكل مؤسسة على نطاق فرعي
-(`alrowad.aqarnova.sa`) بقاعدة بيانات خاصة بها.
+دليل تشغيل Aqar Nova على سيرفر Linux واحد (Ubuntu 24.04). المنصة على نطاق رئيسي `aqarnova.com`، وكل مؤسسة على نطاق فرعي
+(`alrowad.aqarnova.com`) بقاعدة بيانات خاصة بها.
 
 > الأوامر بين `<...>` قيم تختارها أنت. الأوامر تُنفذ داخل مجلد `saas/`.
 
@@ -22,14 +22,14 @@ Node.js غير مطلوب للتشغيل (يُستخدم فقط لسكربت ل�
 
 | النوع | الاسم | القيمة |
 |---|---|---|
-| A | `aqarnova.sa` | IP السيرفر |
+| A | `aqarnova.com` | IP السيرفر |
 | A | `www` | IP السيرفر |
 | A | `*` | IP السيرفر (لكل نطاقات المؤسسات الفرعية) |
 
-الشهادة يجب أن تكون Wildcard (`*.aqarnova.sa`)، وهذه لا تصدر إلا بتحقق DNS:
+الشهادة يجب أن تكون Wildcard (`*.aqarnova.com`)، وهذه لا تصدر إلا بتحقق DNS:
 
 ```bash
-sudo certbot certonly --manual --preferred-challenges dns -d aqarnova.sa -d '*.aqarnova.sa'
+sudo certbot certonly --manual --preferred-challenges dns -d aqarnova.com -d '*.aqarnova.com'
 ```
 
 الأفضل استخدام إضافة Certbot الخاصة بمزود النطاق (Cloudflare مثلًا: `python3-certbot-dns-cloudflare`) حتى يتجدد تلقائيًا.
@@ -62,7 +62,7 @@ php artisan key:generate
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://aqarnova.sa
+APP_URL=https://aqarnova.com
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -71,8 +71,8 @@ DB_DATABASE=aqarnova_central
 DB_USERNAME=aqarnova
 DB_PASSWORD=<كلمة-المرور>
 
-CENTRAL_DOMAINS=aqarnova.sa,www.aqarnova.sa
-TENANT_BASE_DOMAIN=aqarnova.sa
+CENTRAL_DOMAINS=aqarnova.com,www.aqarnova.com
+TENANT_BASE_DOMAIN=aqarnova.com
 
 # لا تضع الجلسات في قاعدة البيانات: الاتصال الافتراضي يتغير مع كل مؤسسة
 SESSION_DRIVER=file          # أو redis
@@ -86,7 +86,7 @@ MAIL_HOST=<smtp-host>
 MAIL_PORT=587
 MAIL_USERNAME=<user>
 MAIL_PASSWORD=<password>
-MAIL_FROM_ADDRESS=noreply@aqarnova.sa
+MAIL_FROM_ADDRESS=noreply@aqarnova.com
 
 PLATFORM_ADMIN_EMAIL=<بريدك>
 PLATFORM_ADMIN_PASSWORD=<كلمة-مرور-قوية>
@@ -117,18 +117,18 @@ sudo chown -R www-data:www-data storage bootstrap/cache
 ```nginx
 server {
     listen 80;
-    server_name aqarnova.sa *.aqarnova.sa;
+    server_name aqarnova.com *.aqarnova.com;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name aqarnova.sa *.aqarnova.sa;
+    server_name aqarnova.com *.aqarnova.com;
     root /var/www/rowad/saas/public;
     index index.php;
 
-    ssl_certificate     /etc/letsencrypt/live/aqarnova.sa/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/aqarnova.sa/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/aqarnova.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aqarnova.com/privkey.pem;
 
     client_max_body_size 50M;   # سحابة الملفات تقبل حتى 50 ميجا
 
@@ -228,7 +228,7 @@ find /var/backups/aqarnova -maxdepth 1 -type d -mtime +14 -exec rm -rf {} +
 
 ## 9. النطاق الخاص لمؤسسة (باقة المؤسسات)
 
-1. المؤسسة تضيف في لوحة نطاقها سجل `CNAME` من `alrowad.com.sa` (أو `www`) إلى `aqarnova.sa`، أو سجل `A` إلى IP السيرفر للنطاق الجذري.
+1. المؤسسة تضيف في لوحة نطاقها سجل `CNAME` من `alrowad.com.sa` (أو `www`) إلى `aqarnova.com`، أو سجل `A` إلى IP السيرفر للنطاق الجذري.
 2. من لوحة المنصة: المؤسسات ← تعديل المؤسسة ← النطاقات ← "إضافة نطاق خاص".
 3. على السيرفر، شهادة للنطاق وكتلة Nginx له (نفس إعداد القسم 5 مع تغيير الاسم والشهادة):
 
@@ -249,7 +249,7 @@ sudo nginx -t && sudo systemctl reload nginx
 3. نفّذ:
 
 ```bash
-LEGACY_DB_PASSWORD=<كلمة-مرور-القاعدة-القديمة> php artisan rowad:import-legacy <alrowad.aqarnova.sa-or-tenant-id> \
+LEGACY_DB_PASSWORD=<كلمة-مرور-القاعدة-القديمة> php artisan rowad:import-legacy <alrowad.aqarnova.com-or-tenant-id> \
   --host=127.0.0.1 --database=<legacy_db> --username=<user> --media=/path/to/legacy/media
 ```
 
@@ -261,7 +261,7 @@ LEGACY_DB_PASSWORD=<كلمة-مرور-القاعدة-القديمة> php artisan
 ## 11. قائمة التحقق قبل الإطلاق
 
 - [ ] `APP_DEBUG=false` و`APP_ENV=production`.
-- [ ] شهادة Wildcard تعمل على `aqarnova.sa` وأي نطاق فرعي.
+- [ ] شهادة Wildcard تعمل على `aqarnova.com` وأي نطاق فرعي.
 - [ ] `php artisan about` يظهر الكاش مفعّلًا، و`queue:work` يعمل تحت Supervisor.
 - [ ] جرّب التسجيل من الصفحة الرئيسية ثم الدخول للوحة المؤسسة الجديدة.
 - [ ] ضبط مزود SMS والبريد من إعدادات كل مؤسسة.
