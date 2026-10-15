@@ -100,12 +100,14 @@ class DashboardStats
     /** @return array{labels: list<string>, collected: list<float>, due: list<float>} */
     public function monthlyCollections(int $year): array
     {
-        $collected = $due = array_fill(1, 12, 0.0);
-
-        Installment::where('is_collected', true)->whereYear('collected_at', $year)->get(['amount', 'collected_at'])
-            ->each(function ($i) use (&$collected) { $collected[(int) $i->collected_at->format('n')] += (float) $i->amount; });
-        Installment::where('type', '!=', 'expenses')->whereYear('due_date', $year)->get(['amount', 'due_date'])
-            ->each(function ($i) use (&$due) { $due[(int) $i->due_date->format('n')] += (float) $i->amount; });
+        // one SUM per month on indexed date ranges: loading every installment of the year was slow for large offices
+        $collected = $due = [];
+        foreach (range(1, 12) as $m) {
+            $start = now()->setDate($year, $m, 1)->startOfDay();
+            $end = $start->copy()->endOfMonth();
+            $collected[$m] = (float) Installment::where('is_collected', true)->whereBetween('collected_at', [$start, $end])->sum('amount');
+            $due[$m] = (float) Installment::where('type', '!=', 'expenses')->whereBetween('due_date', [$start->toDateString(), $end->toDateString()])->sum('amount');
+        }
 
         return [
             'labels' => array_map(fn ($m) => now()->setDate($year, $m, 1)->translatedFormat('M'), range(1, 12)),

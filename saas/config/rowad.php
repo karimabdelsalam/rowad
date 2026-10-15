@@ -74,6 +74,9 @@ return [
         'password' => env('PLATFORM_ADMIN_PASSWORD'),
     ],
 
+    // Log query count and time per request to storage/logs/perf.log (development only).
+    'perf_log' => (bool) env('ROWAD_PERF_LOG', false),
+
     // Password of the legacy MySQL database for rowad:import-legacy (prompted when empty).
     'legacy_db_password' => env('LEGACY_DB_PASSWORD'),
 

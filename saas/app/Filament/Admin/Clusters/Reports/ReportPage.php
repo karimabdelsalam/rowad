@@ -143,12 +143,18 @@ abstract class ReportPage extends Page implements HasTable
         ];
     }
 
+    /** Every row of the report with the current filters (array-based reports override this). */
+    protected function exportRecords(): iterable
+    {
+        return $this->getTable()->hasQuery() ? $this->getFilteredSortedTableQuery()->get() : $this->getTableRecords();
+    }
+
     /** CSV with a UTF-8 BOM so Excel shows Arabic correctly; uses the current filters and sort. */
     public function exportCsv(): StreamedResponse
     {
         $table = $this->getTable();
         $columns = collect($table->getColumns())->filter(fn (Column $c) => ! $c->isHidden() && ! $c->isToggledHidden());
-        $records = $this->getFilteredSortedTableQuery()->get();
+        $records = $this->exportRecords();
 
         return response()->streamDownload(function () use ($columns, $records) {
             $out = fopen('php://output', 'w');

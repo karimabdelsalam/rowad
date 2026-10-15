@@ -127,6 +127,22 @@ class ReportsTest extends TestCase
         $this->assertStringNotContainsString('4600.00', str_replace(',', '', $csv));
     }
 
+    public function test_array_based_reports_export_every_row_and_search_works(): void
+    {
+        $this->seedActivity();
+        $this->actingAsRole('accountant');
+
+        foreach ([Pages\UnitsReport::class, Pages\ProfitsReport::class] as $page) {
+            ob_start();
+            Livewire::test($page)->instance()->exportCsv()->sendContent();
+            $csv = ob_get_clean();
+            $this->assertStringContainsString('الإجمالي', $csv, $page);
+        }
+
+        $units = Livewire::test(Pages\UnitsReport::class)->searchTable('لا توجد وحدة بهذا الاسم')->instance()->getTableRecords();
+        $this->assertSame(['total'], array_keys($units->items()));
+    }
+
     public function test_agents_cannot_open_financial_reports(): void
     {
         $this->actingAsRole('agent');
