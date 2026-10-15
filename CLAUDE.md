@@ -7,7 +7,7 @@ refers to the legacy system being replaced. Production domain: **aqarnova.com** 
 The owner asked for continuous, uninterrupted progress on the Laravel/SaaS rewrite.
 - Do not pause to ask "should I continue?" or "want me to…?" between phases.
 - Make reasonable decisions yourself, document them in the commit message or
-  `saas/docs/decisions.md`, and move on to the next phase.
+  `docs/decisions.md`, and move on to the next phase.
 - Commit and push after each completed step so progress is never lost.
 - Stop only for something truly destructive or a decision only the owner can make
   (e.g. payment provider contracts, production credentials).
@@ -16,15 +16,15 @@ The owner asked for continuous, uninterrupted progress on the Laravel/SaaS rewri
 Whenever a page with visible design is built or changed (landing page, panels, portals,
 print documents, login, emails), take a screenshot (Playwright/Chromium against a local
 demo office) and send it to the owner in the chat with SendUserFile while working.
-Script: `saas/scripts/screenshots.mjs`, demo data: `php artisan rowad:demo`.
+Script: `scripts/screenshots.mjs`, demo data: `php artisan rowad:demo`.
 
 ## Project layout
-- `/` (root) — legacy PHP system (Smarty, ezSQL), upgraded to run on PHP 8.4. Kept as reference.
+- `main` branch — the new Laravel 13 multi-tenant SaaS (Aqar Nova) at the repository root.
+- `old` branch — the legacy PHP system (Smarty, ezSQL) upgraded to PHP 8.4, kept as reference only.
 - `docs/feature-inventory.md` — the parity contract: every feature of the legacy
   system that the rewrite must reproduce.
-- `saas/` — the new Laravel 13 multi-tenant SaaS rewrite.
 
-## Rewrite conventions (saas/)
+## Conventions
 - Laravel 13, PHP 8.3+, Filament for admin/portal UIs, Arabic-first (RTL) with English.
 - Multi-tenancy: database-per-tenant (stancl/tenancy). Central DB holds tenants,
   domains, plans, subscriptions. Tenant DB holds all business data.
