@@ -43,7 +43,7 @@ class SendOutgoingMessage implements ShouldQueue
         }
 
         try {
-            $this->mailer()->html($message->body, function ($mail) use ($message) {
+            $this->mailer()->html(self::layout((string) $message->subject, (string) $message->body), function ($mail) use ($message) {
                 $mail->to($message->recipient)->subject((string) $message->subject);
                 if ($from = Settings::get('email')) {
                     $mail->replyTo($from, Settings::get('site_name'));
@@ -55,6 +55,23 @@ class SendOutgoingMessage implements ShouldQueue
             $message->update(['status' => 'failed', 'error' => mb_substr($e->getMessage(), 0, 500)]);
             $message->campaign?->increment('failed_count');
         }
+    }
+
+    /** Wraps a template or free-text body in the organisation's branded, right-to-left email layout. */
+    public static function layout(string $subject, string $body): string
+    {
+        $html = strip_tags($body) === $body ? nl2br(e($body), false) : $body; // free text (e.g. an inbox reply) keeps its lines
+        $domain = tenancy()->initialized ? tenant()->domains()->value('domain') : null;
+        $scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME) ?: 'https';
+
+        return view('mail.layout', [
+            'subject' => $subject,
+            'body' => $html,
+            'org' => (string) Settings::get('site_name', tenancy()->initialized ? tenant('name') : config('app.name')),
+            'logo' => $domain && filled(Settings::get('logo')) ? $scheme.'://'.$domain.route('site.logo', [], false) : null,
+            'contact' => [trim(Settings::get('address1').' — '.Settings::get('address2'), ' —'), Settings::get('phone'), Settings::get('email')],
+            'locale' => (string) Settings::get('locale', 'ar'),
+        ])->render();
     }
 
     /** The office's own SMTP server when configured, otherwise the platform mailer. */

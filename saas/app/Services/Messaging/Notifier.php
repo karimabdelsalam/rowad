@@ -33,7 +33,7 @@ class Notifier
             $vars = $variables + ['name' => $recipient['name'] ?? '', 'office' => Settings::get('site_name', tenant('name'))];
 
             if (($force || $template?->email_enabled) && filled($recipient['email'] ?? null) && filled($template?->email_body)) {
-                $messages[] = $this->queue(MessageChannel::Mail, $event, $recipient['email'], $this->render($template->email_subject, $vars), $this->render($template->email_body, $vars));
+                $messages[] = $this->queue(MessageChannel::Mail, $event, $recipient['email'], $this->render($template->email_subject, $vars), $this->render($template->email_body, $vars, html: true));
             }
             if (($force || $template?->sms_enabled) && filled($recipient['mobile'] ?? null) && filled($template?->sms_body)) {
                 $messages[] = $this->queue(MessageChannel::Sms, $event, $recipient['mobile'], null, $this->render($template->sms_body, $vars));
@@ -66,9 +66,10 @@ class Notifier
     }
 
     /** Replace {placeholders}; unknown placeholders are left visible so template mistakes are noticed. */
-    public function render(?string $text, array $variables): string
+    public function render(?string $text, array $variables, bool $html = false): string
     {
-        return strtr((string) $text, collect($variables)->mapWithKeys(fn ($v, $k) => ['{'.$k.'}' => (string) $v])->all());
+        // in an HTML email a value such as a name is text, not markup
+        return strtr((string) $text, collect($variables)->mapWithKeys(fn ($v, $k) => ['{'.$k.'}' => $html ? e((string) $v) : (string) $v])->all());
     }
 
     private function queue(MessageChannel $channel, NotificationEvent $event, string $recipient, ?string $subject, string $body): OutgoingMessage
