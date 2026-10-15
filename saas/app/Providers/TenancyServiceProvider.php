@@ -120,6 +120,13 @@ class TenancyServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        // cPanel database names: letters, digits and underscores only, so the UUID loses its dashes.
+        // Only new offices are affected; existing ones keep the name stored with them.
+        if (config('tenancy.database.managers.mysql') === \App\Tenancy\CpanelDatabaseManager::class) {
+            \Stancl\Tenancy\DatabaseConfig::generateDatabaseNamesUsing(fn ($tenant) => config('tenancy.database.prefix')
+                .str_replace('-', '', (string) $tenant->getTenantKey()).config('tenancy.database.suffix'));
+        }
+
         $this->bootEvents();
         $this->mapRoutes();
 

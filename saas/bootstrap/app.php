@@ -28,4 +28,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Wildcard DNS sends every *.aqarnova.com here: a subdomain no office owns gets a 404 page, not a server error.
+        $exceptions->render(function (\Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => 'Not found.'], 404);
+            }
+            return response()->view('errors.office-not-found', ['home' => $request->getScheme().'://'.config('rowad.tenancy.base_domain')
+                .(in_array($request->getPort(), [80, 443], true) ? '' : ':'.$request->getPort())], 404);
+        });
+        $exceptions->dontReport(\Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException::class);
     })->create();

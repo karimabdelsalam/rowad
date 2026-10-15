@@ -92,6 +92,26 @@ class PlatformSignupTest extends TestCase
         $this->assertSame(1, Tenant::count());
     }
 
+    public function test_a_failed_signup_leaves_nothing_behind_and_can_be_retried(): void
+    {
+        // e.g. the hosting account's database quota is full, or a migration fails half way
+        $fail = true;
+        \Illuminate\Support\Facades\Event::listen(\Stancl\Tenancy\Events\DatabaseMigrated::class, function () use (&$fail) {
+            if ($fail) {
+                throw new \RuntimeException('database quota reached');
+            }
+        });
+
+        $this->post('http://localhost/signup', $this->form())->assertSessionHasErrors('name');
+        $this->assertSame(0, \App\Models\Tenant::count());
+        $this->assertSame(0, \Stancl\Tenancy\Database\Models\Domain::count());
+        $this->assertSame(0, \App\Models\Subscription::count());
+
+        $fail = false;
+        $this->post('http://localhost/signup', $this->form())->assertSessionHasNoErrors();
+        $this->assertSame(1, \App\Models\Tenant::count());
+    }
+
     public function test_bots_filling_the_hidden_field_create_nothing(): void
     {
         $this->post('http://localhost/signup', $this->form(['website' => 'http://spam.test']))->assertRedirect('http://localhost');

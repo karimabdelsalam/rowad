@@ -30,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (filled($proxies = config('rowad.trusted_proxies'))) {
+            \Illuminate\Http\Middleware\TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
         \Illuminate\Support\Facades\Auth::provider('legacy-aware', fn ($app, array $config) => new \App\Auth\LegacyAwareUserProvider($app['hash'], $config['model']));
 
         Model::shouldBeStrict(! $this->app->isProduction());

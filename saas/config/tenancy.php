@@ -48,7 +48,7 @@ return [
          * Tenant database names are created like this:
          * prefix + tenant_id + suffix.
          */
-        'prefix' => 'tenant',
+        'prefix' => env('TENANCY_DB_PREFIX', 'tenant'), // on cPanel it must start with the account name, e.g. myuser_t
         'suffix' => '',
 
         /**
@@ -56,8 +56,9 @@ return [
          */
         'managers' => [
             'sqlite' => Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager::class,
-            'mysql' => Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager::class,
-            'mariadb' => Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager::class,
+            // TENANCY_DB_MANAGER=cpanel on cPanel hosting, where databases can only be created through cPanel's API
+            'mysql' => env('TENANCY_DB_MANAGER') === 'cpanel' ? App\Tenancy\CpanelDatabaseManager::class : Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager::class,
+            'mariadb' => env('TENANCY_DB_MANAGER') === 'cpanel' ? App\Tenancy\CpanelDatabaseManager::class : Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager::class,
             'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
 
         /**

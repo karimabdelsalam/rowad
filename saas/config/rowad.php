@@ -91,6 +91,22 @@ return [
         'max_tool_rounds' => 6,
     ],
 
+    // cPanel hosting: office databases are created through cPanel's API (see App\Tenancy\CpanelDatabaseManager).
+    'cpanel' => [
+        'host' => env('CPANEL_HOST', 'localhost'),
+        'port' => (int) env('CPANEL_PORT', 2083),
+        'user' => env('CPANEL_USER'),
+        'token' => env('CPANEL_API_TOKEN'),
+        // localhost has no certificate for its own name; a real hostname should be verified
+        'verify_ssl' => (bool) env('CPANEL_VERIFY_SSL', ! in_array(env('CPANEL_HOST', 'localhost'), ['localhost', '127.0.0.1'], true)),
+    ],
+
+    // Hosting without Supervisor (cPanel): the per-minute cron also works through the queue.
+    'queue_via_scheduler' => env('QUEUE_WORKER') === 'scheduler',
+
+    // Behind Cloudflare or another proxy: "*" so HTTPS and visitor IPs are read from the proxy headers.
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
     'tenancy' => [
         // Subdomains are created under this host, e.g. alrowad.aqarnova.com
         'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),
