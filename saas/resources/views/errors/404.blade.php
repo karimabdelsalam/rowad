@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@php($ar = app()->getLocale() !== 'en')
+@section('code', '404')
+@section('title', $ar ? 'الصفحة غير موجودة' : 'Page not found')
+@section('message', $ar ? 'قد يكون الرابط غير صحيح أو أن الصفحة نُقلت أو حُذفت.' : 'The link may be wrong, or the page was moved or removed.')

@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@php($ar = app()->getLocale() !== 'en')
+@section('code', '503')
+@section('title', $ar ? 'النظام تحت الصيانة' : 'Under maintenance')
+@section('message', $ar ? 'نقوم بتحديث النظام الآن، وسيعود خلال دقائق. شكرًا لصبركم.' : 'We are updating the system and will be back in a few minutes. Thank you for your patience.')

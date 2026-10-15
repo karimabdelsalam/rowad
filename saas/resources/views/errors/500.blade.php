@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@php($ar = app()->getLocale() !== 'en')
+@section('code', '500')
+@section('title', $ar ? 'حدث خطأ غير متوقع' : 'Something went wrong')
+@section('message', $ar ? 'نعتذر عن ذلك، تم تسجيل الخطأ وسنعالجه. حاول مرة أخرى بعد قليل.' : 'Sorry about that. The error was logged and we will look into it. Please try again shortly.')

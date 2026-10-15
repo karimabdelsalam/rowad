@@ -25,4 +25,14 @@ class DeploymentReadinessTest extends TestCase
 
         $this->assertSame([], $offenders, 'env() returns null once config is cached; read it through config/*.php');
     }
+
+    public function test_error_and_maintenance_pages_are_branded_and_bilingual(): void
+    {
+        $this->get('http://localhost/no-such-page')->assertNotFound()->assertSee('الصفحة غير موجودة')->assertSee('planova.com.eg');
+
+        app()->setLocale('en');
+        $html = view('errors.503')->render();
+        $this->assertStringContainsString('Under maintenance', $html);
+        $this->assertStringContainsString('Aqar Nova', $html);
+    }
 }

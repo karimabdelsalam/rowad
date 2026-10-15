@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@php($ar = app()->getLocale() !== 'en')
+@section('code', '429')
+@section('title', $ar ? 'محاولات كثيرة' : 'Too many attempts')
+@section('message', $ar ? 'أرسلت طلبات كثيرة في وقت قصير. انتظر قليلًا ثم حاول مرة أخرى.' : 'Too many requests in a short time. Please wait a moment and try again.')

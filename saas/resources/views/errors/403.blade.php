@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@php($ar = app()->getLocale() !== 'en')
+@section('code', '403')
+@section('title', $ar ? 'لا تملك صلاحية الوصول' : 'Access denied')
+@section('message', $ar ? 'هذه الصفحة غير متاحة لحسابك. إن كنت تحتاجها فاطلب الصلاحية من مدير المؤسسة.' : 'Your account cannot open this page. Ask your organisation administrator for access.')

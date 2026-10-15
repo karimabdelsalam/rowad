@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@php($ar = app()->getLocale() !== 'en')
+@section('code', '419')
+@section('title', $ar ? 'انتهت صلاحية الجلسة' : 'Session expired')
+@section('message', $ar ? 'انتهت صلاحية الصفحة لأنها فُتحت مدة طويلة. حدّث الصفحة وحاول مرة أخرى.' : 'The page was open for too long. Refresh it and try again.')
