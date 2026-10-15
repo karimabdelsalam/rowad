@@ -52,6 +52,10 @@ return new class extends Migration
         // Legacy inbox: contact-form messages from the public site.
         Schema::create('inbox_messages', function (Blueprint $table) {
             $table->id();
+            $table->string('source', 20)->default('contact'); // contact, unit_inquiry
+            $table->foreignId('unit_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('locale', 5)->default('ar');
+            $table->string('ip_address', 45)->nullable();
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('mobile', 30)->nullable();

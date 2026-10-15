@@ -36,6 +36,9 @@ class Unit extends Model implements HasMedia
             'status' => UnitStatus::class,
             'is_active' => 'boolean',
             'is_furnished' => 'boolean',
+            'is_published' => 'boolean',
+            'show_price' => 'boolean',
+            'is_featured' => 'boolean',
             'area' => 'decimal:2',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
@@ -131,9 +134,39 @@ class Unit extends Model implements HasMedia
         return $this->morphTo();
     }
 
+    /** Units listed on the office's public landing page. */
+    public function scopeListed(Builder $query): Builder
+    {
+        return $query->available()->where('is_published', true)->where('offer_type', OfferType::Rent);
+    }
+
+    /** Title/details in the visitor's language, falling back to Arabic. */
+    public function localized(string $attribute): ?string
+    {
+        if (app()->getLocale() !== 'ar' && filled($this->{$attribute.'_en'})) {
+            return $this->{$attribute.'_en'};
+        }
+
+        return $this->{$attribute};
+    }
+
     public function scopeAvailable(Builder $query): Builder
     {
         return $query->where('status', UnitStatus::Available)->where('is_active', true);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('photos');
+        $this->addMediaCollection('attachments');
+    }
+
+    /** Cover photo URL served through the office domain (tenant storage). */
+    public function coverPhotoUrl(): ?string
+    {
+        $media = $this->getMedia('photos')->first();
+
+        return $media ? route('site.media', $media) : null;
     }
 
     public function getActivitylogOptions(): LogOptions

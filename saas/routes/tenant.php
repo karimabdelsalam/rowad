@@ -2,20 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Site\LandingController;
+use App\Http\Controllers\Site\MediaController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 /*
-|--------------------------------------------------------------------------
-| Tenant Routes
-|--------------------------------------------------------------------------
-|
-| Here you can register the tenant routes for your application.
-| These routes are loaded by the TenantRouteServiceProvider.
-|
-| Feel free to customize them however you want. Good luck!
-|
+| Office domains (subdomain or custom domain). The back-office and portals
+| are Filament panels (/admin, /owner, /client); these are the public pages.
 */
 
 Route::middleware([
@@ -23,7 +18,9 @@ Route::middleware([
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
-    Route::get('/', function () {
-        return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
-    });
+    Route::get('/', [LandingController::class, 'home'])->name('site.home');
+    Route::get('/units/{unit}', [LandingController::class, 'show'])->name('site.unit');
+    Route::post('/contact', [LandingController::class, 'inquire'])->name('site.contact');
+    Route::post('/units/{unit}/inquiry', [LandingController::class, 'inquire'])->name('site.unit.inquiry');
+    Route::get('/media/{media}', MediaController::class)->name('site.media');
 });

@@ -142,6 +142,14 @@ class UnitForm
                         return $component->label($field->title)->helperText($field->description)->required($field->is_required);
                     })->all()),
 
+                Tab::make(__('النشر على الموقع'))->columns(3)->schema([
+                    Toggle::make('is_published')->label(__('عرض الوحدة على موقع المكتب'))->helperText(__('تظهر فقط إذا كانت متاحة للإيجار')),
+                    Toggle::make('show_price')->label(__('إظهار السعر'))->default(true),
+                    Toggle::make('is_featured')->label(__('وحدة مميزة')),
+                    TextInput::make('title_en')->label(__('العنوان بالإنجليزية'))->columnSpan(3),
+                    Textarea::make('details_en')->label(__('الوصف بالإنجليزية'))->rows(4)->columnSpanFull(),
+                ]),
+
                 Tab::make(__('المرفقات'))->schema([
                     SpatieMediaLibraryFileUpload::make('attachments')
                         ->hiddenLabel()

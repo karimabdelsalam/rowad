@@ -12,9 +12,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         foreach ([
-            ['basic', 'الأساسية', 'Basic', 199, 1990, 50, 3, 1024, 200, ['owner_portal']],
-            ['professional', 'الاحترافية', 'Professional', 449, 4490, 300, 10, 10240, 1000, ['owner_portal', 'client_portal', 'zatca', 'campaigns']],
-            ['enterprise', 'المؤسسات', 'Enterprise', 999, 9990, null, null, 51200, 5000, ['owner_portal', 'client_portal', 'zatca', 'campaigns', 'api', 'custom_domain']],
+            ['basic', 'الأساسية', 'Basic', 199, 1990, 50, 3, 1024, 200, ['owner_portal', 'landing_page']],
+            ['professional', 'الاحترافية', 'Professional', 449, 4490, 300, 10, 10240, 1000, ['owner_portal', 'client_portal', 'zatca', 'campaigns', 'landing_page']],
+            ['enterprise', 'المؤسسات', 'Enterprise', 999, 9990, null, null, 51200, 5000, ['owner_portal', 'client_portal', 'zatca', 'campaigns', 'api', 'custom_domain', 'landing_page']],
         ] as $i => [$slug, $ar, $en, $monthly, $yearly, $units, $users, $storage, $sms, $features]) {
             Plan::updateOrCreate(['slug' => $slug], [
                 'name_ar' => $ar, 'name_en' => $en, 'monthly_price' => $monthly, 'yearly_price' => $yearly,

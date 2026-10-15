@@ -2,12 +2,15 @@
 
 namespace App\Providers\Filament\Concerns;
 
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\Support\Colors\Color;
+use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -31,6 +34,13 @@ trait ConfiguresPanel
                 'gray' => Color::Slate,
             ])
             ->sidebarCollapsibleOnDesktop()
+            ->userMenuItems([
+                Action::make('switchLocale')
+                    ->label(fn () => app()->getLocale() === 'ar' ? 'English' : 'العربية')
+                    ->icon(Heroicon::OutlinedLanguage)
+                    ->url(fn () => route('locale.switch', app()->getLocale() === 'ar' ? 'en' : 'ar')),
+            ])
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('filament.locale-switch'))
             ->databaseNotifications($tenant)
             ->middleware([
                 EncryptCookies::class,
@@ -38,6 +48,7 @@ trait ConfiguresPanel
                 StartSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
+                \App\Http\Middleware\SetLocale::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,

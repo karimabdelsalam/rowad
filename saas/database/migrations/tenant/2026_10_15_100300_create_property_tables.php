@@ -35,6 +35,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('building_id')->nullable()->constrained()->nullOnDelete(); // legacy locid
             $table->string('title');
+            $table->string('title_en')->nullable();            // public site, English
             $table->string('offer_type', 10)->default('rent')->index(); // rent, sale (legacy type)
             $table->string('status', 20)->default('available')->index(); // available, rented, sold, reserved
             $table->boolean('is_active')->default(true);
@@ -61,6 +62,12 @@ return new class extends Migration
             $table->decimal('longitude', 10, 7)->nullable();
             $table->json('borders')->nullable();               // boundaries per border_type
             $table->text('details')->nullable();
+            $table->text('details_en')->nullable();
+
+            // Landing page: listed publicly while available.
+            $table->boolean('is_published')->default(false)->index();
+            $table->boolean('show_price')->default(true);
+            $table->boolean('is_featured')->default(false);
 
             // Default commercial terms offered for this unit.
             $table->decimal('rent_amount', 14, 2)->nullable();         // rentvalue

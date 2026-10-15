@@ -36,6 +36,7 @@ class User extends Authenticatable implements FilamentUser
         'is_active' => true,
         'is_super_admin' => false,
         'sms_login_enabled' => false,
+        'remember_token' => null,
     ];
 
     protected function casts(): array

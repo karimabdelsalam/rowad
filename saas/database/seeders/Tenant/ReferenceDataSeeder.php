@@ -81,6 +81,13 @@ class ReferenceDataSeeder extends Seeder
                 'sms_provider' => null, 'sms_username' => null, 'sms_password' => null, 'sms_sender' => null,
                 'sms_login_staff' => false, 'sms_login_clients' => false,
             ],
+            'website' => [
+                'landing_enabled' => true,
+                'landing_hero_title' => null, 'landing_hero_title_en' => null,
+                'landing_hero_subtitle' => null, 'landing_hero_subtitle_en' => null,
+                'landing_about' => null, 'landing_about_en' => null,
+                'landing_whatsapp' => null, 'landing_primary_color' => '#0f766e',
+            ],
             'general' => [
                 'support_ticket_prefix' => 'TCK-', 'google_maps_key' => null,
                 'site_closed' => false, 'site_closed_message' => null, 'skip_guide_widget' => false,
