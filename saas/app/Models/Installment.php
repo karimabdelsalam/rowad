@@ -24,6 +24,7 @@ class Installment extends Model
     protected function casts(): array
     {
         return [
+            'last_reminded_at' => 'datetime',
             'type' => InstallmentType::class,
             'calendar' => Calendar::class,
             'due_date' => 'date',

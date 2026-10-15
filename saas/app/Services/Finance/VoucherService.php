@@ -49,7 +49,7 @@ class VoucherService
             throw new BusinessRuleException(__('الحركة رقم :id لا تقبل إنشاء سند قبض', ['id' => $wrong->id]));
         }
 
-        return DB::transaction(function () use ($attributes, $installments, $entries) {
+        $voucher = DB::transaction(function () use ($attributes, $installments, $entries) {
             $voucher = ReceiptVoucher::create($attributes + [
                 'number' => $this->numbers->next('receipt_voucher'),
                 'created_by' => auth()->id(),
@@ -68,6 +68,10 @@ class VoucherService
 
             return $voucher;
         });
+
+        app(\App\Services\Messaging\DomainNotifications::class)->receiptIssued($voucher);
+
+        return $voucher;
     }
 
     /**
@@ -88,7 +92,7 @@ class VoucherService
         $attributes['vat_amount'] = $vat;
         $attributes['amount'] = round((float) $attributes['amount'] + $vat, 2);
 
-        return DB::transaction(function () use ($attributes, $chargeTo, $entries, $vat) {
+        $voucher = DB::transaction(function () use ($attributes, $chargeTo, $entries, $vat) {
             $voucher = PaymentVoucher::create($attributes + [
                 'number' => $this->numbers->next('payment_voucher'),
                 'created_by' => auth()->id(),
@@ -108,6 +112,10 @@ class VoucherService
 
             return $voucher;
         });
+
+        app(\App\Services\Messaging\DomainNotifications::class)->paymentIssued($voucher);
+
+        return $voucher;
     }
 
     /** Re-point or drop the bank movement after an edit (legacy checkBankTransaction). */

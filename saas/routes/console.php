@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Legacy cron/daily.php, cron/hourly.php; messages are delivered by the queue worker (legacy cron/perminute.php).
+Schedule::command('rowad:daily')->dailyAt('03:00')->withoutOverlapping()->onOneServer();
+Schedule::command('rowad:usage')->hourly()->withoutOverlapping()->onOneServer();
+Schedule::command('queue:prune-failed --hours=720')->daily();

@@ -95,7 +95,8 @@ return new class extends Migration
             $table->decimal('paid_amount', 14, 2)->default(0);       // partial payments
             $table->boolean('is_collected')->default(false)->index(); // legacy gone
             $table->timestamp('collected_at')->nullable();
-            $table->unsignedTinyInteger('reminder_stage')->default(0); // legacy alert 15/1/0
+            $table->unsignedTinyInteger('reminder_stage')->default(0); // 0 none, 15 sent 15-day, 1 sent day-before, 2 sent due-day (legacy alert)
+            $table->timestamp('last_reminded_at')->nullable();
             $table->foreignId('receipt_voucher_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('payment_voucher_id')->nullable()->constrained()->nullOnDelete(); // expenses
             $table->foreignId('invoice_id')->nullable()->constrained()->nullOnDelete();

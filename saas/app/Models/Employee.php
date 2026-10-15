@@ -21,9 +21,19 @@ class Employee extends Model implements HasMedia
 
     protected $attributes = ['calendar' => 'gregorian'];
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $model) {
+            if ($model->isDirty('id_expiry_date')) {
+                $model->id_expiry_notified_at = null;
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
+            'id_expiry_notified_at' => 'datetime',
             'id_type' => IdType::class,
             'id_issue_date' => 'date',
             'id_expiry_date' => 'date',

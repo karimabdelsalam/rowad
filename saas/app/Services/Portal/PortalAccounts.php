@@ -40,6 +40,9 @@ class PortalAccounts
             return $user;
         });
 
+        app(\App\Services\Messaging\DomainNotifications::class)
+            ->credentialsIssued($person, $login, $password, $person instanceof Owner ? 'owner' : 'client');
+
         return ['user' => $user, 'login' => $login, 'password' => $password];
     }
 

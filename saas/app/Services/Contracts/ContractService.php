@@ -37,7 +37,7 @@ class ContractService
         $this->assertParties($parties);
         $this->assertUnitAvailable((int) $attributes['unit_id'], $attributes['start_date'], $attributes['end_date']);
 
-        return DB::transaction(function () use ($attributes, $parties, $termIds) {
+        $contract = DB::transaction(function () use ($attributes, $parties, $termIds) {
             $contract = RentContract::create($attributes + [
                 'number' => $this->numbers->next('rent_contract'),
                 'status' => ContractStatus::Active,
@@ -50,6 +50,10 @@ class ContractService
 
             return $contract->refresh();
         });
+
+        app(\App\Services\Messaging\DomainNotifications::class)->rentContractCreated($contract);
+
+        return $contract;
     }
 
     /** Edit terms and regenerate the schedule (refused once money was collected). */

@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Enums\MessageChannel;
+use App\Models\OutgoingMessage;
+use App\Services\Messaging\SmsGateway;
+use App\Support\Settings;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Mail;
+
+/** Delivers one logged email/SMS (legacy email_queue processed by cron/perminute). Runs in the office's context. */
+class SendOutgoingMessage implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable;
+
+    public int $tries = 3;
+
+    public array $backoff = [60, 300];
+
+    public function __construct(public int $messageId)
+    {
+    }
+
+    public function handle(SmsGateway $sms): void
+    {
+        $message = OutgoingMessage::find($this->messageId);
+        if ($message === null || $message->status === 'sent') {
+            return;
+        }
+
+        if ($message->channel === MessageChannel::Sms) {
+            $result = $sms->send($message->recipient, $message->body);
+            $message->update($result->ok
+                ? ['status' => 'sent', 'sent_at' => now(), 'provider' => Settings::get('sms_provider'), 'error' => null]
+                : ['status' => 'failed', 'error' => $result->error, 'provider' => Settings::get('sms_provider')]);
+            $message->campaign?->increment($result->ok ? 'sent_count' : 'failed_count');
+
+            return;
+        }
+
+        try {
+            $this->mailer()->html($message->body, function ($mail) use ($message) {
+                $mail->to($message->recipient)->subject((string) $message->subject);
+                if ($from = Settings::get('email')) {
+                    $mail->replyTo($from, Settings::get('site_name'));
+                }
+            });
+            $message->update(['status' => 'sent', 'sent_at' => now(), 'provider' => Settings::get('mail_driver', 'platform'), 'error' => null]);
+            $message->campaign?->increment('sent_count');
+        } catch (\Throwable $e) {
+            $message->update(['status' => 'failed', 'error' => mb_substr($e->getMessage(), 0, 500)]);
+            $message->campaign?->increment('failed_count');
+        }
+    }
+
+    /** The office's own SMTP server when configured, otherwise the platform mailer. */
+    private function mailer(): \Illuminate\Contracts\Mail\Mailer
+    {
+        if (Settings::get('mail_driver') !== 'smtp' || blank(Settings::get('smtp_host'))) {
+            return Mail::mailer();
+        }
+
+        return Mail::build([
+            'transport' => 'smtp',
+            'host' => Settings::get('smtp_host'),
+            'port' => (int) Settings::get('smtp_port', 587),
+            'username' => Settings::get('smtp_username'),
+            'password' => Settings::get('smtp_password'),
+            'scheme' => (int) Settings::get('smtp_port', 587) === 465 ? 'smtps' : 'smtp',
+        ]);
+    }
+}

@@ -75,6 +75,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $this->person($table);
             $table->date('id_expiry_date')->nullable()->index(); // drives visaEnd15 notification
+            $table->timestamp('id_expiry_notified_at')->nullable();
             $table->string('mobile2', 30)->nullable();
             $table->text('address2')->nullable();
             $table->string('education')->nullable();
@@ -106,6 +107,7 @@ return new class extends Migration
             $table->date('expiry_date')->nullable()->index();
             $table->string('calendar', 10)->default('gregorian');
             $table->boolean('notify_before_expiry')->default(true); // licenseEnd15
+            $table->timestamp('expiry_notified_at')->nullable();
             $table->timestamps();
         });
     }
