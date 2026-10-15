@@ -61,9 +61,9 @@ class RentContractsTable
                 SelectFilter::make('expiring')
                     ->label(__('ينتهي خلال'))
                     ->options(['30' => __('30 يوم'), '60' => __('60 يوم'), '90' => __('90 يوم')])
-                    ->query(fn (Builder $q, array $data) => filled($data['value'])
-                        ? $q->where('status', ContractStatus::Active)->whereBetween('end_date', [today(), today()->addDays((int) $data['value'])])
-                        : $q),
+                    ->query(fn (Builder $query, array $data) => filled($data['value'])
+                        ? $query->where('status', ContractStatus::Active)->whereBetween('end_date', [today(), today()->addDays((int) $data['value'])])
+                        : $query),
                 TrashedFilter::make(),
             ])
             ->recordActions([

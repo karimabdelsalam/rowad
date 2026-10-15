@@ -47,6 +47,12 @@ class TenancyServiceProvider extends ServiceProvider
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                // The office's uploaded files live in storage/tenant<id>; remove them with the database.
+                function (Events\TenantDeleted $event) {
+                    \Illuminate\Support\Facades\File::deleteDirectory(
+                        base_path('storage/'.config('tenancy.filesystem.suffix_base').$event->tenant->getTenantKey())
+                    );
+                },
             ],
 
             // Domain events

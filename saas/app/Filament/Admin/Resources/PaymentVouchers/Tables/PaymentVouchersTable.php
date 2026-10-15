@@ -30,7 +30,7 @@ class PaymentVouchersTable
                     ->state(fn (PaymentVoucher $record) => $record->party_name ?: ($record->party?->full_name ?? $record->party?->name ?? $record->party?->title))
                     ->description(fn (PaymentVoucher $record) => VoucherFormComponents::partyTypes()[$record->party_type] ?? null),
                 TextColumn::make('unit.title')->toggleable(),
-                TextColumn::make('amount')->numeric(2)->sortable()->summarize(\Filament\Tables\Columns\Summarizers\Sum::make()->numeric(2)),
+                TextColumn::make('amount')->numeric(2)->sortable()->summarize(\Filament\Tables\Columns\Summarizers\Sum::make('sum')->numeric(2)),
                 TextColumn::make('payment_method')->badge(),
                 TextColumn::make('bankAccount.holder_name')->toggleable(),
                 TextColumn::make('reason')->limit(40)->toggleable(),
@@ -40,7 +40,7 @@ class PaymentVouchersTable
                 SelectFilter::make('party_type')->label(__('نوع الطرف'))->options(VoucherFormComponents::partyTypes()),
                 Filter::make('period')
                     ->schema([DatePicker::make('from')->label(__('من')), DatePicker::make('until')->label(__('إلى'))])
-                    ->query(fn (Builder $q, array $data) => $q
+                    ->query(fn (Builder $query, array $data) => $query
                         ->when($data['from'] ?? null, fn ($q, $d) => $q->whereDate('issued_at', '>=', $d))
                         ->when($data['until'] ?? null, fn ($q, $d) => $q->whereDate('issued_at', '<=', $d))),
                 TrashedFilter::make(),

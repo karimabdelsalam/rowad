@@ -28,3 +28,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Per-office databases and storage created by tests / local runs
+/database/tenant*
+/storage/tenant*
