@@ -28,7 +28,11 @@ Route::middleware([
         $path = \App\Support\Settings::get('logo');
         abort_unless(filled($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->response($path, headers: ['Cache-Control' => 'public, max-age=3600']);
+        return \Illuminate\Support\Facades\Storage::disk('public')->response($path, headers: [
+            'Cache-Control' => 'public, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox", // an SVG logo opened directly cannot run scripts
+        ]);
     })->name('site.logo');
 
     Route::get('/print/{type}/{id}', \App\Http\Controllers\PrintController::class)->middleware('auth')->whereNumber('id')->name('documents.print');

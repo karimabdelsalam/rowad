@@ -61,6 +61,12 @@ final class Settings
         unset(self::$cache[self::scope()]);
     }
 
+    /** Called when an organisation's context starts, so long-running queue workers never use stale settings. */
+    public static function forgetAll(): void
+    {
+        self::$cache = [];
+    }
+
     private static function scope(): string
     {
         return tenancy()->initialized ? (string) tenant()->getTenantKey() : 'central';

@@ -43,7 +43,13 @@ class PrintController
             $record instanceof \App\Models\Letter => $documents->letter($record),
         };
 
-        return view('print.document', ['html' => $html, 'title' => $record->number ?? $record->full_name ?? $record->type?->getLabel() ?? '']);
+        $title = match (true) {
+            $record instanceof Owner => $record->full_name,
+            $record instanceof \App\Models\Letter => $record->type?->getLabel(),
+            default => $record->number,
+        };
+
+        return view('print.document', ['html' => $html, 'title' => $title ?: __('مستند')]);
     }
 
     /** Public check behind the QR printed on contracts. */
@@ -57,7 +63,7 @@ class PrintController
 
     private function allowed(?User $user, Model $record, string $permission): bool
     {
-        if ($user === null) {
+        if ($user === null || ! $user->is_active) {
             return false;
         }
         if ($user->type === UserType::Staff) {

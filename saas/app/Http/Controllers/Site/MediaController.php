@@ -19,6 +19,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class MediaController
 {
+    /** Shown in the browser; anything else (HTML, SVG, scripts, office files...) is downloaded so it cannot run on the office's domain. */
+    private const INLINE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+
     public function __invoke(Media $media, Request $request): BinaryFileResponse
     {
         $public = $media->collection_name === 'photos'
@@ -31,10 +34,18 @@ class MediaController
         $path = $media->getPath($conversion);
         abort_unless(is_file($path), 404);
 
-        return response()->file($path, [
-            'Content-Type' => $conversion === '' ? $media->mime_type : (mime_content_type($path) ?: $media->mime_type),
+        $type = $conversion === '' ? $media->mime_type : (mime_content_type($path) ?: $media->mime_type);
+        $inline = in_array($type, self::INLINE_TYPES, true);
+        $headers = [
+            'Content-Type' => $inline ? $type : 'application/octet-stream',
             'Cache-Control' => $public ? 'public, max-age=86400' : 'private, max-age=0',
-        ]);
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
+        ];
+
+        return $inline
+            ? response()->file($path, $headers)
+            : response()->download($path, $media->file_name, $headers);
     }
 
     private function allowed(?User $user, Media $media): bool

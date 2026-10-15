@@ -17,9 +17,12 @@ class ImpersonationController
         abort_unless($staff !== null && $staff->type === UserType::Staff, 403);
         $expected = ['owner' => UserType::Owner, 'client' => UserType::Client][$panel] ?? abort(404);
         abort_unless($user->type === $expected && $user->is_active, 404);
+        // the link is signed, but re-check the right here: a copied link must not work for staff without it
+        abort_unless($staff->is_super_admin || $staff->can(($panel === 'owner' ? 'owners' : 'clients').'.login_as'), 403);
 
-        $request->session()->put('impersonator_id', $staff->getKey());
         Auth::login($user);
+        $request->session()->regenerate();
+        $request->session()->put('impersonator_id', $staff->getKey());
         activity()->causedBy($staff)->performedOn($user)->log('impersonation.start');
 
         return redirect("/{$panel}");
@@ -28,9 +31,11 @@ class ImpersonationController
     public function stop(Request $request): RedirectResponse
     {
         $staffId = $request->session()->pull('impersonator_id');
-        abort_if($staffId === null, 404);
+        $staff = $staffId === null ? null : User::find($staffId);
+        abort_unless($staff !== null && $staff->type === UserType::Staff && $staff->is_active, 404);
 
-        Auth::loginUsingId($staffId);
+        Auth::login($staff);
+        $request->session()->regenerate();
 
         return redirect('/admin');
     }

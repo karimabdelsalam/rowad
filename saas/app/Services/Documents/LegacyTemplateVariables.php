@@ -164,7 +164,7 @@ class LegacyTemplateVariables
         $endDate = $contract ? $this->date($contract->end_date, $contract->calendar?->value) : '';
 
         $vars = match ($letter->type) {
-            LetterType::Official => ['content' => (string) ($data['official']['content'] ?? ''), 'toname' => e($toName($data['official'] ?? []))],
+            LetterType::Official => ['content' => DocumentData::safeHtml($data['official']['content'] ?? null), 'toname' => e($toName($data['official'] ?? []))],
             LetterType::Clearance => [
                 'renter' => $renter, 'nationality' => e((string) $letter->client?->nationality), 'id_number' => e((string) $letter->client?->id_number),
                 'build_type' => e((string) $letter->unit?->category?->title),
@@ -172,12 +172,12 @@ class LegacyTemplateVariables
                 'toname' => e($toName($data['cancel'] ?? [], true)),
             ],
             LetterType::RentChange => [
-                'date' => $date, 'renter' => $renter, 'build' => e((string) $letter->unit?->title), 'contract_no' => $contract?->number ?? '',
+                'date' => $date, 'renter' => $renter, 'build' => e((string) $letter->unit?->title), 'contract_no' => e((string) $contract?->number),
                 'new_rent' => $this->n($letter->rent_raise_amount), 'new_rent_text' => AmountInWords::words((float) $letter->rent_raise_amount), 'end_date' => $endDate,
                 'new_rent_words' => AmountInWords::format((float) $letter->rent_raise_amount),
             ],
             LetterType::Handover => [
-                'date' => $date, 'renter' => $renter, 'build' => e((string) $letter->unit?->title), 'contract_no' => $contract?->number ?? '', 'end_date' => $endDate,
+                'date' => $date, 'renter' => $renter, 'build' => e((string) $letter->unit?->title), 'contract_no' => e((string) $contract?->number), 'end_date' => $endDate,
             ],
             LetterType::Evaluation => $this->evaluation((array) ($data['review'] ?? [])),
             default => [],
@@ -240,7 +240,7 @@ class LegacyTemplateVariables
 
     private function rights(RentContract|SaleContract $c): string
     {
-        return $c->terms->isEmpty() ? '' : '<li>'.$c->terms->map(fn ($t) => $t->content)->implode('</li><li>').'</li>';
+        return $c->terms->isEmpty() ? '' : '<li>'.$c->terms->map(fn ($t) => DocumentData::safeHtml($t->content))->implode('</li><li>').'</li>';
     }
 
     /** @return array{0: float, 1: string, 2: float} commission, payment text, first payment — legacy sell printable wording */
@@ -304,7 +304,7 @@ class LegacyTemplateVariables
         ];
         foreach (UnitPlot::SIDES as $side) {
             $vars["{$side}_long"] = e((string) ($r['plot']["{$side}_length"] ?? '')).' '.__('م');
-            $vars["{$side}_type"] = $plot->describeSide($side, true);
+            $vars["{$side}_type"] = e($plot->describeSide($side, true));
         }
 
         return $vars;

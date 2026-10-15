@@ -192,6 +192,8 @@ class UnitForm
                         ->label(__('الصور'))
                         ->collection('photos')
                         ->image()
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp']) // no SVG: it can carry scripts
+                        ->maxSize(10 * 1024)
                         ->multiple()
                         ->reorderable(),
                 ]),

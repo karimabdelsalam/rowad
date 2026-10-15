@@ -84,9 +84,24 @@ class TenancyServiceProvider extends ServiceProvider
             ],
 
             Events\BootstrappingTenancy::class => [],
-            Events\TenancyBootstrapped::class => [],
+            // Roles and permissions differ per organisation, but the cache store is shared (and queue
+            // workers serve many organisations): give each its own cache key and drop the in-memory copy.
+            Events\TenancyBootstrapped::class => [
+                function (Events\TenancyBootstrapped $event) {
+                    $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
+                    $registrar->cacheKey = config('permission.cache.key').'.tenant.'.$event->tenancy->tenant->getTenantKey();
+                    $registrar->clearPermissionsCollection();
+                    \App\Support\Settings::forgetAll();
+                },
+            ],
             Events\RevertingToCentralContext::class => [],
-            Events\RevertedToCentralContext::class => [],
+            Events\RevertedToCentralContext::class => [
+                function () {
+                    $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
+                    $registrar->cacheKey = config('permission.cache.key');
+                    $registrar->clearPermissionsCollection();
+                },
+            ],
 
             // Resource syncing
             Events\SyncedResourceSaved::class => [

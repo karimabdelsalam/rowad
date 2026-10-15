@@ -104,7 +104,7 @@ class DocumentData
             'amount' => $this->money($v->amount),
             'amount_words' => e(AmountInWords::format((float) $v->amount)),
             'reason' => e((string) $v->reason),
-            'payment_method' => $v->payment_method?->getLabel().($v->cheque_number ? ' — '.__('شيك رقم').' '.$v->cheque_number : ''),
+            'payment_method' => e($v->payment_method?->getLabel().($v->cheque_number ? ' — '.__('شيك رقم').' '.$v->cheque_number : '')),
             'unit' => e((string) $v->unit?->title),
             'vat_amount' => $this->money($v->vat_amount),
             'notes' => e((string) $v->notes),
@@ -188,9 +188,21 @@ class DocumentData
 
     private function terms(RentContract|SaleContract $c): string
     {
-        $list = $c->terms->map(fn ($t) => '<li><strong>'.e($t->title).'</strong>: '.$t->content.'</li>')->join('');
+        $list = $c->terms->map(fn ($t) => '<li><strong>'.e($t->title).'</strong>: '.self::safeHtml($t->content).'</li>')->join('');
 
-        return ($list ? '<ol>'.$list.'</ol>' : '').($c->extra_terms ?? '');
+        return ($list ? '<ol>'.$list.'</ol>' : '').self::safeHtml($c->extra_terms);
+    }
+
+    /** Staff-written text or rich text, printed as HTML: scripts, handlers and unknown tags removed, line breaks kept. */
+    public static function safeHtml(?string $html): string
+    {
+        if (blank($html)) {
+            return '';
+        }
+
+        return strip_tags($html) === $html
+            ? nl2br(e($html), false)
+            : \Illuminate\Support\Str::sanitizeHtml($html);
     }
 
     private function people($people, string $pivot): string
