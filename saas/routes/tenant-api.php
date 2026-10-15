@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:20,1')->name('auth.login');
+Route::post('auth/password/code', [AuthController::class, 'requestPasswordCode'])->middleware('throttle:10,1')->name('auth.password.code');
+Route::post('auth/password/reset', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1')->name('auth.password.reset');
 
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');

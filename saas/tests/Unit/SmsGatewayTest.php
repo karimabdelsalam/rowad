@@ -65,4 +65,19 @@ class SmsGatewayTest extends TestCase
         $this->assertFalse((new SmsGateway)->send('0555', 'x', ['provider' => null, 'country_code' => '966'])->ok);
         Http::assertNothingSent();
     }
+
+    public function test_balance_check_per_provider(): void
+    {
+        Http::fake([
+            'rest.clicksend.com/*' => Http::response(['data' => ['balance' => '42.50']]),
+            'api.bulksms.com/*' => Http::response([], 401),
+        ]);
+        $gateway = new SmsGateway;
+
+        $this->assertSame('42.50', $gateway->balance($this->config + ['provider' => 'clicksend']));
+        $this->assertFalse($gateway->balance($this->config + ['provider' => 'bulksms']));
+        $this->assertNull($gateway->balance($this->config + ['provider' => 'smsglobal'])); // no balance API: never sends a test message
+        Http::assertSent(fn (Request $r) => $r->url() === 'https://rest.clicksend.com/v3/account' && $r->hasHeader('Authorization', 'Basic '.base64_encode('KEY:SECRET')));
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), 'smsglobal'));
+    }
 }

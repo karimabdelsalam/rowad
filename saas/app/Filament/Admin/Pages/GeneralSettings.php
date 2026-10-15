@@ -136,6 +136,25 @@ class GeneralSettings extends Page
                     TextInput::make('sms_password')->label(__('كلمة المرور / Secret'))->password()->revealable(),
                     Toggle::make('sms_login_staff')->label(__('دخول الموظفين برمز SMS')),
                     Toggle::make('sms_login_clients')->label(__('دخول الملاك والعملاء برمز SMS')),
+                    Actions::make([
+                        Action::make('smsBalance')
+                            ->label(__('فحص الرصيد والاتصال'))
+                            ->icon(\Filament\Support\Icons\Heroicon::OutlinedSignal)
+                            ->color('gray')
+                            ->action(function (Get $get) {
+                                $result = app(\App\Services\Messaging\SmsGateway::class)->balance([
+                                    'provider' => $get('sms_provider'), 'api_key' => $get('sms_username'),
+                                    'secret_key' => filled($get('sms_password')) ? $get('sms_password') : \App\Support\Settings::get('sms_password'),
+                                    'sender' => $get('sms_sender'),
+                                ]);
+                                $notification = match (true) {
+                                    $result === false => \Filament\Notifications\Notification::make()->title(__('فشل في الربط مع مزود الخدمة'))->danger(),
+                                    $result === null => \Filament\Notifications\Notification::make()->title(__('هذا المزود لا يتيح فحص الرصيد'))->warning(),
+                                    default => \Filament\Notifications\Notification::make()->title(__('تم الاتصال بنجاح'))->body(__('الرصيد: :balance', ['balance' => $result]))->success(),
+                                };
+                                $notification->send();
+                            }),
+                    ])->columnSpanFull(),
                 ]),
                 Tab::make(__('أخرى'))->columns(2)->schema([
                     TextInput::make('support_ticket_prefix')->label(__('بادئة رقم تذكرة الدعم')),

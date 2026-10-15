@@ -16,6 +16,11 @@ abstract class Resource extends FilamentResource
     /** Permission prefix in config/rowad.php, e.g. "units". Null disables the permission gate. */
     protected static ?string $permission = null;
 
+    public static function getPermissionPrefix(): ?string
+    {
+        return static::$permission;
+    }
+
     public static function getNavigationGroup(): string|UnitEnum|null
     {
         $group = parent::getNavigationGroup();

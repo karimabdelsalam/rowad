@@ -12,17 +12,19 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class MediaController
 {
-    public function __invoke(Media $media): BinaryFileResponse
+    public function __invoke(Media $media, \Illuminate\Http\Request $request): BinaryFileResponse
     {
         $public = $media->collection_name === 'photos'
             && $media->model_type === (new Unit)->getMorphClass()
             && Unit::listed()->whereKey($media->model_id)->exists();
 
         abort_unless($public || auth()->check(), 404);
-        abort_unless(is_file($media->getPath()), 404);
+        $conversion = $request->query('size') === 'thumb' && $media->hasGeneratedConversion('thumb') ? 'thumb' : '';
+        $path = $media->getPath($conversion);
+        abort_unless(is_file($path), 404);
 
-        return response()->file($media->getPath(), [
-            'Content-Type' => $media->mime_type,
+        return response()->file($path, [
+            'Content-Type' => $conversion === '' ? $media->mime_type : (mime_content_type($path) ?: $media->mime_type),
             'Cache-Control' => $public ? 'public, max-age=86400' : 'private, max-age=0',
         ]);
     }

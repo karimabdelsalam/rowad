@@ -31,7 +31,7 @@ class WebsiteSettings extends Page
     public const KEYS = [
         'landing_enabled', 'site_name', 'site_name_en', 'landing_hero_title', 'landing_hero_title_en',
         'landing_hero_subtitle', 'landing_hero_subtitle_en', 'landing_about', 'landing_about_en',
-        'landing_whatsapp', 'landing_primary_color',
+        'landing_whatsapp', 'landing_primary_color', 'site_closed_message',
     ];
 
     /** @var array<string, mixed> */
@@ -70,7 +70,10 @@ class WebsiteSettings extends Page
     {
         return $schema->statePath('data')->components([
             Section::make(__('عام'))->columns(2)->schema([
-                Toggle::make('landing_enabled')->label(__('تفعيل الموقع العام'))->columnSpanFull(),
+                Toggle::make('landing_enabled')->label(__('تفعيل الموقع العام'))->live()->columnSpanFull(),
+                Textarea::make('site_closed_message')->label(__('رسالة إغلاق الموقع'))->rows(2)->columnSpanFull()
+                    ->helperText(__('تظهر للزوار بدل الموقع أثناء إغلاقه. اتركها فارغة للتحويل إلى صفحة الدخول.'))
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => ! $get('landing_enabled')),
                 TextInput::make('site_name')->label(__('اسم المكتب')),
                 TextInput::make('site_name_en')->label(__('اسم المكتب بالإنجليزية')),
                 TextInput::make('landing_whatsapp')->label(__('رقم واتساب'))->tel()->helperText(__('بالصيغة الدولية مثل 9665xxxxxxxx')),

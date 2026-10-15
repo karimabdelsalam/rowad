@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Auth\PasswordResetByOtp;
 use App\Auth\SmsAuthentication;
 use App\Http\Resources\V1\UserResource;
 use App\Models\User;
@@ -11,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -64,6 +66,37 @@ class AuthController extends Controller
         $token = $user->createToken($data['device_name'], [$user->type->value]);
 
         return response()->json(['token' => $token->plainTextToken, 'user' => new UserResource($user)]);
+    }
+
+    /** Legacy resetpwd(mobile): always 202 so the API does not reveal which numbers have accounts. */
+    public function requestPasswordCode(Request $request, PasswordResetByOtp $otp): JsonResponse
+    {
+        $data = $request->validate(['mobile' => ['required', 'string', 'max:20']]);
+        $key = 'api-reset:'.tenant('id').'|'.$request->ip();
+        if (! RateLimiter::attempt($key, 3, fn () => true, 600)) {
+            return response()->json(['message' => __('محاولات كثيرة، حاول بعد :seconds ثانية', ['seconds' => RateLimiter::availableIn($key)])], 429);
+        }
+        if ($user = $otp->findUser($data['mobile'])) {
+            $otp->send($user);
+        }
+
+        return response()->json(['message' => __('إذا كان الرقم مرتبطًا بحساب فقد أرسلنا إليه رمز التحقق')], 202);
+    }
+
+    /** Legacy resetbyotp. */
+    public function resetPassword(Request $request, PasswordResetByOtp $otp): JsonResponse
+    {
+        $data = $request->validate([
+            'mobile' => ['required', 'string', 'max:20'],
+            'code' => ['required', 'string', 'size:6'],
+            'password' => ['required', 'confirmed', PasswordRule::default()],
+        ]);
+        $user = $otp->findUser($data['mobile']);
+        if ($user === null || ! $otp->reset($user, $data['code'], $data['password'])) {
+            throw ValidationException::withMessages(['code' => __('رمز التحقق غير صحيح أو انتهت صلاحيته')]);
+        }
+
+        return response()->json(['message' => __('تم تحديث كلمة المرور بنجاح')]);
     }
 
     public function logout(Request $request): JsonResponse

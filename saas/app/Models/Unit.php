@@ -163,12 +163,21 @@ class Unit extends Model implements HasMedia
         $this->addMediaCollection('attachments');
     }
 
+    /** Legacy PhpThumb resize: a small copy for cards and galleries, generated on upload. */
+    public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->fit(\Spatie\Image\Enums\Fit::Crop, 640, 480)
+            ->performOnCollections('photos')
+            ->nonQueued();
+    }
+
     /** Cover photo URL served through the office domain (tenant storage). */
-    public function coverPhotoUrl(): ?string
+    public function coverPhotoUrl(string $conversion = 'thumb'): ?string
     {
         $media = $this->getMedia('photos')->first();
 
-        return $media ? route('site.media', $media) : null;
+        return $media ? route('site.media', ['media' => $media, 'size' => $conversion ?: null]) : null;
     }
 
     public function getActivitylogOptions(): LogOptions

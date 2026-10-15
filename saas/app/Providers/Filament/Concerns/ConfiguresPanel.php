@@ -61,6 +61,7 @@ trait ConfiguresPanel
         if ($tenant) {
             $panel->multiFactorAuthentication([\App\Auth\SmsAuthentication::make()]);
             $panel->widgets([\App\Filament\Widgets\LoginActivities::class]);
+            $panel->passwordReset(\App\Filament\Auth\RequestPasswordReset::class)->profile();
             $panel->renderHook(PanelsRenderHook::BODY_START, fn () => session()->has('impersonator_id') ? view('filament.impersonation-banner') : '');
 
             // Persistent so Livewire update requests are also resolved to the office's database.

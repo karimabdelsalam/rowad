@@ -130,6 +130,9 @@ class LandingPageTest extends TestCase
     {
         Settings::set('landing_enabled', false);
         $this->get($this->host.'/')->assertRedirect('/admin');
+        Settings::set('site_closed_message', 'الموقع مغلق مؤقتًا للتحديث');
+        $this->get($this->host.'/')->assertOk()->assertSee('الموقع مغلق مؤقتًا للتحديث');
+        Settings::set('site_closed_message', null);
 
         Settings::set('landing_enabled', true);
         $plan = Plan::create(['slug' => 'mini', 'name_ar' => 'مصغرة', 'name_en' => 'Mini', 'features' => ['owner_portal']]);
@@ -140,9 +143,13 @@ class LandingPageTest extends TestCase
     public function test_unit_photos_are_public_only_while_listed(): void
     {
         $unit = $this->unit('شقة بالصور');
-        $media = $unit->addMedia(UploadedFile::fake()->image('front.jpg', 400, 300))->toMediaCollection('photos');
+        $media = $unit->addMedia(UploadedFile::fake()->image('front.jpg', 1600, 1200))->toMediaCollection('photos');
 
         $this->get($this->host."/media/{$media->id}")->assertOk();
+        $this->assertTrue($media->fresh()->hasGeneratedConversion('thumb'));
+        $thumb = $this->get($this->host."/media/{$media->id}?size=thumb")->assertOk()->baseResponse->getFile()->getPathname();
+        $this->assertSame([640, 480], array_slice(getimagesize($thumb), 0, 2));
+        $this->assertStringContainsString('size=thumb', $unit->coverPhotoUrl());
 
         $unit->update(['is_published' => false]);
         $this->get($this->host."/media/{$media->id}")->assertNotFound();

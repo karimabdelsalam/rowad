@@ -21,6 +21,10 @@ its own domain: `https://<office-domain>/api/v1`. Data is always the office's ow
 
 `POST /auth/logout` revokes the current token.
 
+Forgotten password (legacy SMS reset): `POST /auth/password/code` `{ mobile }` → always `202`;
+then `POST /auth/password/reset` `{ mobile, code, password, password_confirmation }`. A successful
+reset signs the account out of every device.
+
 ## Every account
 
 | Method | Path | |

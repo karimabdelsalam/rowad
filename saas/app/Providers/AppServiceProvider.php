@@ -34,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Arabic UI with Western digits (Saudi business convention, as in the legacy system).
         Table::configureUsing(fn (Table $table) => $table->defaultNumberLocale('en'));
+        \App\Filament\Tables\TableExport::register();
         Schema::configureUsing(fn (Schema $schema) => $schema->defaultNumberLocale('en'));
 
         // Stable aliases stored in *_type columns (vouchers.party, installments.contract,

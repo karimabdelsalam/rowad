@@ -122,4 +122,29 @@ class DashboardsAndSettingsTest extends TestCase
             ->call('save')
             ->assertHasFormErrors(['vat_number']);
     }
+
+    public function test_my_tasks_and_notes_from_the_dashboard(): void
+    {
+        $admin = User::create(['name' => 'مدير', 'email' => 'admin@office.test', 'password' => 'secret-password']);
+        $admin->assignRole('admin');
+        $other = User::create(['name' => 'آخر', 'email' => 'other@office.test', 'password' => 'secret-password']);
+        $this->actingAs($admin);
+        \Filament\Facades\Filament::setCurrentPanel('admin');
+        $mine = \App\Models\Task::create(['created_by' => $other->id, 'assigned_to' => $admin->id, 'content' => 'مهمتي']);
+        $theirs = \App\Models\Task::create(['created_by' => $admin->id, 'assigned_to' => $other->id, 'content' => 'مهمة غيري']);
+        \App\Models\Note::create(['user_id' => $other->id, 'content' => 'ملاحظة غيري']);
+
+        \Livewire\Livewire::test(\App\Filament\Admin\Widgets\MyTasks::class)
+            ->assertCanSeeTableRecords([$mine])->assertCanNotSeeTableRecords([$theirs])
+            ->callTableAction('complete', $mine);
+        $this->assertNotNull($mine->fresh()->completed_at);
+
+        \Livewire\Livewire::test(\App\Filament\Admin\Widgets\PersonalNotes::class)
+            ->assertCanNotSeeTableRecords(\App\Models\Note::all())
+            ->callTableAction('addNote', data: ['content' => 'اتصل بالمالك']);
+        $this->assertSame(['اتصل بالمالك'], \App\Models\Note::where('user_id', $admin->id)->pluck('content')->all());
+
+        \Livewire\Livewire::test(\App\Filament\Admin\Widgets\PortalLinks::class)->assertSee(url('/owner'))->assertSee(url('/client'))->assertSee('data:image/svg+xml', false);
+        \Livewire\Livewire::test(\App\Filament\Widgets\LoginActivities::class)->callTableAction('clear');
+    }
 }

@@ -21,7 +21,10 @@ class LandingController
     public function home(Request $request): View|RedirectResponse
     {
         if (! Website::enabled()) {
-            return redirect('/admin');
+            // legacy site_closed message, shown instead of the site while it is closed
+            return filled($message = \App\Support\Settings::get('site_closed_message'))
+                ? view('site.closed', ['message' => $message])
+                : redirect('/admin');
         }
 
         $filters = $request->validate([

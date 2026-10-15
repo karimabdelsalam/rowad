@@ -18,8 +18,6 @@ class AdminPanelProvider extends PanelProvider
         return $this->discoverIn($this->basePanel($panel, 'admin', 'admin'), 'Admin')
             ->default()
             ->brandName(fn () => tenancy()->initialized ? (\App\Support\Settings::get('site_name') ?? tenant('name')) : config('app.name'))
-            ->passwordReset()
-            ->profile()
             ->pages([Dashboard::class])
             ->widgets([])
             ->navigationGroups([

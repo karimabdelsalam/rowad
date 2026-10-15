@@ -13,7 +13,7 @@
                 @if ($photos->count() > 1)
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px">
                         @foreach ($photos->skip(1)->take(8) as $photo)
-                            <a href="{{ route('site.media', $photo) }}" target="_blank"><img src="{{ route('site.media', $photo) }}" alt="" style="border-radius:8px;aspect-ratio:1;object-fit:cover"></a>
+                            <a href="{{ route('site.media', $photo) }}" target="_blank"><img src="{{ route('site.media', ['media' => $photo, 'size' => 'thumb']) }}" alt="" loading="lazy" style="border-radius:8px;aspect-ratio:1;object-fit:cover"></a>
                         @endforeach
                     </div>
                 @endif

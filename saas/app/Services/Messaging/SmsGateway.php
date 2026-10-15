@@ -59,6 +59,41 @@ class SmsGateway
         }
     }
 
+    /**
+     * Legacy sms_balance::check: remaining credit as reported by the provider, true when only the
+     * connection can be verified, false on failure, null when the provider has no balance API.
+     * (smsglobal's legacy check sent a real message, so it is not repeated here.)
+     */
+    public function balance(?array $config = null): string|bool|null
+    {
+        $c = $config ?? self::configFromSettings();
+        if (! in_array($c['provider'] ?? null, self::PROVIDERS, true) || blank($c['api_key'] ?? null)) {
+            return false;
+        }
+        $basic = fn () => Http::withBasicAuth((string) $c['api_key'], (string) $c['secret_key']);
+
+        try {
+            $value = match ($c['provider']) {
+                'clickatell' => Http::withHeaders(['Authorization' => $c['api_key']])->get('https://platform.clickatell.com/public-client/balance')->json('balance'),
+                'msg91' => ($r = Http::get('https://control.msg91.com/api/balance.php', ['authkey' => $c['api_key'], 'type' => 4]))->ok() ? trim($r->body()) : false,
+                'bulksms' => $basic()->get('https://api.bulksms.com/v1/profile')->json('credits.balance'),
+                'smsapi' => Http::withToken((string) $c['api_key'])->get('https://api.smsapi.com/profile')->json('points'),
+                'twilio' => $basic()->get("https://api.twilio.com/2010-04-01/Accounts/{$c['api_key']}/Balance.json")->json('balance'),
+                'nexmo' => Http::get('https://rest.nexmo.com/account/get-balance', ['api_key' => $c['api_key'], 'api_secret' => $c['secret_key']])->json('value'),
+                'clicksend' => $basic()->get('https://rest.clicksend.com/v3/account')->json('data.balance'),
+                'unifonic' => Http::asForm()->post('https://api.unifonic.com/rest/Account/GetBalance', ['AppSid' => $c['api_key']])->json('data.Balance'),
+                'mobilysms' => ($r = Http::get('https://www.mobilysms.net/api/getbalance.php', ['username' => $c['api_key'], 'password' => $c['secret_key']]))->ok() ? trim($r->body()) : false,
+                'mobilyws' => Http::asJson()->post('https://mobily.ws/api/balance.php', ['mobile' => $c['api_key'], 'password' => $c['secret_key']])->json('Data.MessageAr'),
+                'mrasel' => ($body = trim(Http::get('https://www.mrasel.net/api/credit.php', ['username' => $c['api_key'], 'password' => $c['secret_key']])->body())) !== '' && ! str_starts_with($body, 'Error') ? $body : false,
+                default => null,
+            };
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $value === null || $value === false ? ($c['provider'] === 'smsglobal' || $c['provider'] === 'hdvbx' ? null : false) : (string) $value;
+    }
+
     private function unifonic(string $to, string $message, array $c): SmsResult
     {
         $r = Http::asForm()->post('https://api.unifonic.com/rest/Messages/Send', ['AppSid' => $c['api_key'], 'Body' => $message, 'Recipient' => $to, 'SenderID' => $c['sender']]);
