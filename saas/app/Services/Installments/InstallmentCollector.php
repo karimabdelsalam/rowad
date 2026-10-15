@@ -65,6 +65,30 @@ class InstallmentCollector
         });
     }
 
+    /**
+     * Back to pending (legacy pays_processed pending): drops the ledger entries the collection made.
+     * Refused once an owner's share was settled or paid out — that money has already left the office.
+     */
+    public function uncollect(Installment $installment): Installment
+    {
+        if (! $installment->is_collected) {
+            return $installment;
+        }
+        $paidOut = $installment->ownerTransactions()->whereNotNull('owner_id')
+            ->where(fn ($query) => $query->where('is_settled', true)->orWhereNotNull('payment_voucher_id'))->exists();
+        if ($paidOut) {
+            throw new BusinessRuleException(__('لا يمكن إلغاء ترحيل القسط لوجود مستحقات ملاك مرتبطة به وتم ترحيلها'));
+        }
+
+        return DB::transaction(function () use ($installment) {
+            $installment->ownerTransactions()->whereNotNull('parent_id')->delete();
+            $installment->ownerTransactions()->delete();
+            $installment->forceFill(['is_collected' => false, 'collected_at' => null])->save();
+
+            return $installment;
+        });
+    }
+
     /** Undo partial payments of an uncollected installment (legacy reset_partpay). */
     public function resetPartial(Installment $installment): Installment
     {

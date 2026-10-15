@@ -52,7 +52,7 @@ class UnitResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ReportsRelationManager::class,
         ];
     }
 

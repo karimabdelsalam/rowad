@@ -54,6 +54,17 @@ class Notifier
         return $messages;
     }
 
+    /** A free-text message outside the event templates (inbox reply, single SMS — legacy sendEmail/onesms). */
+    public function direct(MessageChannel $channel, string $recipient, ?string $subject, string $body, string $event = 'direct'): OutgoingMessage
+    {
+        $message = OutgoingMessage::create([
+            'channel' => $channel, 'event' => $event, 'recipient' => $recipient, 'subject' => $subject, 'body' => $body, 'status' => 'pending',
+        ]);
+        SendOutgoingMessage::dispatch($message->id);
+
+        return $message;
+    }
+
     /** Replace {placeholders}; unknown placeholders are left visible so template mistakes are noticed. */
     public function render(?string $text, array $variables): string
     {

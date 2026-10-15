@@ -16,8 +16,8 @@ class SubscriptionsTable
             ->columns([
                 TextColumn::make('tenant.name')
                     ->searchable(),
-                TextColumn::make('plan.id')
-                    ->searchable(),
+                TextColumn::make('plan.name_ar')
+                    ->label(__('الخطة')),
                 TextColumn::make('billing_cycle')
                     ->searchable(),
                 TextColumn::make('status')

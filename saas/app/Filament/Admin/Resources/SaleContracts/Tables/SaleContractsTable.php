@@ -22,8 +22,9 @@ class SaleContractsTable
                     ->searchable(),
                 TextColumn::make('unit.title')
                     ->searchable(),
-                TextColumn::make('employee.id')
-                    ->searchable(),
+                TextColumn::make('employee.full_name')
+                    ->label(__('الموظف'))
+                    ->toggleable(),
                 TextColumn::make('calendar')
                     ->badge()
                     ->searchable(),

@@ -183,4 +183,23 @@ class GeneralSettings extends Page
 
         Notification::make()->title(__('تم الحفظ'))->success()->send();
     }
+
+    /** Legacy maintenance → backup: download the office's data as a gzip'd SQL file. */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('backup')
+                ->label(__('تنزيل نسخة احتياطية'))
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedCircleStack)
+                ->color('gray')
+                ->visible(fn () => auth()->user()?->is_super_admin || auth()->user()?->can('backups.download'))
+                ->action(function () {
+                    $path = tempnam(sys_get_temp_dir(), 'rowad-backup-');
+                    app(\App\Services\Backups\OfficeBackup::class)->write($path);
+                    activity()->event('backup')->log('backup downloaded');
+
+                    return response()->download($path, 'backup-'.now()->format('Y-m-d-His').'.sql.gz', ['Content-Type' => 'application/gzip'])->deleteFileAfterSend();
+                }),
+        ];
+    }
 }

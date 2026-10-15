@@ -20,9 +20,8 @@ class BuildingsTable
             ->columns([
                 TextColumn::make('title')
                     ->searchable(),
-                TextColumn::make('property_category_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('category.title')
+                    ->label(__('التصنيف')),
                 TextColumn::make('number')
                     ->searchable(),
                 TextColumn::make('city.name')

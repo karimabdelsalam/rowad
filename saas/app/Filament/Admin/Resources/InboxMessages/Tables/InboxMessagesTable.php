@@ -47,11 +47,16 @@ class InboxMessagesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\TernaryFilter::make('read_at')->label(__('مقروءة'))->nullable(),
+                \Filament\Tables\Filters\TernaryFilter::make('replied_at')->label(__('تم الرد'))->nullable(),
+                \Filament\Tables\Filters\SelectFilter::make('source')->label(__('المصدر'))->options(['contact' => __('نموذج التواصل'), 'unit_inquiry' => __('استفسار عن وحدة')]),
             ])
             ->recordActions([
                 ViewAction::make(),
-                ])
+                \App\Filament\Admin\Resources\InboxMessages\InboxActions::reply(),
+                \App\Filament\Admin\Resources\InboxMessages\InboxActions::toggleRead(),
+            ])
+            ->defaultSort('id', 'desc')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

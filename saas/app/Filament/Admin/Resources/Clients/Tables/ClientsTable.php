@@ -22,9 +22,8 @@ class ClientsTable
             ->columns([
                 TextColumn::make('user.name')
                     ->searchable(),
-                TextColumn::make('client_category_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('category.title')
+                    ->label(__('التصنيف')),
                 TextColumn::make('kind')
                     ->badge()
                     ->searchable(),

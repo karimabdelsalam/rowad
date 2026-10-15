@@ -18,7 +18,8 @@ class InvoicesTable
                     ->searchable(),
                 TextColumn::make('type')
                     ->searchable(),
-                TextColumn::make('client.id')
+                TextColumn::make('client.full_name')
+                    ->label(__('العميل'))
                     ->searchable(),
                 TextColumn::make('customer_name')
                     ->searchable(),

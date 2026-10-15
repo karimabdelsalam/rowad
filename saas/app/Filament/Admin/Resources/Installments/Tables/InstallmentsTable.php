@@ -93,6 +93,14 @@ class InstallmentsTable
                         fn () => app(InstallmentCollector::class)->collectPartial($record, (float) $data['amount'], null, (bool) $data['close'], (bool) $data['settle_owners']),
                         __('تم تسجيل الدفعة'),
                     )),
+                Action::make('uncollect')
+                    ->label(__('إرجاع إلى مستحق'))
+                    ->icon(Heroicon::OutlinedArrowUturnLeft)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription(__('سيُلغى تحصيل القسط وتُحذف حركات الملاك الناتجة عنه.'))
+                    ->visible(fn (Installment $record) => $record->is_collected && self::allowed('reset'))
+                    ->action(fn (Installment $record) => self::run(fn () => app(InstallmentCollector::class)->uncollect($record), __('تم إرجاع القسط إلى مستحق'))),
                 Action::make('resetPartial')
                     ->label(__('إلغاء الدفعات الجزئية'))
                     ->icon(Heroicon::OutlinedArrowUturnLeft)

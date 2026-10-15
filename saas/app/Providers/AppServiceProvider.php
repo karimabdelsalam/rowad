@@ -40,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         // Stable aliases stored in *_type columns (vouchers.party, installments.contract,
         // media, activity log, permissions) so class renames never break stored data.
         Relation::enforceMorphMap([
+            'activity' => \Spatie\Activitylog\Models\Activity::class,
             'bank_account' => Models\BankAccount::class,
             'bank_transaction' => Models\BankTransaction::class,
             'building' => Models\Building::class,

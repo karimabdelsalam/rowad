@@ -4,7 +4,6 @@ namespace App\Filament\Admin\Resources\SupportTickets\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -20,9 +19,11 @@ class SupportTicketsTable
                 TextColumn::make('type')
                     ->badge()
                     ->searchable(),
-                TextColumn::make('owner.id')
+                TextColumn::make('owner.full_name')
+                    ->label(__('المالك'))
                     ->searchable(),
-                TextColumn::make('client.id')
+                TextColumn::make('client.full_name')
+                    ->label(__('العميل'))
                     ->searchable(),
                 TextColumn::make('unit.title')
                     ->searchable(),
@@ -44,11 +45,15 @@ class SupportTicketsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('status')->options(\App\Enums\TicketStatus::class),
+                \Filament\Tables\Filters\SelectFilter::make('type')->options(\App\Enums\TicketType::class),
+                \Filament\Tables\Filters\TernaryFilter::make('read_at')->label(__('مقروءة'))->nullable(),
             ])
+            ->defaultSort('id', 'desc')
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                \App\Filament\Admin\Resources\SupportTickets\TicketActions::reply(),
+                \App\Filament\Admin\Resources\SupportTickets\TicketActions::toggleRead(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

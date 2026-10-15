@@ -21,6 +21,8 @@ class ViewInboxMessage extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            \App\Filament\Admin\Resources\InboxMessages\InboxActions::reply(),
+            \App\Filament\Admin\Resources\InboxMessages\InboxActions::toggleRead(),
         ];
     }
 }

@@ -75,7 +75,8 @@ class LetterResource extends Resource
                     ->searchable(),
                 TextColumn::make('unit.title')
                     ->searchable(),
-                TextColumn::make('client.id')
+                TextColumn::make('client.full_name')
+                    ->label(__('العميل'))
                     ->searchable(),
                 TextColumn::make('calendar')
                     ->badge()

@@ -68,7 +68,8 @@ class EmployeePenaltyResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('employee.id')
+                TextColumn::make('employee.full_name')
+                    ->label(__('الموظف'))
                     ->searchable(),
                 TextColumn::make('amount')
                     ->numeric()

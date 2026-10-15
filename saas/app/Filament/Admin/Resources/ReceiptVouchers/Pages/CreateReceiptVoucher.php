@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class CreateReceiptVoucher extends CreateRecord
 {
     use HandlesContractParties;
+    use \App\Filament\Concerns\PrefillsOwnerEntries;
 
     protected static string $resource = ReceiptVoucherResource::class;
 
