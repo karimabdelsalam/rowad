@@ -25,6 +25,8 @@ class Client extends Model implements HasMedia
 {
     use HasPersonName, SoftDeletes, InteractsWithMedia, LogsActivity;
 
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [

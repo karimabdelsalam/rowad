@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Guarded(['id'])]
 class EmployeePenalty extends Model
 {
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [

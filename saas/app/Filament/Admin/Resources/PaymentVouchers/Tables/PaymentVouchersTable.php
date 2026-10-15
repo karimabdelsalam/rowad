@@ -2,90 +2,49 @@
 
 namespace App\Filament\Admin\Resources\PaymentVouchers\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use App\Enums\PaymentMethod;
+use App\Filament\Admin\Resources\Concerns\VoucherFormComponents;
+use App\Models\PaymentVoucher;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Filament\Forms\Components\DatePicker;
+use Illuminate\Database\Eloquent\Builder;
 
 class PaymentVouchersTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['party', 'unit', 'bankAccount']))
+            ->defaultSort('issued_at', 'desc')
             ->columns([
-                TextColumn::make('number')
-                    ->searchable(),
-                TextColumn::make('calendar')
-                    ->badge()
-                    ->searchable(),
-                TextColumn::make('issued_at')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('party_type')
-                    ->searchable(),
-                TextColumn::make('party_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('party_name')
-                    ->searchable(),
-                TextColumn::make('unit.title')
-                    ->searchable(),
-                TextColumn::make('amount')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('vat_amount')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('payment_method')
-                    ->badge()
-                    ->searchable(),
-                TextColumn::make('bank_name')
-                    ->searchable(),
-                TextColumn::make('cheque_number')
-                    ->searchable(),
-                TextColumn::make('cheque_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('bankAccount.id')
-                    ->searchable(),
-                TextColumn::make('expenseType.title')
-                    ->searchable(),
-                TextColumn::make('reason')
-                    ->searchable(),
-                TextColumn::make('created_by')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('number')->searchable()->sortable(),
+                TextColumn::make('issued_at')->date('Y-m-d')->sortable(),
+                TextColumn::make('party_display')
+                    ->label(__('الطرف'))
+                    ->state(fn (PaymentVoucher $record) => $record->party_name ?: ($record->party?->full_name ?? $record->party?->name ?? $record->party?->title))
+                    ->description(fn (PaymentVoucher $record) => VoucherFormComponents::partyTypes()[$record->party_type] ?? null),
+                TextColumn::make('unit.title')->toggleable(),
+                TextColumn::make('amount')->numeric(2)->sortable()->summarize(\Filament\Tables\Columns\Summarizers\Sum::make()->numeric(2)),
+                TextColumn::make('payment_method')->badge(),
+                TextColumn::make('bankAccount.holder_name')->toggleable(),
+                TextColumn::make('reason')->limit(40)->toggleable(),
             ])
             ->filters([
+                SelectFilter::make('payment_method')->options(PaymentMethod::class),
+                SelectFilter::make('party_type')->label(__('نوع الطرف'))->options(VoucherFormComponents::partyTypes()),
+                Filter::make('period')
+                    ->schema([DatePicker::make('from')->label(__('من')), DatePicker::make('until')->label(__('إلى'))])
+                    ->query(fn (Builder $q, array $data) => $q
+                        ->when($data['from'] ?? null, fn ($q, $d) => $q->whereDate('issued_at', '>=', $d))
+                        ->when($data['until'] ?? null, fn ($q, $d) => $q->whereDate('issued_at', '<=', $d))),
                 TrashedFilter::make(),
             ])
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([ViewAction::make(), EditAction::make()]);
     }
 }

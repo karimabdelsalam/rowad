@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Guarded(['id'])]
 class Letter extends Model
 {
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [

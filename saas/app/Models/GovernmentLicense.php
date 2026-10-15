@@ -13,6 +13,8 @@ class GovernmentLicense extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [

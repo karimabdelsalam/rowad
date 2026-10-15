@@ -19,6 +19,8 @@ class Employee extends Model implements HasMedia
 {
     use HasPersonName, SoftDeletes, InteractsWithMedia;
 
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [

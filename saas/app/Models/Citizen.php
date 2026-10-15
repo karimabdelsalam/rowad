@@ -16,6 +16,8 @@ class Citizen extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
 
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [

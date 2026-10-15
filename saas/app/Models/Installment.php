@@ -19,6 +19,8 @@ class Installment extends Model
 {
     use LogsActivity;
 
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [

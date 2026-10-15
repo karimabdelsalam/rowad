@@ -29,6 +29,8 @@ class Unit extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia, LogsActivity;
 
+    protected $attributes = ['calendar' => 'gregorian'];
+
     protected function casts(): array
     {
         return [
