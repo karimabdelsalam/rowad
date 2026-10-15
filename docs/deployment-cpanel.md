@@ -10,7 +10,7 @@
 | المطلوب | لماذا | أين تجده |
 |---|---|---|
 | **Terminal / SSH** | لتشغيل `composer` و`php artisan` | Advanced → Terminal |
-| **PHP 8.3 أو 8.4** مع `intl gd zip bcmath mbstring pdo_mysql fileinfo exif curl` | متطلبات النظام | Software → MultiPHP Manager / Select PHP Version |
+| **PHP 8.3 أو 8.4** مع `intl gd zip mbstring pdo_mysql fileinfo exif curl` | متطلبات النظام | Software → MultiPHP Manager / Select PHP Version |
 | **عدد قواعد MySQL غير محدود** (أو كبير) | **كل مؤسسة = قاعدة بيانات**، وقاعدة للمنصة | Statistics في الصفحة الرئيسية: MySQL® Databases |
 | **Cron Jobs** | التذكيرات اليومية وإرسال الرسائل | Advanced → Cron Jobs |
 | **Wildcard subdomain** | نطاقات المؤسسات `*.aqarnova.com` | Domains |
@@ -211,6 +211,17 @@ cd ~/aqarnova && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1
 | `post_max_size` | `55M` |
 | `max_execution_time` | `180` (إجابات المساعد الذكي قد تأخذ أكثر من دقيقة) |
 
+## 8.5 فحص الجاهزية
+
+بعد التثبيت وبعد كل تحديث:
+
+```bash
+cd ~/aqarnova && php artisan rowad:doctor
+```
+
+يعرض جدولًا بكل فحص: ✓ جاهز، ! تنبيه، ✗ يجب إصلاحه — مع ما يجب عمله بالضبط (إعدادات `.env`، مفتاح cPanel وحصة قواعد البيانات،
+تحديثات القواعد، الـ Cron، الطابور، البريد، الصلاحيات، الذكاء الاصطناعي، الحساب التجريبي). لا تطلق قبل أن تختفي كل علامات ✗.
+
 ## 9. النسخ الاحتياطي
 
 - نسخ cPanel (أو JetBackup إن وُجد) تشمل كل قواعد `USER_*` ومجلد المشروع — تأكد أنها مفعّلة يوميًا وتُحفظ خارج السيرفر.
@@ -244,6 +255,7 @@ LEGACY_DB_PASSWORD=<كلمة-مرور-USER_app> php artisan rowad:import-legacy 
 
 ## قائمة التحقق
 
+- [ ] `php artisan rowad:doctor` بدون أي ✗.
 - [ ] `APP_DEBUG=false`، والصفحة الرئيسية تفتح على `https://aqarnova.com`.
 - [ ] `https://test.aqarnova.com` يفتح بقفل أخضر (Wildcard SSL) ويعرض صفحة "لا توجد مؤسسة بهذا الرابط".
 - [ ] التسجيل ينشئ قاعدة `USER_t...` جديدة ويدخل لوحة المؤسسة.
