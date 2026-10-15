@@ -7,9 +7,14 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 
 const [outDir = 'screenshots', ...only] = process.argv.slice(2);
 const host = process.env.DEMO_HOST ?? 'http://demo.localhost:8000';
+const centralHost = process.env.CENTRAL_HOST ?? 'http://localhost:8000';
 const password = 'demo-password';
 
 const pages = [
+  { name: 'platform-home', path: '/', central: true, full: true },
+  { name: 'platform-home-top', path: '/', central: true },
+  { name: 'platform-home-mobile', path: '/', central: true, mobile: true, full: true },
+  { name: 'platform-signup', path: '/signup?plan=2', central: true, full: true },
   { name: 'site-home', path: '/', full: true },
   { name: 'site-unit', path: '/units/1', full: true },
   { name: 'site-home-mobile', path: '/', mobile: true, full: true },
@@ -69,7 +74,7 @@ async function context(page) {
 for (const page of pages.filter(p => only.length === 0 || only.includes(p.name))) {
   const ctx = await context(page);
   const p = await ctx.newPage();
-  await p.goto(host + page.path, { waitUntil: 'networkidle', timeout: 60000 });
+  await p.goto((page.central ? centralHost : host) + page.path, { waitUntil: 'networkidle', timeout: 60000 });
   // lazy widgets load when scrolled into view
   await p.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 150)); } window.scrollTo(0, 0); });
   await p.waitForLoadState('networkidle');
