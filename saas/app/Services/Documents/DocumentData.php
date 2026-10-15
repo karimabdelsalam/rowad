@@ -41,6 +41,25 @@ class DocumentData
         return $this->document($letter->type->templateKey(), ['number' => (string) $letter->id], $this->legacy->letter($letter));
     }
 
+    /** Legacy building/printable: a unit's data sheet with the organisation's document header. */
+    public function unitSheet(\App\Models\Unit $unit): string
+    {
+        $unit->loadMissing(['building', 'category', 'city', 'district', 'owners', 'deeds.deedType', 'meters.meterType', 'currentContract']);
+        if ($unit->currentContract instanceof RentContract) {
+            $unit->currentContract->loadMissing('clients');
+        }
+        $template = \App\Models\PrintTemplate::where('key', 'rent_contract')->first();
+        $dir = resource_path('print-templates');
+        $org = $this->renderer->organisationVariables();
+
+        return view('print.unit-sheet', [
+            'unit' => $unit,
+            'header' => strtr($template?->header ?: (string) file_get_contents("{$dir}/_header.html"), $org),
+            'footer' => strtr($template?->footer ?: (string) file_get_contents("{$dir}/_footer.html"), $org),
+            'currency' => $org['{$}'],
+        ])->render();
+    }
+
     public function rentContract(RentContract $c): string
     {
         $c->loadMissing(['unit.owners', 'unit.city', 'unit.district', 'clients', 'terms']);

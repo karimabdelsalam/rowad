@@ -26,6 +26,7 @@ class PrintController
         'invoice' => [Invoice::class, 'invoices.print'],
         'owner_statement' => [Owner::class, 'owner_transactions.view_any'],
         'letter' => [\App\Models\Letter::class, 'letters.print'],
+        'unit' => [\App\Models\Unit::class, 'units.view'],
     ];
 
     public function __invoke(Request $request, string $type, int $id, DocumentData $documents): View
@@ -41,11 +42,13 @@ class PrintController
             $record instanceof Invoice => $documents->invoice($record),
             $record instanceof Owner => $documents->ownerStatement($record, $request->query('from'), $request->query('to')),
             $record instanceof \App\Models\Letter => $documents->letter($record),
+            $record instanceof \App\Models\Unit => $documents->unitSheet($record),
         };
 
         $title = match (true) {
             $record instanceof Owner => $record->full_name,
             $record instanceof \App\Models\Letter => $record->type?->getLabel(),
+            $record instanceof \App\Models\Unit => $record->title,
             default => $record->number,
         };
 
@@ -90,6 +93,7 @@ class PrintController
                 || ($client && $record->party_type === 'client' && (int) $record->party_id === $client->id),
             $record instanceof Invoice => $client && (int) $record->client_id === $client->id,
             $record instanceof Owner => $owner && $owner->is($record),
+            $record instanceof \App\Models\Unit => $owner && $record->owners()->whereKey($owner->id)->exists(),
             default => false,
         };
     }

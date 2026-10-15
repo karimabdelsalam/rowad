@@ -13,6 +13,12 @@ class ViewUnit extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            \Filament\Actions\Action::make('print')
+                ->label(__('طباعة البطاقة'))
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                ->color('gray')
+                ->url(fn () => route('documents.print', ['type' => 'unit', 'id' => $this->record->getKey()]))
+                ->openUrlInNewTab(),
             EditAction::make(),
         ];
     }

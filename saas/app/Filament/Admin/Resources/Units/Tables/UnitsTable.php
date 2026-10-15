@@ -87,6 +87,8 @@ class UnitsTable
                 ViewAction::make(),
                 \Filament\Actions\ActionGroup::make([
                 EditAction::make(),
+                Action::make('print')->label(__('طباعة البطاقة'))->icon(Heroicon::OutlinedPrinter)
+                    ->url(fn (Unit $record) => route('documents.print', ['type' => 'unit', 'id' => $record->getKey()]), true),
                 Action::make('toggleActive')
                     ->label(fn (Unit $record) => $record->is_active ? __('تعطيل') : __('تفعيل'))
                     ->icon(fn (Unit $record) => $record->is_active ? Heroicon::OutlinedPause : Heroicon::OutlinedPlay)

@@ -1101,5 +1101,10 @@
     "امسح الرمز بكاميرا جوالك للدخول إلى بوابة العملاء: عقدك، دفعاتك القادمة، وطلبات الصيانة": "Scan with your phone camera to open the client portal: your contract, upcoming payments and maintenance requests",
     "امسح الرمز بكاميرا جوالك لتصفح الوحدات المتاحة للإيجار والبيع": "Scan with your phone camera to browse units available for rent and sale",
     "فتح في الخرائط": "Open in Maps",
-    "اسم المستأجر": "Tenant name"
+    "اسم المستأجر": "Tenant name",
+    "طباعة البطاقة": "Print sheet",
+    "بطاقة وحدة": "Unit sheet",
+    "العدادات": "Meters",
+    "الأسعار والعقد الحالي": "Prices and current contract",
+    "لا يوجد": "None"
 }

@@ -93,6 +93,15 @@ class PortalsTest extends TestCase
             ->assertTableFilterExists('unit_id');
     }
 
+    public function test_owner_prints_the_sheet_of_their_own_units_only(): void
+    {
+        $s = $this->scenario();
+        $this->actingAs($s['A']['owner']);
+
+        $this->get("{$this->host}/print/unit/{$s['A']['unit']->id}")->assertOk()->assertSee('وحدة A');
+        $this->get("{$this->host}/print/unit/{$s['B']['unit']->id}")->assertForbidden();
+    }
+
     public function test_client_sees_only_their_contracts_and_payments(): void
     {
         $s = $this->scenario();

@@ -64,7 +64,11 @@ class UnitResource extends PortalResource
                 TextColumn::make('my_share')->label(__('نسبة الملكية'))->state(fn (Unit $record) => $record->owners->first()?->pivot->share_percent)->suffix(' %'),
             ])
             ->filters([SelectFilter::make('status')->options(UnitStatus::class)])
-            ->recordActions([ViewAction::make()]);
+            ->recordActions([
+                ViewAction::make(),
+                \Filament\Actions\Action::make('print')->label(__('طباعة'))->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->url(fn ($record) => route('documents.print', ['type' => 'unit', 'id' => $record->getKey()]), true),
+            ]);
     }
 
     public static function getPages(): array
