@@ -24,11 +24,22 @@ class ClientStatsOverview extends StatsOverviewWidget
         $next = $s['next'];
 
         return [
-            Stat::make(__('الدفعة القادمة'), $next ? number_format($next->remainingAmount(), 2) : '—')
-                ->description($next ? $next->due_date->toDateString() : __('لا توجد دفعات مستحقة')),
-            Stat::make(__('إجمالي المستحق'), number_format($s['outstanding'], 2)),
-            Stat::make(__('متأخرات'), number_format($s['overdue'], 2))->color($s['overdue'] > 0 ? 'danger' : 'success'),
-            Stat::make(__('عقودي السارية'), (string) $s['contracts']),
+            Stat::make(__('الدفعة القادمة'), $next ? number_format($next->remainingAmount(), 2).' '.\App\Support\Settings::currencyLabel() : '—')
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedCalendarDays)
+                ->description($next ? ($next->due_date->isPast() ? __('متأخرة منذ :d', ['d' => $next->due_date->format('Y-m-d')]) : __('تستحق في :d', ['d' => $next->due_date->format('Y-m-d')])) : __('لا توجد دفعات مستحقة'))
+                ->color($next?->due_date->isPast() ? 'danger' : 'info'),
+            Stat::make(__('إجمالي المستحق'), number_format($s['outstanding'], 2).' '.\App\Support\Settings::currencyLabel())
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedBanknotes)
+                ->description(__('على كل عقودك'))
+                ->color('warning'),
+            Stat::make(__('متأخرات'), number_format($s['overdue'], 2).' '.\App\Support\Settings::currencyLabel())
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedExclamationTriangle)
+                ->description($s['overdue'] > 0 ? __('يرجى السداد في أقرب وقت') : __('لا توجد متأخرات'))
+                ->color($s['overdue'] > 0 ? 'danger' : 'success'),
+            Stat::make(__('عقودي السارية'), (string) $s['contracts'])
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedDocumentText)
+                ->description(__('عقود إيجار نشطة'))
+                ->color('primary'),
         ];
     }
 }

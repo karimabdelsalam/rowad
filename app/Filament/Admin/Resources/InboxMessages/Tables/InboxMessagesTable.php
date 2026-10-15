@@ -7,6 +7,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Support\Icons\Heroicon;
 
 class InboxMessagesTable
 {
@@ -14,37 +16,17 @@ class InboxMessagesTable
     {
         return $table
             ->columns([
-                TextColumn::make('source')
-                    ->searchable(),
-                TextColumn::make('unit.title')
-                    ->searchable(),
-                TextColumn::make('locale')
-                    ->searchable(),
-                TextColumn::make('ip_address')
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('mobile')
-                    ->searchable(),
-                TextColumn::make('subject')
-                    ->searchable(),
-                TextColumn::make('read_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('replied_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('read_at')->label('')->boolean()->trueIcon(Heroicon::OutlinedEnvelopeOpen)->falseIcon(Heroicon::Envelope)->trueColor('gray')->falseColor('warning')->alignCenter()
+                    ->tooltip(fn ($record) => $record->read_at ? __('مقروءة') : __('جديدة')),
+                TextColumn::make('name')->label(__('المرسل'))->weight(fn ($record) => $record->read_at ? null : 'bold')->searchable()
+                    ->description(fn ($record) => $record->mobile ?: $record->email),
+                TextColumn::make('subject')->label(__('الموضوع'))->searchable()->limit(50)
+                    ->state(fn ($record) => $record->subject ?: str($record->message)->limit(50)),
+                TextColumn::make('source')->label(__('المصدر'))->badge()->color('gray')
+                    ->formatStateUsing(fn ($state) => $state === 'unit_inquiry' ? __('استفسار عن وحدة') : __('نموذج التواصل')),
+                TextColumn::make('unit.title')->label(__('الوحدة'))->placeholder('-')->toggleable(),
+                IconColumn::make('replied_at')->label(__('رُدّ عليها'))->boolean()->alignCenter(),
+                TextColumn::make('created_at')->label(__('وصلت'))->since()->sortable()->tooltip(fn ($record) => $record->created_at?->format('Y-m-d H:i')),
             ])
             ->filters([
                 \Filament\Tables\Filters\TernaryFilter::make('read_at')->label(__('مقروءة'))->nullable(),

@@ -11,6 +11,8 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Support\Icons\Heroicon;
 
 class OwnersTable
 {
@@ -20,68 +22,32 @@ class OwnersTable
     {
         return $table
             ->columns([
-                TextColumn::make('user.name')
-                    ->searchable(),
-                TextColumn::make('first_name')
-                    ->searchable(),
-                TextColumn::make('father_name')
-                    ->searchable(),
-                TextColumn::make('grandfather_name')
-                    ->searchable(),
-                TextColumn::make('family_name')
-                    ->searchable(),
-                TextColumn::make('full_name')
-                    ->searchable(),
-                TextColumn::make('id_type')
-                    ->badge()
-                    ->searchable(),
-                TextColumn::make('id_number')
-                    ->searchable(),
-                TextColumn::make('id_source')
-                    ->searchable(),
-                TextColumn::make('id_issue_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('nationality')
-                    ->searchable(),
-                TextColumn::make('mobile')
-                    ->searchable(),
-                TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('home_phone')
-                    ->searchable(),
-                TextColumn::make('work')
-                    ->searchable(),
-                TextColumn::make('work_phone')
-                    ->searchable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('full_name')->label(__('الاسم'))->weight('bold')->searchable(['full_name', 'first_name', 'family_name'])->sortable()
+                    ->description(fn ($record) => $record->id_type ? $record->id_type->getLabel().' '.$record->id_number : null),
+                TextColumn::make('mobile')->label(__('الجوال'))->searchable()->icon(Heroicon::OutlinedPhone)->iconColor('gray')->extraAttributes(['dir' => 'ltr'])->placeholder('-'),
+                TextColumn::make('email')->label(__('البريد الإلكتروني'))->searchable()->placeholder('-')->toggleable()->extraAttributes(['dir' => 'ltr']),
+                TextColumn::make('nationality')->label(__('الجنسية'))->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('units_count')->label(__('الوحدات'))->counts('units')->badge()->color('gray')->sortable()->alignCenter(),
+                TextColumn::make('balance')->label(__('الرصيد المستحق له'))->numeric(2)->state(fn ($record) => $record->outstandingBalance())
+                    ->color(fn ($state) => $state > 0 ? 'warning' : 'success')->weight('bold'),
+                IconColumn::make('user_id')->label(__('بوابة'))->boolean()->trueIcon(Heroicon::OutlinedKey)->falseIcon(Heroicon::OutlinedMinus)->trueColor('success')->falseColor('gray')->alignCenter()->tooltip(__('حساب دخول للبوابة')),
+                TextColumn::make('created_at')->label(__('أُضيف في'))->date('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                \Filament\Actions\Action::make('print')
-                    ->label(__('طباعة'))
-                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
-                    ->url(fn ($record) => route('documents.print', ['type' => 'owner_statement', 'id' => $record->getKey()]))
-                    ->openUrlInNewTab(),
-
-                self::portalAccountAction('owners'),
-                self::loginAsAction('owners', 'owner'),
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()->label(__('عرض')),
+                \Filament\Actions\ActionGroup::make([
+                    EditAction::make(),
+                    \Filament\Actions\Action::make('print')
+                        ->label(__('طباعة كشف الحساب'))
+                        ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                        ->url(fn ($record) => route('documents.print', ['type' => 'owner_statement', 'id' => $record->getKey()]))
+                        ->openUrlInNewTab(),
+                    self::portalAccountAction('owners'),
+                    self::loginAsAction('owners', 'owner'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -2,9 +2,10 @@
 
 namespace App\Enums;
 
+use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
-enum TicketType: string implements HasLabel
+enum TicketType: string implements HasColor, HasLabel
 {
     case Request = 'request';
     case Enquiry = 'enquiry';
@@ -19,5 +20,15 @@ enum TicketType: string implements HasLabel
             self::Problem => 'مشكلة',
             self::Suggestion => 'اقتراح',
         });
+    }
+
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::Request => 'info',
+            self::Enquiry => 'gray',
+            self::Problem => 'danger',
+            self::Suggestion => 'success',
+        };
     }
 }

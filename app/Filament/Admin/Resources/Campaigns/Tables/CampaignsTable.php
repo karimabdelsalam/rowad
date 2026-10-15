@@ -15,41 +15,24 @@ class CampaignsTable
     {
         return $table
             ->columns([
-                TextColumn::make('channel')
-                    ->badge()
-                    ->searchable(),
-                TextColumn::make('audience')
-                    ->searchable(),
-                TextColumn::make('subject')
-                    ->searchable(),
-                TextColumn::make('status')
-                    ->searchable(),
-                TextColumn::make('recipients_count')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('sent_count')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('failed_count')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('scheduled_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('created_by')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('subject')->label(__('الحملة'))->weight('bold')->searchable()
+                    ->state(fn ($record) => $record->subject ?: str($record->body)->limit(50))
+                    ->description(fn ($record) => __('إلى :a', ['a' => \App\Filament\Admin\Resources\Campaigns\Schemas\CampaignInfolist::audience($record->audience)])),
+                TextColumn::make('channel')->label(__('القناة'))->badge(),
+                TextColumn::make('status')->label(__('الحالة'))->badge()
+                    ->formatStateUsing(fn ($state) => \App\Filament\Admin\Resources\Campaigns\Schemas\CampaignInfolist::status($state))
+                    ->color(fn ($state) => \App\Filament\Admin\Resources\Campaigns\Schemas\CampaignInfolist::STATUSES[$state][1] ?? 'gray'),
+                TextColumn::make('recipients_count')->label(__('المستلمون'))->numeric()->alignCenter()->sortable(),
+                TextColumn::make('sent_count')->label(__('أُرسلت'))->numeric()->alignCenter()->color('success')->sortable(),
+                TextColumn::make('failed_count')->label(__('فشلت'))->numeric()->alignCenter()->color(fn ($state) => $state > 0 ? 'danger' : 'gray')->sortable(),
+                TextColumn::make('scheduled_at')->label(__('موعد الإرسال'))->dateTime('Y-m-d H:i')->placeholder(__('فوري'))->sortable()->toggleable(),
+                TextColumn::make('creator.name')->label(__('أنشأها'))->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label(__('التاريخ'))->date('Y-m-d')->sortable(),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('channel')->label(__('القناة'))->options(\App\Enums\MessageChannel::class),
+                \Filament\Tables\Filters\SelectFilter::make('status')->label(__('الحالة'))
+                    ->options(collect(\App\Filament\Admin\Resources\Campaigns\Schemas\CampaignInfolist::STATUSES)->map(fn ($v) => __($v[0]))->all()),
             ])
             ->recordActions([
                 \Filament\Actions\Action::make('send')

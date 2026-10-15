@@ -31,21 +31,28 @@ class InstallmentResource extends PortalResource
     {
         return parent::getEloquentQuery()
             ->whereHas('unit.owners', fn (Builder $q) => $q->whereKey(Portal::owner()->getKey()))
-            ->with('unit');
+            ->with(['unit', 'contract.clients']);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->defaultSort('due_date')
+            ->striped()
             ->columns([
-                TextColumn::make('due_date')->date('Y-m-d')->sortable(),
-                TextColumn::make('unit.title'),
-                TextColumn::make('type')->badge(),
-                TextColumn::make('amount')->numeric(2),
-                TextColumn::make('paid_amount')->state(fn (\App\Models\Installment $record) => $record->paidTotal())->numeric(2),
-                TextColumn::make('remaining')->label(__('المتبقي'))->state(fn (\App\Models\Installment $record) => $record->remainingAmount())->numeric(2),
-                IconColumn::make('is_collected')->boolean(),
+                TextColumn::make('due_date')->label(__('الاستحقاق'))->date('Y-m-d')->sortable()->weight('bold')
+                    ->color(fn (\App\Models\Installment $record) => ! $record->is_collected && $record->due_date?->isPast() ? 'danger' : null),
+                TextColumn::make('unit.title')->label(__('الوحدة'))->weight('medium')
+                    ->description(fn (\App\Models\Installment $record) => $record->contract?->clients?->pluck('full_name')->implode('، ')),
+                TextColumn::make('type')->label(__('النوع'))->badge(),
+                TextColumn::make('amount')->label(__('المبلغ'))->numeric(2)->weight('bold'),
+                TextColumn::make('paid_amount')->label(__('المدفوع'))->state(fn (\App\Models\Installment $record) => $record->paidTotal())->numeric(2)->color('success'),
+                TextColumn::make('remaining')->label(__('المتبقي'))->state(fn (\App\Models\Installment $record) => $record->remainingAmount())->numeric(2)->color(fn ($state) => $state > 0 ? 'danger' : 'gray'),
+                TextColumn::make('state')->label(__('الحالة'))->badge()
+                    ->state(fn (\App\Models\Installment $record) => $record->is_collected ? 'collected' : ($record->due_date?->isPast() ? 'late' : ((float) $record->paid_amount > 0 ? 'partial' : 'due')))
+                    ->formatStateUsing(fn ($state) => ['collected' => __('محصّل'), 'late' => __('متأخر'), 'partial' => __('جزئي'), 'due' => __('مستحق')][$state])
+                    ->color(fn ($state) => ['collected' => 'success', 'late' => 'danger', 'partial' => 'warning', 'due' => 'info'][$state])
+                    ->icon(fn ($state) => ['collected' => Heroicon::OutlinedCheckCircle, 'late' => Heroicon::OutlinedExclamationCircle, 'partial' => Heroicon::OutlinedClock, 'due' => Heroicon::OutlinedCalendar][$state]),
             ])
             // legacy owner "my payments": filter by property and by tenant
             ->filters([

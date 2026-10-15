@@ -36,14 +36,23 @@ class OwnerTransactionResource extends PortalResource
     {
         return $table
             ->defaultSort('due_date', 'desc')
+            ->striped()
             ->description(fn () => __('الرصيد المستحق لك').': '.number_format(Portal::owner()->outstandingBalance(), 2))
             ->columns([
-                TextColumn::make('due_date')->date('Y-m-d')->sortable(),
-                TextColumn::make('unit.title'),
-                TextColumn::make('type.title')->label(__('البيان')),
-                TextColumn::make('direction')->badge()->color(fn ($state) => $state->value === 'debit' ? 'success' : 'danger'),
-                TextColumn::make('amount')->numeric(2),
-                IconColumn::make('is_settled')->boolean(),
+                TextColumn::make('due_date')->label(__('التاريخ'))->date('Y-m-d')->sortable()->weight('bold'),
+                TextColumn::make('type.title')->label(__('البيان'))->weight('medium')
+                    ->description(fn ($record) => $record->unit?->title),
+                TextColumn::make('direction')->label(__('الاتجاه'))->badge()
+                    ->formatStateUsing(fn ($state) => $state->value === 'debit' ? __('لك') : __('عليك')),
+                TextColumn::make('amount')->label(__('المبلغ'))->numeric(2)->weight('bold')
+                    ->color(fn ($record) => $record->direction->value === 'debit' ? 'success' : 'danger')
+                    ->prefix(fn ($record) => $record->direction->value === 'debit' ? '+ ' : '- '),
+                TextColumn::make('is_settled')->label(__('الحالة'))->badge()
+                    ->formatStateUsing(fn ($state) => $state ? __('مُرحّلة') : __('معلّقة'))
+                    ->color(fn ($state) => $state ? 'success' : 'warning')
+                    ->description(fn ($record) => $record->settled_at?->format('Y-m-d')),
+                TextColumn::make('voucher')->label(__('السند'))->placeholder('-')->fontFamily('mono')->size('xs')
+                    ->state(fn ($record) => $record->paymentVoucher?->number ?? $record->receiptVoucher?->number),
             ])
             ->filters([
                 TernaryFilter::make('is_settled'),

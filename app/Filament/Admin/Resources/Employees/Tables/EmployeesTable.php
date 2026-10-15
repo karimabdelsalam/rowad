@@ -11,6 +11,8 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Support\Icons\Heroicon;
 
 class EmployeesTable
 {
@@ -18,83 +20,23 @@ class EmployeesTable
     {
         return $table
             ->columns([
-                TextColumn::make('user.name')
-                    ->searchable(),
-                TextColumn::make('first_name')
-                    ->searchable(),
-                TextColumn::make('father_name')
-                    ->searchable(),
-                TextColumn::make('grandfather_name')
-                    ->searchable(),
-                TextColumn::make('family_name')
-                    ->searchable(),
-                TextColumn::make('full_name')
-                    ->searchable(),
-                TextColumn::make('id_type')
-                    ->badge()
-                    ->searchable(),
-                TextColumn::make('id_number')
-                    ->searchable(),
-                TextColumn::make('id_source')
-                    ->searchable(),
-                TextColumn::make('id_issue_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('nationality')
-                    ->searchable(),
-                TextColumn::make('mobile')
-                    ->searchable(),
-                TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('home_phone')
-                    ->searchable(),
-                TextColumn::make('work')
-                    ->searchable(),
-                TextColumn::make('work_phone')
-                    ->searchable(),
-                TextColumn::make('id_expiry_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('mobile2')
-                    ->searchable(),
-                TextColumn::make('education')
-                    ->searchable(),
-                TextColumn::make('marital_status')
-                    ->searchable(),
-                TextColumn::make('salary')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('rent_commission')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('sale_commission')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('start_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('calendar')
-                    ->badge()
-                    ->searchable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('full_name')->label(__('الاسم'))->weight('bold')->searchable(['full_name', 'first_name', 'family_name'])->sortable()
+                    ->description(fn ($record) => $record->work),
+                TextColumn::make('mobile')->label(__('الجوال'))->searchable()->icon(Heroicon::OutlinedPhone)->iconColor('gray')->extraAttributes(['dir' => 'ltr'])->placeholder('-'),
+                TextColumn::make('email')->label(__('البريد الإلكتروني'))->searchable()->placeholder('-')->toggleable(isToggledHiddenByDefault: true)->extraAttributes(['dir' => 'ltr']),
+                TextColumn::make('salary')->label(__('الراتب'))->numeric(2)->sortable()->toggleable(),
+                TextColumn::make('start_date')->label(__('تاريخ التعيين'))->date('Y-m-d')->sortable()->toggleable(),
+                TextColumn::make('id_expiry_date')->label(__('انتهاء الهوية'))->date('Y-m-d')->sortable()->placeholder('-')
+                    ->color(fn ($record) => $record->id_expiry_date?->isPast() ? 'danger' : ($record->id_expiry_date && $record->id_expiry_date->diffInDays(today()) <= 60 ? 'warning' : null))
+                    ->icon(fn ($record) => $record->id_expiry_date && $record->id_expiry_date->diffInDays(today(), false) >= -60 ? Heroicon::OutlinedExclamationTriangle : null),
+                IconColumn::make('user.is_active')->label(__('الحساب'))->boolean()->alignCenter()->placeholder('-'),
+                TextColumn::make('created_at')->label(__('أُضيف في'))->date('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()->label(__('عرض')),
                 EditAction::make(),
             ])
             ->toolbarActions([

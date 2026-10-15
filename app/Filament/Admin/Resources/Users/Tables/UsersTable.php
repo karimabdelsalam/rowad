@@ -19,52 +19,24 @@ class UsersTable
     {
         return $table
             ->columns([
-                TextColumn::make('type')
-                    ->badge()
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('username')
-                    ->searchable(),
-                TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('mobile')
-                    ->searchable(),
-                TextColumn::make('national_id')
-                    ->searchable(),
-                TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('locale')
-                    ->searchable(),
-                IconColumn::make('is_active')
-                    ->boolean(),
-                IconColumn::make('is_super_admin')
-                    ->boolean(),
-                IconColumn::make('sms_login_enabled')
-                    ->boolean(),
-                TextColumn::make('last_login_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('name')->label(__('الاسم'))->weight('bold')->searchable()->sortable()
+                    ->description(fn ($record) => $record->email ?? $record->username),
+                TextColumn::make('type')->label(__('النوع'))->badge(),
+                TextColumn::make('roles.name')->label(__('الأدوار'))->badge()->color('info')->placeholder('-')
+                    ->state(fn ($record) => $record->is_super_admin ? [__('مدير النظام')] : $record->getRoleNames()->all()),
+                TextColumn::make('mobile')->label(__('الجوال'))->searchable()->placeholder('-')->extraAttributes(['dir' => 'ltr'])->toggleable(),
+                IconColumn::make('is_active')->label(__('مفعل'))->boolean()->alignCenter(),
+                IconColumn::make('sms_login_enabled')->label('SMS')->boolean()->alignCenter()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('last_login_at')->label(__('آخر دخول'))->since()->sortable()->placeholder(__('لم يدخل بعد')),
+                TextColumn::make('created_at')->label(__('أُضيف في'))->date('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('type')->label(__('النوع'))->options(\App\Enums\UserType::class),
+                \Filament\Tables\Filters\TernaryFilter::make('is_active')->label(__('مفعل')),
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()->label(__('عرض')),
                 EditAction::make(),
             ])
             ->toolbarActions([

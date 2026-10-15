@@ -162,7 +162,7 @@ class PlanLimitsTest extends TestCase
         $admin = $this->admin();
         $this->actingAs($admin)->get("{$this->host}/admin")->assertOk()->assertDontSee('تنتهي الفترة التجريبية');
 
-        $this->tenant->update(['trial_ends_at' => now()->addDays(3)->addHour()]);
+        $this->tenant->update(['trial_ends_at' => today()->addDays(3)->setTime(12, 0)]); // noon: the day count must not depend on the hour the test runs
         $this->actingAs($admin)->get("{$this->host}/admin")->assertOk()->assertSee('تنتهي الفترة التجريبية بعد 3 أيام');
 
         $this->tenant->update(['status' => \App\Models\Tenant::STATUS_PAST_DUE]);

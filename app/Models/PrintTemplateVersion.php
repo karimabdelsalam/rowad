@@ -16,6 +16,11 @@ class PrintTemplateVersion extends Model
         ];
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function template(): BelongsTo
     {
         return $this->belongsTo(PrintTemplate::class, 'print_template_id');

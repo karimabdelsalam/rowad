@@ -32,13 +32,14 @@ class UnitsTable
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['building', 'category', 'owners', 'city']))
             ->defaultSort('id', 'desc')
             ->columns([
-                TextColumn::make('title')->searchable()->sortable(),
-                TextColumn::make('building.title')->searchable()->sortable(),
+                TextColumn::make('title')->label(__('الوحدة'))->weight('bold')->searchable()->sortable()
+                    ->description(fn ($record) => $record->building?->title ?? $record->city?->name),
+                TextColumn::make('building.title')->label(__('العقار'))->searchable()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('number')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('category.title')->label(__('التصنيف'))->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('offer_type')->badge(),
                 TextColumn::make('status')->badge()->sortable(),
-                TextColumn::make('owners.full_name')->label(__('الملاك'))->listWithLineBreaks()->limitList(2)->expandableLimitedList(),
+                TextColumn::make('owners.full_name')->label(__('الملاك'))->badge()->color('info')->limitList(2)->expandableLimitedList(),
                 TextColumn::make('rent_amount')->numeric(2)->sortable()->toggleable(),
                 TextColumn::make('rooms')->numeric()->sortable()->toggleable(),
                 TextColumn::make('area')->numeric(2)->sortable()->toggleable(isToggledHiddenByDefault: true),

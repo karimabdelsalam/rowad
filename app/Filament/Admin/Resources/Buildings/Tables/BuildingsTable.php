@@ -18,56 +18,26 @@ class BuildingsTable
     {
         return $table
             ->columns([
-                TextColumn::make('title')
-                    ->searchable(),
-                TextColumn::make('category.title')
-                    ->label(__('التصنيف')),
-                TextColumn::make('number')
-                    ->searchable(),
-                TextColumn::make('city.name')
-                    ->searchable(),
-                TextColumn::make('district.name')
-                    ->searchable(),
-                TextColumn::make('street')
-                    ->searchable(),
-                TextColumn::make('zone')
-                    ->searchable(),
-                TextColumn::make('plan_number')
-                    ->searchable(),
-                TextColumn::make('plot_number')
-                    ->searchable(),
-                TextColumn::make('area')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('floors')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('address')
-                    ->searchable(),
-                TextColumn::make('latitude')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('longitude')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('title')->label(__('العقار'))->weight('bold')->searchable()->sortable()
+                    ->description(fn ($record) => implode(' · ', array_filter([$record->city?->name, $record->district?->name, $record->street]))),
+                TextColumn::make('category.title')->label(__('التصنيف'))->badge()->color('gray')->placeholder('-'),
+                TextColumn::make('number')->label(__('الرقم'))->searchable()->placeholder('-')->toggleable(),
+                TextColumn::make('units_count')->label(__('الوحدات'))->counts('units')->badge()->color('gray')->alignCenter()->sortable(),
+                TextColumn::make('rented_count')->label(__('مؤجرة'))->badge()->color('success')->alignCenter()
+                    ->state(fn ($record) => $record->units()->where('status', \App\Enums\UnitStatus::Rented)->count()),
+                TextColumn::make('floors')->label(__('الأدوار'))->numeric()->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('area')->label(__('المساحة'))->numeric(2)->suffix(' م²')->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('plan_number')->label(__('المخطط'))->searchable()->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('plot_number')->label(__('القطعة'))->searchable()->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label(__('أُضيف في'))->date('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('property_category_id')->label(__('التصنيف'))->relationship('category', 'title'),
+                \Filament\Tables\Filters\SelectFilter::make('city_id')->label(__('المدينة'))->relationship('city', 'name')->searchable()->preload(),
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()->label(__('عرض')),
                 EditAction::make(),
             ])
             ->toolbarActions([

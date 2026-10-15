@@ -51,7 +51,7 @@ class TableExportTest extends TestCase
         $page = Livewire::test(ListOwners::class)->searchTable('مالك1')->instance();
         [$headings, $rows] = TableExport::snapshot($page);
 
-        $this->assertContains(__('Full name'), $headings);
+        $this->assertContains(__('الاسم'), $headings);
         $this->assertCount(11, $rows); // مالك1, مالك10..19 — every page, not only the first 10
         $flat = array_merge(...$rows);
         $this->assertContains('0500000001', $flat); // phone numbers keep their leading zero

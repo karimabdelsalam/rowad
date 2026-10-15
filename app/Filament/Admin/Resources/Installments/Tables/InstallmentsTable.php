@@ -30,29 +30,41 @@ class InstallmentsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['unit', 'contract']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['unit', 'contract.clients']))
             ->defaultSort('due_date')
             ->columns([
                 TextColumn::make('due_date')
+                    ->label(__('الاستحقاق'))
                     ->date('Y-m-d')
+                    ->weight('bold')
+                    ->color(fn (Installment $record) => ! $record->is_collected && $record->due_date?->isPast() ? 'danger' : null)
                     ->description(fn (Installment $record) => $record->calendar?->value === 'hijri' ? Hijri::toString($record->due_date) : null)
                     ->sortable(),
-                TextColumn::make('unit.title')->searchable()->sortable(),
+                TextColumn::make('unit.title')->label(__('الوحدة'))->searchable()->sortable()->weight('medium')
+                    ->description(fn (Installment $record) => $record->contract?->clients?->pluck('full_name')->implode('، ')),
                 TextColumn::make('contract_label')
                     ->label(__('العقد'))
-                    ->state(fn (Installment $record) => $record->contract?->number ?? '#'.$record->contract_id),
-                TextColumn::make('type')->badge(),
-                TextColumn::make('amount')->numeric(2)->sortable(),
-                TextColumn::make('paid_amount')->state(fn (Installment $record) => $record->paidTotal())->numeric(2)->toggleable(),
+                    ->state(fn (Installment $record) => $record->contract?->number ?? '#'.$record->contract_id)
+                    ->toggleable(),
+                TextColumn::make('type')->label(__('النوع'))->badge(),
+                TextColumn::make('amount')->label(__('المبلغ'))->numeric(2)->sortable()->weight('bold'),
+                TextColumn::make('paid_amount')->label(__('المدفوع'))->state(fn (Installment $record) => $record->paidTotal())->numeric(2)->color('success')->toggleable(),
                 TextColumn::make('remaining')
                     ->label(__('المتبقي'))
                     ->state(fn (Installment $record) => $record->remainingAmount())
-                    ->numeric(2),
-                TextColumn::make('vat_amount')->numeric(2)->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('buyer_commission')->numeric(2)->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('seller_commission')->numeric(2)->toggleable(isToggledHiddenByDefault: true),
-                IconColumn::make('is_collected')->boolean(),
-                TextColumn::make('collected_at')->dateTime('Y-m-d')->toggleable(isToggledHiddenByDefault: true),
+                    ->numeric(2)
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'gray'),
+                TextColumn::make('vat_amount')->label(__('الضريبة'))->numeric(2)->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('buyer_commission')->label(__('عمولة المشتري'))->numeric(2)->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('seller_commission')->label(__('عمولة البائع'))->numeric(2)->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('state')
+                    ->label(__('الحالة'))
+                    ->badge()
+                    ->state(fn (Installment $record) => $record->is_collected ? 'collected' : ($record->due_date?->isPast() ? 'late' : ((float) $record->paid_amount > 0 ? 'partial' : 'due')))
+                    ->formatStateUsing(fn ($state) => ['collected' => __('محصّل'), 'late' => __('متأخر'), 'partial' => __('جزئي'), 'due' => __('مستحق')][$state])
+                    ->color(fn ($state) => ['collected' => 'success', 'late' => 'danger', 'partial' => 'warning', 'due' => 'info'][$state])
+                    ->icon(fn ($state) => ['collected' => Heroicon::OutlinedCheckCircle, 'late' => Heroicon::OutlinedExclamationCircle, 'partial' => Heroicon::OutlinedClock, 'due' => Heroicon::OutlinedCalendar][$state]),
+                TextColumn::make('collected_at')->label(__('تاريخ التحصيل'))->dateTime('Y-m-d')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TernaryFilter::make('is_collected')->default(false),
@@ -65,7 +77,6 @@ class InstallmentsTable
                     ->query(fn (Builder $query) => $query->whereBetween('due_date', [today()->startOfMonth(), today()->endOfMonth()])),
             ])
             ->recordActions([
-                ViewAction::make(),
                 Action::make('collect')
                     ->label(__('تحصيل'))
                     ->icon(Heroicon::OutlinedCheckCircle)
@@ -73,6 +84,8 @@ class InstallmentsTable
                     ->requiresConfirmation()
                     ->visible(fn (Installment $record) => ! $record->is_collected && self::allowed('collect'))
                     ->action(fn (Installment $record) => self::run(fn () => app(InstallmentCollector::class)->collect($record), __('تم تحصيل القسط'))),
+                \Filament\Actions\ActionGroup::make([
+                ViewAction::make(),
                 Action::make('collectPartial')
                     ->label(__('دفعة جزئية'))
                     ->icon(Heroicon::OutlinedBanknotes)
@@ -108,6 +121,12 @@ class InstallmentsTable
                     ->requiresConfirmation()
                     ->visible(fn (Installment $record) => ! $record->is_collected && (float) $record->paid_amount > 0 && self::allowed('reset'))
                     ->action(fn (Installment $record) => self::run(fn () => app(InstallmentCollector::class)->resetPartial($record), __('تم إلغاء الدفعات الجزئية'))),
+                Action::make('printReceipt')
+                    ->label(__('طباعة سند القبض'))
+                    ->icon(Heroicon::OutlinedPrinter)
+                    ->visible(fn (Installment $record) => $record->receipt_voucher_id !== null)
+                    ->url(fn (Installment $record) => route('documents.print', ['type' => 'receipt_voucher', 'id' => $record->receipt_voucher_id]), shouldOpenInNewTab: true),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

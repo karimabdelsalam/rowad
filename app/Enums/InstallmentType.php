@@ -2,10 +2,11 @@
 
 namespace App\Enums;
 
+use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
 /** Legacy payments.type values, renamed consistently. */
-enum InstallmentType: string implements HasLabel
+enum InstallmentType: string implements HasColor, HasLabel
 {
     case DayRent = 'day_rent';
     case MonthRent = 'month_rent';
@@ -49,5 +50,14 @@ enum InstallmentType: string implements HasLabel
             self::InstallmentSale => 'بيع - أقساط',
             self::Expenses => 'مصروفات على العقد',
         });
+    }
+
+    public function getColor(): string
+    {
+        return match (true) {
+            $this === self::Expenses => 'danger',
+            $this->isRent() => 'info',
+            default => 'primary',
+        };
     }
 }
