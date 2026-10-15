@@ -30,6 +30,7 @@ class SetLocale
             $request->query('lang'),
             $request->hasSession() ? $request->session()->get('locale') : null,
             $request->user()?->locale,
+            $request->headers->has('Accept-Language') && $request->is('api/*') ? $request->getPreferredLanguage(self::SUPPORTED) : null,
             tenancy()->initialized ? Settings::get('locale') : null,
         ];
 

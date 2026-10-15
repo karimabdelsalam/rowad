@@ -2,11 +2,8 @@
 
 namespace App\Filament\Concerns;
 
-use App\Enums\TicketStatus;
 use App\Enums\TicketType;
 use App\Models\SupportTicket;
-use App\Services\DocumentNumberGenerator;
-use App\Support\Settings;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -68,9 +65,6 @@ trait PortalSupportTickets
             $data['unit_id'] = null;
         }
 
-        return $owner + $data + [
-            'code' => Settings::get('support_ticket_prefix', 'TCK-').app(DocumentNumberGenerator::class)->sequence('support_ticket'),
-            'status' => TicketStatus::Open,
-        ];
+        return $owner + $data + SupportTicket::newTicketDefaults();
     }
 }

@@ -633,5 +633,20 @@
     "ينبع": "Yanbu",
     "ينتهي خلال": "Ending within",
     "يوم": "Day",
-    "يومي": "Daily"
+    "يومي": "Daily",
+    "آخر نشاطات الدخول": "Recent sign-ins",
+    "الوقت": "Time",
+    "عنوان IP": "IP address",
+    "الجهاز": "Device",
+    "ناجح": "Successful",
+    "مسح السجل": "Clear history",
+    "تم مسح سجل الدخول": "Sign-in history cleared",
+    "ليس لديك صلاحية لهذا الإجراء": "You are not allowed to do this",
+    "محاولات كثيرة، حاول بعد :seconds ثانية": "Too many attempts. Try again in :seconds seconds",
+    "تم إرسال رمز التحقق إلى جوالك": "A verification code was sent to your mobile",
+    "رمز التحقق غير صحيح": "The verification code is incorrect",
+    "تم تسجيل الخروج": "Signed out",
+    "تمت الإضافة بنجاح": "Added successfully",
+    "تم الحذف": "Deleted",
+    "حساب المكتب موقوف أو انتهت فترته التجريبية": "This office account is suspended or its trial has ended"
 }

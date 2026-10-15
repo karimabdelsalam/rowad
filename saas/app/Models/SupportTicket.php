@@ -16,6 +16,15 @@ class SupportTicket extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
+    /** Code and status for a newly opened ticket (legacy support_ticket_prefix + running number). */
+    public static function newTicketDefaults(): array
+    {
+        return [
+            'code' => \App\Support\Settings::get('support_ticket_prefix', 'TCK-').app(\App\Services\DocumentNumberGenerator::class)->sequence('support_ticket'),
+            'status' => TicketStatus::Open,
+        ];
+    }
+
     protected function casts(): array
     {
         return [

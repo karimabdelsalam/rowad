@@ -38,3 +38,11 @@ Route::middleware([
         ->middleware('signed')->name('portal.impersonate');
     Route::get('/impersonate/stop', [\App\Http\Controllers\ImpersonationController::class, 'stop'])->name('portal.impersonate.stop');
 });
+
+Route::prefix('api/v1')->name('api.v1.')->middleware([
+    'api',
+    InitializeTenancyByDomain::class,
+    PreventAccessFromCentralDomains::class,
+    \App\Http\Middleware\EnsureOfficeIsAccessible::class,
+    \App\Http\Middleware\SetLocale::class,
+])->group(base_path('routes/tenant-api.php'));

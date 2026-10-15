@@ -6,7 +6,6 @@ use App\Filament\Concerns\PortalSupportTickets;
 use App\Filament\Owner\Resources\SupportTickets\Pages\ManageSupportTickets;
 use App\Filament\PortalResource;
 use App\Models\SupportTicket;
-use App\Models\Unit;
 use App\Support\Portal;
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
@@ -35,7 +34,7 @@ class SupportTicketResource extends PortalResource
 
     protected static function ticketUnits(): array
     {
-        return Unit::whereHas('owners', fn ($q) => $q->whereKey(Portal::owner()->getKey()))->pluck('title', 'id')->all();
+        return Portal::ownerUnits(Portal::owner())->pluck('title', 'id')->all();
     }
 
     public static function getPages(): array

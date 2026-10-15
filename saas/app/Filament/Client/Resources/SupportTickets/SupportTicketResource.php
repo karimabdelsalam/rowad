@@ -6,7 +6,6 @@ use App\Filament\Client\Resources\SupportTickets\Pages\ManageSupportTickets;
 use App\Filament\Concerns\PortalSupportTickets;
 use App\Filament\PortalResource;
 use App\Models\SupportTicket;
-use App\Models\Unit;
 use App\Support\Portal;
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
@@ -35,13 +34,7 @@ class SupportTicketResource extends PortalResource
 
     protected static function ticketUnits(): array
     {
-        $client = Portal::client();
-
-        return Unit::query()
-            ->where(fn ($q) => $q
-                ->whereHas('rentContracts.clients', fn ($q) => $q->whereKey($client->getKey()))
-                ->orWhereHas('saleContracts.clients', fn ($q) => $q->whereKey($client->getKey())))
-            ->pluck('title', 'id')->all();
+        return Portal::clientUnits(Portal::client())->pluck('title', 'id')->all();
     }
 
     public static function getPages(): array
