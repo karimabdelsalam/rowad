@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Campaigns\Schemas;
 
 use App\Enums\MessageChannel;
+use App\Filament\Forms\AiWriteAction;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -32,9 +33,11 @@ class CampaignForm
             Select::make('channel')->options(MessageChannel::class)->default('mail')->required()->live(),
             Select::make('audience')->options(self::audiences())->required(),
             TextInput::make('subject')->required(fn (Get $get) => ! $isSms($get))->hidden($isSms)->columnSpanFull(),
-            RichEditor::make('body')->required()->hidden($isSms)->columnSpanFull(),
+            RichEditor::make('body')->required()->hidden($isSms)->columnSpanFull()
+                ->hintAction(AiWriteAction::make('email', subjectField: 'subject')),
             Textarea::make('body')->required()->visible($isSms)->maxLength(612)->rows(4)->columnSpanFull()
-                ->helperText(__('الرسالة العربية الواحدة 70 حرفًا')),
+                ->helperText(__('الرسالة العربية الواحدة 70 حرفًا'))
+                ->hintAction(AiWriteAction::make('sms', name: 'aiWriteSms')),
         ]);
     }
 }

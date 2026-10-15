@@ -153,6 +153,49 @@ class Assistant
     }
 
     /**
+     * Drafts text for the user to review before saving (bulk messages, letters). Counts as one question.
+     *
+     * @param  string  $kind  email|sms|letter
+     * @return array{subject: ?string, body: string} body is markdown for email/letter, plain text for SMS
+     */
+    public function write(User $user, string $kind, string $brief, string $tone, string $language, array $context = []): array
+    {
+        self::ensureAvailable();
+
+        $format = match ($kind) {
+            'sms' => 'an SMS: plain text, no markdown, at most 140 characters, no subject',
+            'letter' => 'a formal letter body in markdown paragraphs (no letterhead, date or signature block: the system prints those)',
+            default => 'an email: a short subject line and a body in markdown paragraphs, with a closing line signed by the organisation',
+        };
+        $instruction = "Write {$format}. Language: ".($language === 'en' ? 'English' : 'Arabic').". Tone: {$tone}. "
+            .'It goes to many recipients, so do not use personal names or placeholders like [Name]. '
+            .'Return only JSON: {"subject": "..." or null, "body": "..."}.'
+            ."\n\nWhat the message should say:\n".$brief
+            .($context ? "\n\nContext: ".json_encode($context, JSON_UNESCAPED_UNICODE) : '');
+
+        $conversation = AiConversation::create(['user_id' => $user->id, 'panel' => 'tools', 'title' => Str::limit($brief, 70), 'context' => ['type' => 'writing', 'kind' => $kind]]);
+        $conversation->messages()->create(['role' => 'user', 'content' => $brief, 'kind' => 'writing']);
+        $response = $this->client->message($this->systemPrompt($user), [['role' => 'user', 'content' => $instruction]], [], 1500);
+        $text = collect($response['content'] ?? [])->where('type', 'text')->pluck('text')->implode("\n");
+
+        $json = json_decode(trim(preg_replace('/^```(?:json)?|```$/m', '', $text)), true);
+        $draft = is_array($json) && isset($json['body'])
+            ? ['subject' => filled($json['subject'] ?? null) ? (string) $json['subject'] : null, 'body' => (string) $json['body']]
+            : ['subject' => null, 'body' => trim($text)];
+        if ($kind === 'sms') {
+            $draft = ['subject' => null, 'body' => Str::limit(trim(strip_tags(Str::markdown($draft['body']))), 600, '')];
+        }
+
+        $conversation->messages()->create([
+            'role' => 'assistant', 'kind' => 'writing', 'content' => $draft['body'],
+            'input_tokens' => (int) data_get($response, 'usage.input_tokens', 0),
+            'output_tokens' => (int) data_get($response, 'usage.output_tokens', 0),
+        ]);
+
+        return $draft;
+    }
+
+    /**
      * The API needs user/assistant turns alternating and starting with the user; a question whose
      * answer failed leaves two user turns in a row, so those are merged.
      *

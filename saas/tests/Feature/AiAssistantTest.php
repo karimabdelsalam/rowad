@@ -350,4 +350,37 @@ class AiAssistantTest extends TestCase
             ->test(\App\Filament\Owner\Pages\Assistant::class)
             ->assertSet('subject', null);
     }
+
+    public function test_ai_drafts_a_bulk_email_into_the_form_for_review(): void
+    {
+        $this->fakeAnalysis('```json
+{"subject": "تذكير بموعد السداد", "body": "عملاءنا الكرام،\n\nنذكركم **بسداد** الإيجار قبل يوم 5."}
+```');
+        $this->actingAs($this->staff());
+        \Filament\Facades\Filament::setCurrentPanel('admin');
+
+        \Livewire\Livewire::test(\App\Filament\Admin\Resources\Campaigns\Pages\CreateCampaign::class)
+            ->fillForm(['channel' => 'mail', 'audience' => 'renters'])
+            ->callAction(\Filament\Actions\Testing\TestAction::make('aiWrite')->schemaComponent('body'), ['brief' => 'ذكرهم بالسداد قبل 5', 'tone' => 'ودّي', 'language' => 'ar'])
+            ->assertHasNoActionErrors()
+            ->assertSchemaStateSet(['subject' => 'تذكير بموعد السداد'])
+            ->assertSchemaStateSet(fn (array $state) => [
+                'body' => tap($state['body'], fn ($body) => $this->assertStringContainsString('بسداد', is_string($body) ? $body : json_encode($body, JSON_UNESCAPED_UNICODE))),
+            ]);
+
+        $request = $this->sent[0]['messages'][0]['content'];
+        $this->assertStringContainsString('ذكرهم بالسداد قبل 5', $request);
+        $this->assertStringContainsString('Tone: ودّي', $request);
+        $this->assertSame(1, AiMessage::where('kind', 'writing')->where('role', 'assistant')->count()); // counts against the quota
+        $this->assertSame(0, \App\Models\AiConversation::where('panel', 'admin')->count()); // not in the chat history
+    }
+
+    public function test_sms_drafts_are_plain_and_short(): void
+    {
+        $this->fakeAnalysis('{"subject": null, "body": "**تذكير:** سداد الإيجار قبل 5 من الشهر. شكرًا لكم"}');
+        $draft = app(Assistant::class)->write($this->staff(), 'sms', 'تذكير', 'مختصر ومباشر', 'ar');
+
+        $this->assertSame('تذكير: سداد الإيجار قبل 5 من الشهر. شكرًا لكم', $draft['body']);
+        $this->assertNull($draft['subject']);
+    }
 }

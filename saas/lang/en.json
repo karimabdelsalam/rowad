@@ -1295,5 +1295,17 @@
     "كم المستحق لهذا المالك؟": "How much is owed to this owner?",
     "لخص وضع هذا العميل": "Summarise this client",
     "هل على هذا العميل متأخرات؟": "Does this client have overdue amounts?",
-    "ما عقود هذا العميل؟": "What contracts does this client have?"
+    "ما عقود هذا العميل؟": "What contracts does this client have?",
+    "اكتب بالذكاء الاصطناعي": "Write with AI",
+    "اكتب فكرة الرسالة وسيصوغها المساعد في الحقل، وتستطيع تعديلها قبل الحفظ.": "Describe the message and the assistant drafts it into the field; you can edit it before saving.",
+    "اكتب المسودة": "Write draft",
+    "ماذا تريد أن تقول؟": "What do you want to say?",
+    "مثال: تذكير المستأجرين بسداد إيجار الشهر قبل يوم 5، مع رقم الحساب البنكي": "e.g. Remind tenants to pay this month's rent before the 5th, with the bank account number",
+    "الأسلوب": "Tone",
+    "رسمي ومهذب": "Formal and polite",
+    "ودّي": "Friendly",
+    "مختصر ومباشر": "Short and direct",
+    "حازم ومهذب": "Firm but polite",
+    "اللغة": "Language",
+    "تمت كتابة المسودة. راجعها قبل الحفظ.": "Draft written. Review it before saving."
 }

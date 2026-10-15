@@ -70,7 +70,8 @@ class LetterResource extends Resource
 
             Section::make(__('الخطاب الرسمي'))->columns(2)->columnSpanFull()
                 ->visible(fn (Get $get) => $type($get) === LetterType::Official)
-                ->schema([...$sendTo('data.official'), RichEditor::make('data.official.content')->label(__('نص الخطاب'))->required()->columnSpanFull()]),
+                ->schema([...$sendTo('data.official'), RichEditor::make('data.official.content')->label(__('نص الخطاب'))->required()->columnSpanFull()
+                    ->hintAction(\App\Filament\Forms\AiWriteAction::make('letter'))]),
             Section::make(__('إخلاء الطرف'))->columns(2)->columnSpanFull()
                 ->visible(fn (Get $get) => $type($get) === LetterType::Clearance)
                 ->schema($sendTo('data.cancel')),
