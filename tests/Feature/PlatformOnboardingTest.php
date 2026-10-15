@@ -101,6 +101,17 @@ class PlatformOnboardingTest extends TestCase
         }
     }
 
+    public function test_offices_are_fully_set_up_in_production(): void
+    {
+        // Artisan asks for confirmation in production; tenant migrate and seed must not stop there.
+        $this->app['env'] = 'production';
+        $tenant = app(OfficeProvisioner::class)->provision(['name' => 'مكتب الإنتاج', 'subdomain' => 'prod', 'admin_name' => 'a',
+            'admin_email' => 'a@prod.test', 'admin_password' => 'secret-pass']);
+        $this->app['env'] = 'testing';
+
+        $tenant->run(fn () => $this->assertTrue(User::where('email', 'a@prod.test')->sole()->hasRole('admin')));
+    }
+
     public function test_platform_admin_signs_in_through_the_login_form(): void
     {
         $this->platformAdmin();
