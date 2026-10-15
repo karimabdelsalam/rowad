@@ -1,4 +1,4 @@
-# Rowad Mobile API (v1)
+# Aqar Nova Mobile API (v1)
 
 Replaces the legacy `?output=json` + `ACCESS-TOKEN` interface. Every office has its own API on
 its own domain: `https://<office-domain>/api/v1`. Data is always the office's own database.
@@ -34,6 +34,24 @@ reset signs the account out of every device.
 | DELETE | `/devices` | `{ token }` |
 | GET | `/notifications` | in-app notifications, `meta.unread` |
 | POST | `/notifications/read` | mark all read, or `{ id }` |
+
+## AI assistant (every account)
+
+The same assistant as the web panels: staff get answers from the office's data within their permissions;
+owners and tenants only about their own units, contracts and payments. Needs the plan's `ai` feature
+(`403` otherwise) and counts against the office's monthly AI questions.
+
+| Method | Path | |
+|---|---|---|
+| POST | `/assistant/ask` | `{ question, conversation_id? }` → `{ conversation_id, answer, remaining_this_month }` (20/min) |
+| GET | `/assistant/conversations` | the user's conversations, newest first (paginated) |
+| GET | `/assistant/conversations/{id}` | `{ id, title, messages: [...] }` |
+| DELETE | `/assistant/conversations/{id}` | `204` |
+
+A message is `{ id, role: user|assistant, content, format: "markdown", sources: [labels of the data used], created_at }` —
+render `content` as markdown. `remaining_this_month` is `null` for owners/tenants and for unlimited plans.
+When the assistant can't answer (not configured, monthly quota used up, service busy) the response is
+`503 { message, code: "ai_unavailable" }` with a message to show as is. Answers can take up to a minute.
 
 ## Office staff
 

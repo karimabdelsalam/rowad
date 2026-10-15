@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\AssistantController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\OfficeController;
 use App\Http\Controllers\Api\V1\PortalController;
@@ -25,6 +26,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::delete('devices', [AccountController::class, 'removeDevice'])->name('devices.destroy');
     Route::get('notifications', [AccountController::class, 'notifications'])->name('notifications');
     Route::post('notifications/read', [AccountController::class, 'markNotificationsRead'])->name('notifications.read');
+
+    // AI assistant: each user type gets its own panel's assistant (staff tools, or only their own data for owners/tenants)
+    Route::prefix('assistant')->name('assistant.')->middleware(\App\Http\Middleware\EnsurePlanFeature::class.':ai')->group(function () {
+        Route::post('ask', [AssistantController::class, 'ask'])->middleware('throttle:20,1')->name('ask');
+        Route::get('conversations', [AssistantController::class, 'conversations'])->name('conversations.index');
+        Route::get('conversations/{id}', [AssistantController::class, 'show'])->whereNumber('id')->name('conversations.show');
+        Route::delete('conversations/{id}', [AssistantController::class, 'destroy'])->whereNumber('id')->name('conversations.destroy');
+    });
 
     Route::middleware(EnsureUserType::class.':staff')->group(function () {
         Route::get('dashboard', [OfficeController::class, 'dashboard'])->name('dashboard');
