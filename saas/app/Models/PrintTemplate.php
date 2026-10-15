@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Guarded(['id'])]
 class PrintTemplate extends Model
 {
+    protected function casts(): array
+    {
+        return ['legacy_syntax' => 'boolean'];
+    }
+
     public function versions(): HasMany
     {
         return $this->hasMany(PrintTemplateVersion::class);

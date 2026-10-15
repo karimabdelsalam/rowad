@@ -29,6 +29,8 @@ use Filament\Schemas\Schema;
 /** Legacy building add/edit form. */
 class UnitForm
 {
+    private const SIDE_LABELS = ['north' => 'الحد الشمالي', 'east' => 'الحد الشرقي', 'south' => 'الحد الجنوبي', 'west' => 'الحد الغربي'];
+
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
@@ -87,16 +89,42 @@ class UnitForm
                 ]),
 
                 Tab::make(__('الصك والحدود'))->columns(3)->schema([
-                    Select::make('deed_type_id')->relationship('deedType', 'title'),
-                    TextInput::make('deed_number'),
                     TextInput::make('plan_number'),
                     TextInput::make('plot_number'),
-                    TextInput::make('plots'),
-                    KeyValue::make('borders')
+                    // legacy building.deed: several title deeds per unit
+                    Repeater::make('deeds')
+                        ->label(__('الصكوك'))
+                        ->relationship()
                         ->columnSpanFull()
-                        ->keyLabel(__('الحد'))
-                        ->valueLabel(__('الوصف / الطول'))
-                        ->default(fn () => BorderType::query()->pluck('title')->mapWithKeys(fn ($t) => [$t => ''])->all()),
+                        ->columns(4)
+                        ->defaultItems(0)
+                        ->addActionLabel(__('إضافة صك'))
+                        ->schema([
+                            Select::make('deed_type_id')->label(__('نوع الصك'))->relationship('deedType', 'title'),
+                            TextInput::make('number')->label(__('رقم الصك'))->required()->maxLength(100),
+                            TextInput::make('source')->label(__('مصدر الصك')),
+                            TextInput::make('issue_date')->label(__('تاريخ الصك'))->maxLength(20)->placeholder('1445-06-12'),
+                        ]),
+                    // legacy building.plots: land plots with their four boundaries
+                    Repeater::make('landPlots')
+                        ->label(__('القطع والحدود'))
+                        ->relationship()
+                        ->columnSpanFull()
+                        ->defaultItems(0)
+                        ->addActionLabel(__('إضافة قطعة'))
+                        ->schema([
+                            TextInput::make('number')->label(__('رقم القطعة'))->maxLength(50),
+                            TextInput::make('area')->label(__('المساحة (م²)'))->numeric()->minValue(0),
+                            ...collect(\App\Models\UnitPlot::SIDES)->map(fn (string $side) => \Filament\Schemas\Components\Fieldset::make(__(self::SIDE_LABELS[$side]))
+                                ->columns(4)
+                                ->schema([
+                                    Select::make("sides.{$side}.type")->label(__('نوع الحد'))
+                                        ->options(fn () => BorderType::query()->whereNotNull('code')->pluck('title', 'code')),
+                                    TextInput::make("sides.{$side}.length")->label(__('الطول (م)'))->numeric(),
+                                    TextInput::make("sides.{$side}.width")->label(__('العرض (م)'))->numeric(),
+                                    TextInput::make("sides.{$side}.plot_number")->label(__('رقم القطعة المجاورة')),
+                                ]))->all(),
+                        ]),
                     Repeater::make('meters')
                         ->relationship()
                         ->columnSpanFull()
@@ -106,6 +134,9 @@ class UnitForm
                         ->schema([
                             Select::make('meter_type_id')->relationship('meterType', 'title')->required(),
                             TextInput::make('number')->label(__('رقم العداد'))->required(),
+                            Select::make('ownership')->label(__('نوع العداد'))->options(['private' => __('خاص'), 'shared' => __('مشترك')]),
+                            TextInput::make('payment_code')->label(__('رمز السداد'))->maxLength(100),
+                            TextInput::make('payment_account')->label(__('رقم حساب السداد'))->maxLength(100),
                         ]),
                 ]),
 

@@ -106,6 +106,14 @@ class RentContractForm
                 Select::make('commission_cycle')->options(PaymentCycle::class)->placeholder(__('بدون عمولة')),
             ]),
 
+            // legacy rent contract meters: reading of each unit meter at handover, printed on the contract
+            Section::make(__('قراءات العدادات عند التسليم'))->collapsible()->collapsed()->schema([
+                \Filament\Forms\Components\KeyValue::make('meter_readings')->hiddenLabel()
+                    ->keyLabel(__('رقم العداد'))->valueLabel(__('القراءة'))
+                    ->addActionLabel(__('إضافة قراءة'))
+                    ->helperText(__('تُطبع في العقد بجانب عدادات الوحدة.')),
+            ]),
+
             Section::make(__('البنود والملاحظات'))->collapsible()->schema([
                 CheckboxList::make('terms')->relationship('terms', 'title')->columns(2),
                 RichEditor::make('extra_terms'),

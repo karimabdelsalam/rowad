@@ -86,7 +86,22 @@ class TemplateSeeder extends Seeder
             'payment_voucher' => ['سند صرف', '<h3 style="text-align:center">سند صرف رقم {serial}</h3><p>{doc_date}</p><p>صرفنا إلى: {party} مبلغ {amount} ({amount_words}) وذلك عن: {reason} — طريقة الدفع: {payment_method}</p>'],
             'invoice' => ['فاتورة', '<h3 style="text-align:center">فاتورة رقم {serial}</h3><p>{doc_date}</p><p>العميل: {customer}</p>{items_table}<p>الإجمالي: {total}</p>'],
             'tax_invoice' => ['فاتورة ضريبية', '<h3 style="text-align:center">فاتورة ضريبية رقم {serial}</h3><p>الرقم الضريبي: {vat_number} — {doc_date}</p><p>العميل: {customer} — الرقم الضريبي للعميل: {customer_vat_number}</p>{items_table}<p>المجموع قبل الضريبة: {subtotal}</p><p>ضريبة القيمة المضافة: {vat_total}</p><p>الإجمالي: {total}</p><div>{qrcode}</div>'],
-            'letter' => ['خطاب رسمي', '<p>{doc_date}</p><p>إلى من يهمه الأمر،</p><p>{body}</p>'],
+            'letter' => ['خطاب رسمي', '<p>التاريخ: {date}</p><p><strong>{toname}</strong></p><p>السلام عليكم ورحمة الله وبركاته،</p>{content}<p style="margin-top:40px">{org_arname}</p>'],
+            'letter_cancel' => ['إخلاء طرف', '<h3 style="text-align:center">إخلاء طرف</h3><p>التاريخ: {date}</p><p><strong>{toname}</strong></p>'
+                .'<p>يشهد {org_arname} بأن المستأجر {renter} ({nationality}) صاحب الهوية رقم {id_number} قد أخلى {build_type} المستأجر وسدد جميع ما عليه من مستحقات حتى تاريخه، ولا مانع لدينا من إخلاء طرفه.</p>'
+                .'<p style="margin-top:40px">{org_arname}</p>'],
+            'letter_rentraise' => ['إشعار بتغيير الإيجار', '<h3 style="text-align:center">إشعار بتغيير قيمة الإيجار</h3><p>التاريخ: {date}</p><p>المكرم/ {renter} المحترم،</p>'
+                .'<p>نفيدكم بأن قيمة الإيجار السنوي للوحدة {build} (عقد رقم {contract_no}) ستصبح {new_rent} ({new_rent_text} ريال) ابتداءً من تاريخ انتهاء العقد الحالي في {end_date}.</p>'
+                .'<p style="margin-top:40px">{org_arname}</p>'],
+            'letter_finish' => ['تسليم عقار', '<h3 style="text-align:center">إشعار بتسليم العقار</h3><p>التاريخ: {date}</p><p>المكرم/ {renter} المحترم،</p>'
+                .'<p>نذكركم بأن عقد إيجار الوحدة {build} (عقد رقم {contract_no}) ينتهي في {end_date}، ونأمل تسليم الوحدة بحالتها في موعدها.</p>'
+                .'<p style="margin-top:40px">{org_arname}</p>'],
+            'letter_review' => ['تقييم عقار', '<h3 style="text-align:center">تقييم عقار</h3><p>مقدم الطلب: {name} — {provider}</p>'
+                .'<table class="grid"><tr><th>المدينة</th><td>{city}</td><th>الحي</th><td>{district}</td></tr><tr><th>رقم المخطط</th><td>{planno}</td><th>رقم القطعة</th><td>{plotno}</td></tr>'
+                .'<tr><th>المساحة</th><td colspan="3">{size} م²</td></tr><tr><th>شمالًا</th><td>{north_type}</td><th>بطول</th><td>{north_long}</td></tr>'
+                .'<tr><th>جنوبًا</th><td>{south_type}</td><th>بطول</th><td>{south_long}</td></tr><tr><th>شرقًا</th><td>{east_type}</td><th>بطول</th><td>{east_long}</td></tr>'
+                .'<tr><th>غربًا</th><td>{west_type}</td><th>بطول</th><td>{west_long}</td></tr></table><p>{desc}</p>'
+                .'<p><strong>قيمة التقييم: {amount} ({amount_text} ريال)</strong></p><p style="margin-top:40px">{org_arname}</p>'],
             'owner_statement' => ['كشف حساب مالك', '<h3 style="text-align:center">كشف حساب المالك {owner}</h3><p>من {from_date} إلى {to_date}</p>{transactions_table}<p>الرصيد: {balance}</p>'],
         ];
     }

@@ -25,6 +25,7 @@ class PrintController
         'payment_voucher' => [PaymentVoucher::class, 'payment_vouchers.print'],
         'invoice' => [Invoice::class, 'invoices.print'],
         'owner_statement' => [Owner::class, 'owner_transactions.view_any'],
+        'letter' => [\App\Models\Letter::class, 'letters.print'],
     ];
 
     public function __invoke(Request $request, string $type, int $id, DocumentData $documents): View
@@ -39,9 +40,10 @@ class PrintController
             $record instanceof ReceiptVoucher, $record instanceof PaymentVoucher => $documents->voucher($record),
             $record instanceof Invoice => $documents->invoice($record),
             $record instanceof Owner => $documents->ownerStatement($record, $request->query('from'), $request->query('to')),
+            $record instanceof \App\Models\Letter => $documents->letter($record),
         };
 
-        return view('print.document', ['html' => $html, 'title' => $record->number ?? $record->full_name ?? '']);
+        return view('print.document', ['html' => $html, 'title' => $record->number ?? $record->full_name ?? $record->type?->getLabel() ?? '']);
     }
 
     /** Public check behind the QR printed on contracts. */

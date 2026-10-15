@@ -150,6 +150,48 @@ class LegacyImportTest extends TestCase
         $this->assertTrue(Hash::check('secret123', $user->password));
     }
 
+    public function test_office_print_templates_deeds_plots_and_letters_keep_working(): void
+    {
+        $this->import(['--legacy-templates' => true])->assertSuccessful();
+        tenancy()->initialize($this->tenant);
+
+        $unit = Unit::with(['deeds', 'landPlots', 'meters'])->findOrFail(100);
+        $this->assertSame(['4101', 'كتابة عدل الرياض', '1444-03-15'], [$unit->deeds->first()->number, $unit->deeds->first()->source, $unit->deeds->first()->issue_date]);
+        $this->assertSame('4101', $unit->deed_number); // first deed mirrored for list search
+        $plot = $unit->landPlots->first();
+        $this->assertSame(['58', 'شارع (20) م', 'قطعة (59)'], [$plot->number, $plot->describeSide('north', true), $plot->describeSide('east')]);
+        $this->assertSame(['private', 'PC-9', 'ACC-7'], [$unit->meters->first()->ownership, $unit->meters->first()->payment_code, $unit->meters->first()->payment_account]);
+        $this->assertSame('المملكة العربية السعودية', \App\Models\Owner::find(10)->nationality);
+
+        // the office's own rent contract template replaces the default and prints with legacy names and blocks
+        $template = \App\Models\PrintTemplate::where('key', 'rent_contract')->sole();
+        $this->assertTrue($template->legacy_syntax);
+        $this->assertStringContainsString('<div class="hdr">{org_arname}</div>', $template->header);
+        $html = app(\App\Services\Documents\DocumentData::class)->rentContract(\App\Models\RentContract::findOrFail(50));
+        $this->assertStringContainsString('<div class="hdr">مكتب الرواد</div>', $html);
+        $this->assertStringNotContainsString('sample', $html);
+        $this->assertStringContainsString('سعد محمد العتيبي', $html);
+        $this->assertStringContainsString('المملكة العربية السعودية', $html);
+        foreach (['MTR-1', 'خاص', '10234', 'ACC-7', 'PC-9', '4101', 'كتابة عدل الرياض', '2,500.00', 'ألفان وخمسمئة', '2026-01-01', '2026-12-31'] as $expected) {
+            $this->assertStringContainsString($expected, $html, $expected);
+        }
+
+        // legacy review letter prints with the plot boundaries
+        $letter = \App\Models\Letter::findOrFail(5);
+        $this->assertSame(\App\Enums\LetterType::Evaluation, $letter->type);
+        $this->assertSame(5, $letter->data['review']['city_id']);
+        $this->assertStringContainsString('شارع (20) م', app(\App\Services\Documents\DocumentData::class)->letter($letter));
+    }
+
+    public function test_old_templates_are_kept_as_copies_by_default(): void
+    {
+        $this->import()->assertSuccessful();
+        tenancy()->initialize($this->tenant);
+
+        $this->assertFalse(\App\Models\PrintTemplate::where('key', 'rent_contract')->sole()->legacy_syntax);
+        $this->assertTrue(\App\Models\PrintTemplate::where('key', 'legacy_rent_contract')->sole()->legacy_syntax);
+    }
+
     public function test_import_refuses_an_office_that_already_has_units_unless_forced(): void
     {
         $this->import()->assertSuccessful();
@@ -164,6 +206,9 @@ class LegacyImportTest extends TestCase
         ]);
         $this->table('city', [['id' => 5, 'name' => 'الرياض']]);
         $this->table('meter_types', [['id' => 1, 'title' => 'كهرباء']]);
+        $this->table('deed_types', [['id' => 1, 'title' => 'صك إلكتروني']]);
+        $this->table('country', [['id' => 191, 'name' => 'المملكة العربية السعودية']]);
+        $this->table('building_borders', [['id' => 1, 'border' => 'street', 'attrs' => 'LW', 'title' => 'شارع'], ['id' => 6, 'border' => 'build', 'attrs' => 'NL', 'title' => 'قطعة']]);
         $this->table('transaction_types', [['id' => 'payment', 'type' => 'دفعة'], ['id' => 'comp_tax', 'type' => 'ضريبة الشركة']]);
         $this->table('user', [
             ['id' => 1, 'groupid' => 1, 'name' => 'المدير', 'username' => 'admin', 'email' => 'admin@legacy.test', 'password' => md5('secret123'), 'super' => 1, 'active' => 1],
@@ -171,23 +216,27 @@ class LegacyImportTest extends TestCase
             ['id' => 7, 'groupid' => 3, 'name' => 'خالد', 'username' => 'khaled', 'email' => 'admin@legacy.test', 'password' => md5('y'), 'super' => 0, 'active' => 1],
         ]);
         $this->table('owner', [
-            ['id' => 10, 'userid' => 2, 'fname' => 'سعد', 'fathname' => 'محمد', 'lname' => null, 'famname' => 'العتيبي', 'mobile' => '0500000001'],
-            ['id' => 11, 'userid' => 0, 'fname' => 'نورة', 'fathname' => null, 'lname' => null, 'famname' => 'القحطاني', 'mobile' => '0500000002'],
+            ['id' => 10, 'userid' => 2, 'fname' => 'سعد', 'fathname' => 'محمد', 'lname' => null, 'famname' => 'العتيبي', 'mobile' => '0500000001', 'nationality' => '191'],
+            ['id' => 11, 'userid' => 0, 'fname' => 'نورة', 'fathname' => null, 'lname' => null, 'famname' => 'القحطاني', 'mobile' => '0500000002', 'nationality' => ''],
         ]);
         $this->table('buyer', [['id' => 20, 'userid' => 7, 'fname' => 'خالد', 'fathname' => '', 'lname' => '', 'famname' => 'الحربي', 'calendar' => 1]]);
         $this->table('building_locs', [['id' => 3, 'title' => 'برج الرواد', 'citytid' => 5]]);
         $this->table('building', [
             ['id' => 100, 'locid' => 3, 'title' => 'شقة 101', 'type' => 'rent', 'available' => 0, 'contractid' => 50, 'rentvalue' => 30000, 'payment' => 'month',
-                'owner' => json_encode(['id' => ['10', '11'], 'share' => ['60', '40'], 'outgoings' => ['60', '40']]), 'meters' => json_encode(['1' => 'MTR-1']),
+                'owner' => json_encode(['id' => ['10', '11'], 'share' => ['60', '40'], 'outgoings' => ['60', '40']]), 'meters' => json_encode(['typeid' => ['1'], 'owner_type' => ['private'], 'no' => ['MTR-1'], 'pay_code' => ['PC-9'], 'pay_no' => ['ACC-7']]),
+                'deed' => json_encode(['typeid' => ['1'], 'no' => ['4101'], 'source' => ['كتابة عدل الرياض'], 'date' => ['1444-03-15']]),
+                'plots' => json_encode(['no' => ['58'], 'size' => ['625'], 'north_type' => ['street'], 'north_width' => ['20'], 'north_length' => ['25'], 'north_plotno' => [''],
+                    'east_type' => ['build'], 'east_plotno' => ['59'], 'east_length' => ['25'], 'east_width' => [''], 'south_type' => [''], 'south_plotno' => [''], 'south_length' => [''], 'south_width' => [''],
+                    'west_type' => [''], 'west_plotno' => [''], 'west_length' => [''], 'west_width' => ['']]),
                 'gps_location' => '24.7,46.6', 'calendar' => 1],
             ['id' => 101, 'locid' => 3, 'title' => 'فيلا 7', 'type' => 'sell', 'available' => 1, 'contractid' => 0, 'rentvalue' => null, 'payment' => null,
-                'owner' => json_encode(['id' => ['10'], 'share' => ['100']]), 'meters' => null, 'gps_location' => null, 'calendar' => 1],
+                'owner' => json_encode(['id' => ['10'], 'share' => ['100']]), 'meters' => null, 'deed' => null, 'plots' => null, 'gps_location' => null, 'calendar' => 1],
         ]);
         $this->table('contract_rights', [['id' => 1, 'title' => 'الصيانة', 'content' => 'على المستأجر'], ['id' => 2, 'title' => 'التجديد', 'content' => 'بموافقة الطرفين']]);
         $this->table('rent_contracts', [[
             'id' => 50, 'buildid' => 100, 'buyer' => json_encode(['id' => ['20'], 'share' => ['100']]), 'rightsid' => '1,2', 'postdate' => '2026-01-01',
             'startdate' => '2026-01-01', 'enddate' => '2026-12-31', 'period' => 'year', 'periodnum' => 1, 'payment' => 'month', 'rentvalue' => 2500,
-            'commission' => 0, 'tax' => 0, 'tax_percent' => 0, 'calendar' => 1, 'ended' => 0, 'archive' => 0,
+            'commission' => 0, 'tax' => 0, 'tax_percent' => 0, 'calendar' => 1, 'ended' => 0, 'archive' => 0, 'meters' => json_encode(['MTR-1' => '10234']),
         ]]);
         $this->table('sell_contracts', [[
             'id' => 60, 'buildid' => 101, 'buyer' => json_encode(['id' => ['20']]), 'rightsid' => null, 'postdate' => '2026-02-01', 'total' => 500000,
@@ -207,6 +256,18 @@ class LegacyImportTest extends TestCase
             ['id' => 2003, 'ownerid' => 10, 'buildid' => 100, 'typeid' => 'unknown_x', 'paymentid' => 0, 'module' => 'build', 'contractid' => 0, 'direction' => 'credit', 'amount' => 5, 'paydate' => '2026-01-01', 'gone' => 0, 'statoutid' => 0, 'parent' => 0],
         ]);
         $this->table('cp_module', [['id' => 5, 'name' => 'building']]);
+        // stored HTML-encoded, as the legacy editor saved it; #1/#2 are the shared header/footer
+        $this->table('print_samples', [
+            ['id' => 1, 'title' => 'رأس الصفحة', 'content' => htmlspecialchars('<div class="hdr">{org_arname}</div>'), 'header' => '0', 'footer' => '0'],
+            ['id' => 2, 'title' => 'ذيل الصفحة', 'content' => htmlspecialchars('<div class="ftr">FOOTER</div>'), 'header' => '0', 'footer' => '0'],
+            ['id' => 8, 'title' => 'طباعة عقد إيجار', 'header' => '1', 'footer' => '0', 'content' => htmlspecialchars(
+                '<p>يوم {day} {date}</p><table class="o"><!--{owners}--><tr><td>sample</td></tr><!--{owners}--></table>'
+                .'<table class="m"><!--{meters}--><tr><td>sample</td></tr><!--{meters}--></table><table class="d"><!--{deeds}--><tr><td>sample</td></tr><!--{deeds}--></table>'
+                .'<p>الإيجار {total_rent} ({total_rent_text}) من {startdate} إلى {enddate} — {buyers_unused}</p>')],
+        ]);
+        $this->table('letters', [['id' => 5, 'type' => 'review', 'renterid' => 0, 'buildid' => 0, 'official' => null, 'cancel' => null, 'rentraise' => null, 'calendar' => 1, 'postdate' => '2026-03-01',
+            'review' => json_encode(['provider' => 'سعد', 'provider_title' => 'owner', 'city' => '5', 'amount' => '900000',
+                'plot' => ['north_type' => 'street', 'north_width' => '20', 'north_length' => '25', 'east_type' => 'build', 'east_plotno' => '59', 'east_length' => '25']])]]);
         $this->table('attachments', [['id' => 1, 'moduleid' => 5, 'objectid' => 100, 'path' => 'building/front.jpg', 'name' => 'الواجهة']]);
     }
 

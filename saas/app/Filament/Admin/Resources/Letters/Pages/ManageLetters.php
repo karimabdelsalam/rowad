@@ -13,7 +13,7 @@ class ManageLetters extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->mutateDataUsing(fn (array $data) => $data + ['created_by' => auth()->id()]),
         ];
     }
 }

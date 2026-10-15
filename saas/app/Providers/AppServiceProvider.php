@@ -84,6 +84,8 @@ class AppServiceProvider extends ServiceProvider
             'task' => Models\Task::class,
             'unit' => Models\Unit::class,
             'unit_meter' => Models\UnitMeter::class,
+            'unit_deed' => Models\UnitDeed::class,
+            'unit_plot' => Models\UnitPlot::class,
             'unit_report' => Models\UnitReport::class,
             'user' => Models\User::class,
             'bank' => Models\Lookups\Bank::class,

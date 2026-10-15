@@ -18,15 +18,36 @@ use Illuminate\Support\Facades\URL;
 /** Variables for each printable document (legacy rent/sell/statementsin/statementsout/invoices printable). */
 class DocumentData
 {
-    public function __construct(private readonly DocumentRenderer $renderer)
+    public function __construct(private readonly DocumentRenderer $renderer, private readonly LegacyTemplateVariables $legacy)
     {
+    }
+
+    /**
+     * Templates imported from the legacy system (legacy_syntax) get the legacy meaning of every name — e.g. {total}
+     * was the pre-tax amount on invoices; templates written for the new system keep the new names, with legacy-only
+     * names available as extras. Repeating blocks (<!--{owners}-->) are filled for both.
+     *
+     * @param  array{vars: array<string, mixed>, blocks: array<string, string>}  $legacy
+     */
+    private function document(string $key, array $vars, array $legacy): string
+    {
+        $legacySyntax = (bool) \App\Models\PrintTemplate::where('key', $key)->value('legacy_syntax');
+
+        return $this->renderer->render($key, $legacySyntax ? array_merge($vars, $legacy['vars']) : $vars + $legacy['vars'], $legacy['blocks']);
+    }
+
+    public function letter(\App\Models\Letter $letter): string
+    {
+        return $this->document($letter->type->templateKey(), ['number' => (string) $letter->id], $this->legacy->letter($letter));
     }
 
     public function rentContract(RentContract $c): string
     {
         $c->loadMissing(['unit.owners', 'unit.city', 'unit.district', 'clients', 'terms']);
 
-        return $this->renderer->render('rent_contract', [
+        $qr = $this->qr($this->verifyUrl($c));
+
+        return $this->document('rent_contract', [
             'number' => $c->number,
             'date' => $this->date($c->contract_date, $c->calendar?->value),
             'day' => $this->dayName($c->contract_date), // legacy {day}: weekday of the contract date
@@ -42,10 +63,10 @@ class DocumentData
             'payment_cycle' => $c->payment_cycle?->getLabel(),
             'vat_amount' => $this->money($c->vat_amount),
             'terms' => $this->terms($c),
-            'qrcode_owner' => $this->qr($this->verifyUrl($c)),
+            'qrcode_owner' => $qr,
             'qrcode_renter' => '',
             'installments_table' => $this->installmentsTable($c),
-        ]);
+        ], $this->legacy->rentContract($c, $qr));
     }
 
     public function saleContract(SaleContract $c): string
@@ -53,7 +74,9 @@ class DocumentData
         $c->loadMissing(['unit.owners', 'clients', 'terms']);
         $plan = $c->payment_plan;
 
-        return $this->renderer->render('sale_contract', [
+        $qr = $this->qr($this->verifyUrl($c));
+
+        return $this->document('sale_contract', [
             'number' => $c->number,
             'date' => $this->date($c->contract_date, $c->calendar?->value),
             'day' => $this->dayName($c->contract_date), // legacy {day}: weekday of the contract date
@@ -66,15 +89,15 @@ class DocumentData
             'first_payment' => $this->money($plan['first_payment'] ?? 0),
             'installments_table' => $this->installmentsTable($c),
             'terms' => $this->terms($c),
-            'qrcode' => $this->qr($this->verifyUrl($c)),
-        ]);
+            'qrcode' => $qr,
+        ], $this->legacy->saleContract($c, $qr));
     }
 
     public function voucher(ReceiptVoucher|PaymentVoucher $v): string
     {
         $v->loadMissing(['party', 'unit']);
 
-        return $this->renderer->render($v instanceof ReceiptVoucher ? 'receipt_voucher' : 'payment_voucher', [
+        return $this->document($v instanceof ReceiptVoucher ? 'receipt_voucher' : 'payment_voucher', [
             'number' => $v->number,
             'date' => $this->date($v->issued_at, $v->calendar?->value),
             'party' => e($v->party_name ?: ($v->party?->full_name ?? $v->party?->name ?? $v->party?->title ?? '')),
@@ -85,7 +108,7 @@ class DocumentData
             'unit' => e((string) $v->unit?->title),
             'vat_amount' => $this->money($v->vat_amount),
             'notes' => e((string) $v->notes),
-        ]);
+        ], $this->legacy->voucher($v));
     }
 
     public function invoice(Invoice $invoice): string
@@ -94,7 +117,9 @@ class DocumentData
             .$this->money($i['unit_price']).'</td><td>'.$this->money($i['vat_amount'] ?? 0).'</td><td>'.$this->money($i['total']).'</td></tr>')->join('');
         $table = '<table class="grid"><thead><tr><th>'.__('البيان').'</th><th>'.__('الكمية').'</th><th>'.__('السعر').'</th><th>'.__('الضريبة').'</th><th>'.__('الإجمالي').'</th></tr></thead><tbody>'.$rows.'</tbody></table>';
 
-        return $this->renderer->render($invoice->vat_total > 0 ? 'tax_invoice' : 'invoice', [
+        $qr = $invoice->zatca_qr ? $this->qr($invoice->zatca_qr) : '';
+
+        return $this->document($invoice->vat_total > 0 ? 'tax_invoice' : 'invoice', [
             'number' => $invoice->number,
             'date' => $invoice->issue_date->toDateString(),
             'customer' => e((string) $invoice->customer_name),
@@ -104,8 +129,8 @@ class DocumentData
             'vat_total' => $this->money($invoice->vat_total),
             'total' => $this->money($invoice->total),
             'total_words' => e(AmountInWords::format((float) $invoice->total)),
-            'qrcode' => $invoice->zatca_qr ? $this->qr($invoice->zatca_qr) : '',
-        ]);
+            'qrcode' => $qr,
+        ], $this->legacy->invoice($invoice, $qr));
     }
 
     public function ownerStatement(Owner $owner, ?string $from = null, ?string $to = null): string

@@ -38,7 +38,7 @@ class TenantProvisioningTest extends TestCase
         $this->assertFalse(Role::findByName('viewer')->hasPermissionTo('units.delete'));
 
         $this->assertSame(count(NotificationEvent::cases()), MessageTemplate::count());
-        $this->assertSame(8, PrintTemplate::count());
+        $this->assertSame(12, PrintTemplate::count()); // 7 documents + 5 letter types
         $this->assertSame(15, Setting::where('key', 'vat_percent')->value('value'));
         $this->assertSame('مكتب الاختبار العقاري', Setting::where('key', 'site_name')->value('value'));
         $this->assertTrue(TransactionType::where('code', 'payment')->value('is_income'));

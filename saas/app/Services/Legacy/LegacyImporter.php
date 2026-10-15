@@ -39,12 +39,19 @@ class LegacyImporter
     /** @var array<string, int> legacy transaction type code => new id */
     private array $transactionTypes = [];
 
+    /** @var array<int, string>|null legacy country id => name */
+    private ?array $countries = null;
+
     /** Legacy `media` upload folder; attachments are skipped when null. */
     private ?string $mediaPath = null;
 
     /** @return array{counts: array<string, int>, warnings: list<string>} */
-    public function import(Connection $legacy, ?string $mediaPath = null): array
+    /** Office print templates replace the modern defaults only when asked; otherwise they are kept as legacy_* copies. */
+    private bool $useLegacyTemplates = false;
+
+    public function import(Connection $legacy, ?string $mediaPath = null, bool $useLegacyTemplates = false): array
     {
+        $this->useLegacyTemplates = $useLegacyTemplates;
         $this->legacy = $legacy;
         $this->mediaPath = $mediaPath !== null ? rtrim($mediaPath, '/') : null;
         DB::connection()->disableQueryLog();
@@ -88,10 +95,23 @@ class LegacyImporter
             $value = match (true) {
                 str_ends_with($new, '_enabled'), str_starts_with($new, 'sms_login') => (string) $value === '1',
                 str_ends_with($new, '_percent') => (float) $value,
-                $new === 'mail_driver' => $value === 'smtp' ? 'smtp' : 'platform',
+                $new === 'mail_driver' => strtolower((string) $value) === 'smtp' ? 'smtp' : 'platform',
                 default => $value,
             };
             Settings::set($new, $value);
+        }
+        if (in_array($legacy['lang'] ?? null, ['ar', 'en'], true)) {
+            Settings::set('locale', $legacy['lang']);
+        }
+        // legacy closemsg is shown only while the old system was switched off (active = 0)
+        if ((string) ($legacy['active'] ?? '1') === '0' && filled($legacy['closemsg'] ?? null)) {
+            Settings::set('site_closed_message', $legacy['closemsg']);
+            Settings::set('landing_enabled', false);
+        }
+        if ($this->mediaPath !== null && filled($legacy['logo'] ?? null) && is_file($logo = $this->mediaPath.'/'.ltrim($legacy['logo'], '/'))) {
+            $target = 'branding/'.basename($logo);
+            \Illuminate\Support\Facades\Storage::disk('public')->put($target, file_get_contents($logo));
+            Settings::set('logo', $target);
         }
         foreach (['system_calendar', 'salary_calendar'] as $key) {
             if ($legacy->has($key)) {
@@ -117,7 +137,9 @@ class LegacyImporter
             $this->copy($old, $new, fn ($r) => ['id' => $r->id, 'title' => $r->title]);
         }
         $this->copy('building_reports_cats', 'unit_report_categories', fn ($r) => ['id' => $r->id, 'title' => $r->name ?? $r->title]);
-        $this->copy('building_borders', 'border_types', fn ($r) => ['id' => $r->id, 'title' => $r->title, 'attributes' => $this->json($r->attrs ?? null)]);
+        // attrs letters: L = has a length, W = width, N = neighbouring plot number
+        $this->copy('building_borders', 'border_types', fn ($r) => ['id' => $r->id, 'code' => $r->border ?? null, 'title' => $r->title,
+            'attributes' => json_encode(array_values(array_filter(str_split(strtoupper((string) ($r->attrs ?? '')))))) ]);
 
         // Legacy transaction types are keyed by code (payment, tax, commission, mancost, ...).
         foreach ($this->rows('transaction_types') as $row) {
@@ -136,6 +158,7 @@ class LegacyImporter
 
     private function users(): void
     {
+        $this->moveCollidingUsers();
         $types = [1 => 'staff', 2 => 'owner', 3 => 'client'];
         $this->copy('user', 'users', fn ($r) => [
             'id' => $r->id,
@@ -155,6 +178,40 @@ class LegacyImporter
         foreach (DB::table('users')->where('type', 'staff')->pluck('id') as $id) {
             DB::table('model_has_roles')->insertOrIgnore(['role_id' => DB::table('roles')->where('name', 'admin')->value('id'), 'model_type' => 'user', 'model_id' => $id]);
         }
+    }
+
+    /**
+     * The office admin created at sign-up usually holds id 1, which a legacy user also has.
+     * Existing users are moved past the legacy ids so every legacy reference keeps pointing
+     * at the right person.
+     */
+    private function moveCollidingUsers(): void
+    {
+        $legacyIds = $this->rows('user')->pluck('id')->map(fn ($id) => (int) $id);
+        $colliding = DB::table('users')->whereIn('id', $legacyIds)->orderBy('id')->pluck('id');
+        if ($colliding->isEmpty()) {
+            return;
+        }
+        $next = max((int) $legacyIds->max(), (int) DB::table('users')->max('id')) + 1;
+        $userMorph = (new \App\Models\User)->getMorphClass();
+
+        \Illuminate\Support\Facades\Schema::withoutForeignKeyConstraints(function () use ($colliding, &$next, $userMorph) {
+            foreach ($colliding as $oldId) {
+                $newId = $next++;
+                DB::table('users')->where('id', $oldId)->update(['id' => $newId]);
+                foreach (['login_activities' => 'user_id', 'otp_codes' => 'user_id', 'device_tokens' => 'user_id', 'notes' => 'user_id',
+                    'tasks' => 'created_by', 'support_ticket_replies' => 'user_id'] as $table => $column) {
+                    DB::table($table)->where($column, $oldId)->update([$column => $newId]);
+                }
+                DB::table('tasks')->where('assigned_to', $oldId)->update(['assigned_to' => $newId]);
+                foreach ([['model_has_roles', 'model_type', 'model_id'], ['model_has_permissions', 'model_type', 'model_id'],
+                    ['personal_access_tokens', 'tokenable_type', 'tokenable_id'], ['notifications', 'notifiable_type', 'notifiable_id'],
+                    ['activity_log', 'causer_type', 'causer_id']] as [$table, $type, $id]) {
+                    DB::table($table)->where($type, $userMorph)->where($id, $oldId)->update([$id => $newId]);
+                }
+                $this->warn("existing user #{$oldId} moved to #{$newId} so legacy user #{$oldId} keeps its id");
+            }
+        });
     }
 
     private function owners(): void
@@ -180,7 +237,7 @@ class LegacyImporter
     {
         $this->copy('citizens', 'citizens', fn ($r) => [
             'id' => $r->id, 'name' => $r->title, 'id_type' => $this->idType($r->idtype ?? null), 'id_number' => $r->idnumber ?? null,
-            'id_source' => $r->idsource ?? null, 'id_issue_date' => $this->date($r->iddate ?? null), 'nationality' => $r->nationality ?? null,
+            'id_source' => $r->idsource ?? null, 'id_issue_date' => $this->date($r->iddate ?? null), 'nationality' => $this->nationality($r->nationality ?? null),
             'calendar' => $this->calendar($r->calendar ?? 1),
         ]);
         $this->copy('employees', 'employees', fn ($r) => $this->person($r, idNumber: 'idnum') + [
@@ -206,6 +263,7 @@ class LegacyImporter
             'id' => $r->id, 'title' => $r->title ?? $r->location ?? ('#'.$r->id), 'property_category_id' => $this->ref('property_categories', $r->buildcat ?? null),
             'number' => $r->buildno ?? null, 'city_id' => $this->ref('cities', $r->citytid ?? null), 'street' => $r->street ?? null, 'zone' => $r->zone ?? null,
             'plan_number' => $r->planno ?? null, 'plot_number' => $r->platno ?? null, 'area' => $this->num($r->size ?? null), 'floors' => $this->int($r->floors ?? null),
+            'district_id' => $this->ref('districts', $r->district ?? null),
             'address' => $r->location ?? null, 'address_details' => $r->loc_details ?? null,
         ] + $this->gps($r->gps_location ?? null));
     }
@@ -224,9 +282,9 @@ class LegacyImporter
                 'client_category_id' => $this->ref('client_categories', $r->buyercat ?? null),
                 'number' => $r->buildno ?? null, 'floor' => $r->floor ?? null, 'rooms' => $this->int($r->rooms ?? null),
                 'area' => $this->num($r->size ?? null), 'is_furnished' => (bool) ($r->furnished ?? false), 'max_occupants' => $this->int($r->max ?? null),
-                'deed_number' => $r->deed ?? null, 'plan_number' => $r->planno ?? null, 'plot_number' => $r->platno ?? null, 'plots' => $r->plots ?? null,
+                'deed_number' => is_array($this->json($r->deed ?? null)) ? null : ($r->deed ?? null), 'plan_number' => $r->planno ?? null, 'plot_number' => $r->platno ?? null, 'plots' => null,
                 'zone' => $r->zone ?? null, 'street' => $r->street ?? null, 'city_id' => $this->ref('cities', $r->citytid ?? null),
-                'district_id' => $this->ref('districts', $r->districtid ?? null), 'address' => $r->location ?? null,
+                'district_id' => $this->ref('districts', $r->districtid ?? $r->district ?? null), 'address' => $r->location ?? null,
                 'address_details' => $r->loc_details ?? null, 'details' => $r->details ?? null,
                 'rent_amount' => $this->num($r->rentvalue ?? null), 'daily_rent' => $this->num($r->rent_day ?? null),
                 'monthly_rent' => $this->num($r->rent_month ?? null), 'rent_period' => $this->periodUnit($r->period ?? null),
@@ -252,14 +310,8 @@ class LegacyImporter
                     'expenses_percent' => (float) (array_values((array) ($owners['outgoings'] ?? []))[$i] ?? 0),
                 ]));
             }
-            foreach ((array) ($this->json($r->meters ?? null) ?? []) as $typeId => $number) {
-                if (is_array($number)) {
-                    [$typeId, $number] = [$number['type'] ?? $typeId, $number['number'] ?? null];
-                }
-                if (filled($number) && DB::table('meter_types')->where('id', $typeId)->exists()) {
-                    DB::table('unit_meters')->insert($this->stamp(['unit_id' => $r->id, 'meter_type_id' => $typeId, 'number' => (string) $number]));
-                }
-            }
+            $this->meters($r);
+            $this->deedsAndPlots($r);
         }
 
         $this->copy('custom_fields_cats', 'custom_field_groups', fn ($r) => ['id' => $r->id, 'title' => $r->title, 'property_category_id' => $this->ref('property_categories', $r->build_catid ?? null)]);
@@ -268,6 +320,66 @@ class LegacyImporter
         $this->copy('custom_fields_data', 'custom_field_values', fn ($r) => ['custom_field_id' => $r->field_id, 'unit_id' => $r->build_id, 'value' => $r->data]);
         $this->copy('building_reports', 'unit_reports', fn ($r) => ['id' => $r->id, 'unit_id' => $r->buildid,
             'unit_report_category_id' => $this->ref('unit_report_categories', $r->catid ?? null), 'title' => $r->title, 'issued_at' => $this->date($r->issued_date ?? null)]);
+    }
+
+    /**
+     * Legacy building.meters: parallel arrays {typeid[], no[], owner_type[], pay_code[], pay_no[]}
+     * (older rows may hold a plain {typeid: number} map).
+     */
+    private function meters(object $r): void
+    {
+        $meters = $this->json($r->meters ?? null) ?? [];
+        $rows = [];
+        if (isset($meters['typeid']) && is_array($meters['typeid'])) {
+            foreach (array_values($meters['typeid']) as $i => $typeId) {
+                $rows[] = [
+                    'meter_type_id' => $typeId,
+                    'number' => array_values((array) ($meters['no'] ?? []))[$i] ?? null,
+                    'ownership' => in_array($own = array_values((array) ($meters['owner_type'] ?? []))[$i] ?? null, ['private', 'shared'], true) ? $own : null,
+                    'payment_code' => array_values((array) ($meters['pay_code'] ?? []))[$i] ?? null,
+                    'payment_account' => array_values((array) ($meters['pay_no'] ?? []))[$i] ?? null,
+                ];
+            }
+        } else {
+            foreach ($meters as $typeId => $number) {
+                $rows[] = ['meter_type_id' => $typeId, 'number' => is_scalar($number) ? $number : null];
+            }
+        }
+        foreach ($rows as $row) {
+            if (blank($row['number']) || ! is_numeric($row['meter_type_id']) || ! DB::table('meter_types')->where('id', $row['meter_type_id'])->exists()) {
+                continue;
+            }
+            DB::table('unit_meters')->insert($this->stamp(['unit_id' => $r->id] + array_map(fn ($v) => $v === null ? null : (string) $v, $row)));
+        }
+    }
+
+    /** Legacy building.deed {typeid[], no[], source[], date[]} and building.plots {no[], size[], <side>_type/_plotno/_length/_width[]}. */
+    private function deedsAndPlots(object $r): void
+    {
+        $at = fn (array $list, string $key, int $i) => array_values((array) ($list[$key] ?? []))[$i] ?? null;
+
+        $deed = $this->json($r->deed ?? null) ?? [];
+        foreach (array_values((array) ($deed['no'] ?? [])) as $i => $number) {
+            if (blank($number)) {
+                continue;
+            }
+            \App\Models\UnitDeed::create([
+                'unit_id' => $r->id, 'deed_type_id' => $this->ref('deed_types', $at($deed, 'typeid', $i)), 'number' => (string) $number,
+                'source' => $at($deed, 'source', $i), 'issue_date' => $at($deed, 'date', $i),
+            ]); // also mirrors the first deed onto the unit
+        }
+
+        $plots = $this->json($r->plots ?? null) ?? [];
+        $count = max(count((array) ($plots['no'] ?? [])), count((array) ($plots['size'] ?? [])));
+        for ($i = 0; $i < $count; $i++) {
+            $sides = [];
+            foreach (\App\Models\UnitPlot::SIDES as $side) {
+                $sides[$side] = ['type' => $at($plots, "{$side}_type", $i), 'plot_number' => $at($plots, "{$side}_plotno", $i),
+                    'length' => $at($plots, "{$side}_length", $i), 'width' => $at($plots, "{$side}_width", $i)];
+            }
+            DB::table('unit_plots')->insert($this->stamp(['unit_id' => $r->id, 'number' => $at($plots, 'no', $i),
+                'area' => $this->num($at($plots, 'size', $i)), 'sides' => json_encode($sides, JSON_UNESCAPED_UNICODE)]));
+        }
     }
 
     // ---------------------------------------------------------------- contracts
@@ -345,7 +457,7 @@ class LegacyImporter
         $this->copy('bank_accounts', 'bank_accounts', fn ($r) => ['id' => $r->id, 'bank_id' => $this->ref('banks', $r->bankid ?? null),
             'holder_name' => $r->fullname ?? ('#'.$r->id), 'account_number' => $r->accno ?? null, 'iban' => $r->iban ?? null,
             'branch_number' => $r->branchno ?? null, 'opening_balance' => (float) ($r->balance ?? 0), 'balance' => (float) ($r->balance ?? 0),
-            'is_default' => (bool) ($r->isdefault ?? $r->default ?? false)]);
+            'is_default' => (bool) ($r->isdefault ?? $r->default ?? $r->main ?? false)]);
     }
 
     private function vouchers(): void
@@ -456,11 +568,18 @@ class LegacyImporter
             'owner_id' => $this->ref('owners', $r->ownerid ?? null), 'client_id' => $this->ref('clients', $r->clientid ?? null),
             'unit_id' => $this->ref('units', $r->buildid ?? null), 'subject' => $r->subject ?? '', 'message' => $r->message ?? '',
             'status' => (int) ($r->read_state ?? 0) === 1 ? 'answered' : 'open', 'read_at' => (int) ($r->read_state ?? 0) === 1 ? now() : null]);
-        $this->copy('letters', 'letters', fn ($r) => ['id' => $r->id, 'type' => (string) ($r->type ?? 'general'), 'unit_id' => $this->ref('units', $r->buildid ?? null),
-            'client_id' => $this->ref('clients', $r->renterid ?? null), 'calendar' => $this->calendar($r->calendar ?? 1),
-            'letter_date' => $this->date($r->postdate ?? null) ?? now()->toDateString(), 'is_official' => (bool) ($r->official ?? true),
-            'rent_raise_amount' => $this->num($r->rentraise ?? null),
-            'data' => json_encode(['review' => $r->review ?? null, 'cancel' => $r->cancel ?? null], JSON_UNESCAPED_UNICODE)]);
+        // legacy letters keep each type's details in its own JSON column (official, cancel, rentraise, review)
+        $this->copy('letters', 'letters', function ($r) {
+            $review = $this->json($r->review ?? null) ?? [];
+            $review += ['city_id' => $this->ref('cities', $review['city'] ?? null), 'district_id' => $this->ref('districts', $review['district'] ?? null)];
+            $raise = $this->json($r->rentraise ?? null) ?? [];
+
+            return ['id' => $r->id, 'type' => \App\Enums\LetterType::tryFrom((string) ($r->type ?? ''))?->value ?? 'official',
+                'unit_id' => $this->ref('units', $r->buildid ?? null), 'client_id' => $this->ref('clients', $r->renterid ?? null),
+                'calendar' => $this->calendar($r->calendar ?? 1), 'letter_date' => $this->date($r->postdate ?? null) ?? now()->toDateString(),
+                'is_official' => ($r->type ?? '') === 'official', 'rent_raise_amount' => $this->num($raise['amount'] ?? null),
+                'data' => json_encode(['official' => $this->json($r->official ?? null), 'cancel' => $this->json($r->cancel ?? null), 'review' => $review], JSON_UNESCAPED_UNICODE)];
+        });
         $this->copy('punish', 'employee_penalties', fn ($r) => ['id' => $r->id, 'employee_id' => $r->employeeid, 'amount' => (float) $r->amount,
             'reason' => $r->reason ?? null, 'reason_text' => $r->reasontext ?? null, 'for_month' => (int) ($r->formonth ?? 1), 'for_year' => (int) ($r->foryear ?? date('Y')),
             'calendar' => $this->calendar($r->calendar ?? 1), 'issued_at' => $this->date($r->createddate ?? null) ?? now()->toDateString()],
@@ -477,16 +596,29 @@ class LegacyImporter
     /** Office-edited print templates and message templates replace the defaults. */
     private function templates(): void
     {
-        $keys = [];
-        foreach ($this->rows('print_samples') as $r) {
-            $key = Str::slug((string) ($r->name ?? $r->title ?? 'sample'), '_') ?: 'sample_'.$r->id;
-            $key = isset($keys[$key]) ? $key.'_'.$r->id : $key;
-            $keys[$key] = true;
-            DB::table('print_templates')->updateOrInsert(['key' => 'legacy_'.$key], $this->stamp([
-                'title' => $r->title ?? $key, 'header' => $r->header ?? null, 'content' => $r->content ?? '', 'footer' => $r->footer ?? null,
+        // The office's samples are kept as legacy_<key> copies (modern designs stay active) unless --legacy-templates.
+        // Legacy code printed each document with a fixed print_samples id; #1/#2 are the shared page header/footer,
+        // included where a sample's header/footer flag is 1. The office's samples replace the defaults.
+        $samples = $this->rows('print_samples')->keyBy('id');
+        $decode = fn (?string $html) => stripslashes(htmlspecialchars_decode((string) $html));
+        $byId = [3 => 'payment_voucher', 4 => 'receipt_voucher', 5 => 'letter_finish', 6 => 'letter_rentraise', 7 => 'letter',
+            8 => 'rent_contract', 9 => 'sale_contract', 10 => 'letter_cancel', 11 => 'letter_review', 12 => 'invoice', 13 => 'tax_invoice'];
+        $header = $samples->has(1) ? $decode($samples[1]->content) : null;
+        $footer = $samples->has(2) ? $decode($samples[2]->content) : null;
+        $count = 0;
+        foreach ($samples as $id => $r) {
+            if (in_array((int) $id, [1, 2], true)) {
+                continue;
+            }
+            $key = isset($byId[(int) $id]) ? ($this->useLegacyTemplates ? $byId[(int) $id] : 'legacy_'.$byId[(int) $id]) : 'legacy_'.$id;
+            DB::table('print_templates')->updateOrInsert(['key' => $key], $this->stamp([
+                'title' => $r->title ?? $key, 'legacy_syntax' => true, 'content' => $decode($r->content),
+                'header' => (string) ($r->header ?? '') === '1' ? $header : null,
+                'footer' => (string) ($r->footer ?? '') === '1' ? $footer : null,
             ]));
+            $count++;
         }
-        $this->count('print_samples', count($keys));
+        $this->count('print_samples', $count);
 
         $count = 0;
         foreach ($this->rows('email_templates') as $r) {
@@ -498,7 +630,8 @@ class LegacyImporter
                 continue;
             }
             DB::table('message_templates')->where('event', $event->value)->update(array_filter([
-                'email_subject' => $r->subject ?? null, 'email_body' => $r->content ?? null, 'sms_body' => $r->sms ?? null,
+                'email_subject' => $r->subject ?? null, 'email_body' => isset($r->content) ? stripslashes(htmlspecialchars_decode((string) $r->content)) : null,
+                'sms_body' => isset($r->sms) ? stripslashes(htmlspecialchars_decode((string) $r->sms)) : null,
                 'email_enabled' => isset($r->active) ? (bool) $r->active : null, 'sms_enabled' => isset($r->sms_active) ? (bool) $r->sms_active : null,
                 'updated_at' => now(),
             ], fn ($v) => $v !== null));
@@ -596,6 +729,8 @@ class LegacyImporter
                     }
                     $seen[$column][$value] = true;
                 }
+                // JSON columns (meter readings, billing info...) are written through the query builder, so encode them here
+                $data = array_map(fn ($v) => is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v, $data);
                 DB::table($to)->insert($this->stamp($data));
                 $count++;
             } catch (Throwable $e) {
@@ -637,7 +772,7 @@ class LegacyImporter
                 return trim(preg_replace('/\s+/u', ' ', implode(' ', array_filter($parts, fn ($p) => filled($p)))));
             })() ?: '-',
             'id_type' => $this->idType($r->idtype ?? null), 'id_number' => $r->{$idNumber} ?? null, 'id_source' => $r->idsource ?? null,
-            'id_issue_date' => $this->date($r->iddate ?? null), 'nationality' => $r->nationality ?? null, 'mobile' => $r->mobile ?? null,
+            'id_issue_date' => $this->date($r->iddate ?? null), 'nationality' => $this->nationality($r->nationality ?? null), 'mobile' => $r->mobile ?? null,
             'email' => filter_var($r->email ?? null, FILTER_VALIDATE_EMAIL) ? $r->email : null, 'home_phone' => $r->homephone ?? null,
             'work' => $r->work ?? null, 'work_phone' => $r->workphone ?? null, 'address' => $r->address ?? null,
         ];
@@ -681,6 +816,17 @@ class LegacyImporter
 
         return ['first_payment' => (float) ($inst['firstvalue'] ?? 0), 'count' => (int) ($inst['installscount'] ?? 1),
             'cycle' => $this->cycle($inst['period'] ?? 'month') ?? 'month', 'start_date' => $this->date($inst['startdate'] ?? null)];
+    }
+
+    /** Legacy people stored nationality as an id of its `country` table. */
+    private function nationality(mixed $value): ?string
+    {
+        if (! is_numeric($value)) {
+            return blank($value) ? null : (string) $value;
+        }
+        $this->countries ??= $this->rows('country')->pluck('name', 'id')->all();
+
+        return $this->countries[(int) $value] ?? null;
     }
 
     private function payer(?string $legacy): ?string

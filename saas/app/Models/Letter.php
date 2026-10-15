@@ -15,6 +15,7 @@ class Letter extends Model
     protected function casts(): array
     {
         return [
+            'type' => \App\Enums\LetterType::class,
             'calendar' => Calendar::class,
             'letter_date' => 'date',
             'is_official' => 'boolean',

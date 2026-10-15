@@ -23,6 +23,7 @@ class ImportLegacyOffice extends Command
         {--username=root}
         {--prefix= : Legacy table prefix, if any}
         {--media= : Path to the legacy "media" upload folder to copy attachments from}
+        {--legacy-templates : Print with the office\'s old templates instead of the modern designs}
         {--force : Import even if the office already has units}';
 
     protected $description = 'Import an office\'s data from the legacy Rowad database';
@@ -67,7 +68,7 @@ class ImportLegacyOffice extends Command
         }
 
         $this->info("Importing into {$tenant->name} ({$tenant->id})…");
-        $result = $tenant->run(fn () => app(LegacyImporter::class)->import($legacy, $media));
+        $result = $tenant->run(fn () => app(LegacyImporter::class)->import($legacy, $media, (bool) $this->option('legacy-templates')));
 
         $this->table(['Legacy table', 'Rows imported'], collect($result['counts'])->map(fn ($n, $t) => [$t, $n])->values()->all());
         foreach ($result['warnings'] as $warning) {

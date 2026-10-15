@@ -101,6 +101,16 @@ class Unit extends Model implements HasMedia
         return $this->hasMany(UnitMeter::class);
     }
 
+    public function deeds(): HasMany
+    {
+        return $this->hasMany(UnitDeed::class);
+    }
+
+    public function landPlots(): HasMany
+    {
+        return $this->hasMany(UnitPlot::class);
+    }
+
     public function reports(): HasMany
     {
         return $this->hasMany(UnitReport::class);

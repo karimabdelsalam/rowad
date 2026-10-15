@@ -7,6 +7,12 @@ use NumberFormatter;
 /** Legacy I18N_Arabic int2str usage on vouchers/contracts: "فقط ألف ومائتان ريال لا غير". */
 final class AmountInWords
 {
+    /** Bare words as legacy int2str printed them ("مئة وعشرة ألف"), for office templates that add their own wording. */
+    public static function words(float $amount): string
+    {
+        return (new \ArPHP\I18N\Arabic)->int2str(round($amount, 2));
+    }
+
     public static function format(float $amount, ?string $locale = null): string
     {
         $locale ??= app()->getLocale();

@@ -53,8 +53,6 @@ class UnitInfolist
                     ->placeholder('-'),
                 TextEntry::make('plot_number')
                     ->placeholder('-'),
-                TextEntry::make('plots')
-                    ->placeholder('-'),
                 TextEntry::make('zone')
                     ->placeholder('-'),
                 TextEntry::make('street')
@@ -76,9 +74,22 @@ class UnitInfolist
                 TextEntry::make('longitude')
                     ->numeric()
                     ->placeholder('-'),
-                TextEntry::make('borders')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
+                \Filament\Infolists\Components\RepeatableEntry::make('deeds')->label(__('الصكوك'))->columnSpanFull()->columns(4)
+                    ->schema([
+                        TextEntry::make('deedType.title')->label(__('نوع الصك'))->placeholder('-'),
+                        TextEntry::make('number')->label(__('رقم الصك')),
+                        TextEntry::make('source')->label(__('مصدر الصك'))->placeholder('-'),
+                        TextEntry::make('issue_date')->label(__('تاريخ الصك'))->placeholder('-'),
+                    ])->placeholder('-'),
+                \Filament\Infolists\Components\RepeatableEntry::make('landPlots')->label(__('القطع والحدود'))->columnSpanFull()->columns(3)
+                    ->schema([
+                        TextEntry::make('number')->label(__('رقم القطعة'))->placeholder('-'),
+                        TextEntry::make('area')->label(__('المساحة (م²)'))->placeholder('-'),
+                        TextEntry::make('boundaries')->label(__('الحدود'))->columnSpanFull()
+                            ->state(fn (\App\Models\UnitPlot $record) => collect(\App\Models\UnitPlot::SIDES)
+                                ->map(fn ($side) => filled($record->describeSide($side)) ? __(['north' => 'شمالًا', 'east' => 'شرقًا', 'south' => 'جنوبًا', 'west' => 'غربًا'][$side]).': '.$record->describeSide($side, true).(filled($record->sides[$side]['length'] ?? null) ? ' '.__('بطول').' '.$record->sides[$side]['length'].' '.__('م') : '') : null)
+                                ->filter()->implode(' — ') ?: '-'),
+                    ])->placeholder('-'),
                 TextEntry::make('details')
                     ->placeholder('-')
                     ->columnSpanFull(),

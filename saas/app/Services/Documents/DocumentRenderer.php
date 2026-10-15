@@ -22,6 +22,12 @@ class DocumentRenderer
         $template = PrintTemplate::where('key', $templateKey)->first();
         $html = $template ? ($template->header ?? '').$template->content.($template->footer ?? '') : '';
 
+        // Repeating blocks first: their markers (<!--{owners}-->) contain the same names as plain variables.
+        foreach ($blocks as $name => $replacement) {
+            $quoted = preg_quote($name, '/');
+            $html = preg_replace('/<!--\{'.$quoted.'\}-->(.*?)<!--\{'.$quoted.'\}-->/su', str_replace(['\\', '$'], ['\\\\', '\$'], $replacement), $html) ?? $html;
+        }
+
         $html = strtr($html, $this->organisationVariables());
 
         if (filled($variables['number'] ?? null)) {
@@ -42,10 +48,6 @@ class DocumentRenderer
             $html = str_replace('{'.$key.'}', is_scalar($value) || $value === null ? (string) $value : '', $html);
         }
 
-        foreach ($blocks as $name => $replacement) {
-            $quoted = preg_quote($name, '/');
-            $html = preg_replace('/<!--\{'.$quoted.'\}-->(.*?)<!--\{'.$quoted.'\}-->/su', str_replace(['\\', '$'], ['\\\\', '\$'], $replacement), $html) ?? $html;
-        }
 
         return $html;
     }
