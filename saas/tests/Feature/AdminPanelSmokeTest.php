@@ -54,7 +54,8 @@ class AdminPanelSmokeTest extends TestCase
         foreach ($panel->getResources() as $resource) {
             // A create page exists exactly when the role system has a create permission for it.
             $creatable = in_array('create', $permissions[$permissionOf($resource)] ?? ['create'], true);
-            $this->assertSame($creatable, $resource::hasPage('create'), "{$resource} create page");
+            $createsInModal = is_subclass_of($resource::getPages()['index']->getPage(), \Filament\Resources\Pages\ManageRecords::class);
+            $this->assertSame($creatable, $resource::hasPage('create') || $createsInModal, "{$resource} create page");
 
             foreach (['index', 'create'] as $page) {
                 if (! $resource::hasPage($page)) {
