@@ -33,11 +33,12 @@ class PlanForm
                     TextInput::make('trial_days')->label(__('أيام التجربة'))->required()->integer()->minValue(0)->default(14)->suffix(__('يوم')),
                     TextInput::make('currency')->label(__('العملة'))->required()->default('SAR')->length(3)->extraInputAttributes(['dir' => 'ltr']),
                 ]),
-                Section::make(__('الحدود'))->description(__('ما تستطيع المؤسسة استخدامه في هذه الباقة.'))->columns(['default' => 1, 'md' => 4])->schema([
+                Section::make(__('الحدود'))->description(__('ما تستطيع المؤسسة استخدامه في هذه الباقة.'))->columns(['default' => 1, 'md' => 3])->schema([
                     $limit('max_units', 'الوحدات', 'وحدة'),
                     $limit('max_users', 'المستخدمون', 'مستخدم'),
                     $limit('max_storage_mb', 'التخزين', 'ميجا'),
                     $limit('max_sms_per_month', 'رسائل SMS شهريًا', 'رسالة'),
+                    $limit('max_ai_messages_per_month', 'أسئلة المساعد الذكي شهريًا', 'سؤال'),
                 ]),
                 Section::make(__('المزايا'))->schema([
                     CheckboxList::make('features')->hiddenLabel()

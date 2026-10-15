@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\MessageChannel;
 use App\Exceptions\BusinessRuleException;
+use App\Models\AiMessage;
 use App\Models\OutgoingMessage;
 use App\Models\Plan;
 use App\Models\Unit;
@@ -24,6 +25,7 @@ class PlanLimits
         'landing_page' => 'موقع المؤسسة العام',
         'zatca' => 'الفوترة الإلكترونية (زاتكا)',
         'custom_domain' => 'نطاق خاص باسم مؤسستك',
+        'ai' => 'المساعد الذكي والتحليلات',
     ];
 
     /** quota key => [plan column, label] */
@@ -32,6 +34,7 @@ class PlanLimits
         'users' => ['max_users', 'المستخدمون'],
         'storage_mb' => ['max_storage_mb', 'التخزين (ميجا)'],
         'sms' => ['max_sms_per_month', 'رسائل SMS هذا الشهر'],
+        'ai' => ['max_ai_messages_per_month', 'أسئلة المساعد الذكي هذا الشهر'],
     ];
 
     public static function plan(): ?Plan
@@ -62,6 +65,7 @@ class PlanLimits
             'storage_mb' => (float) (tenant('usage')['storage_mb'] ?? 0), // measured hourly by rowad:usage
             'sms' => OutgoingMessage::where('channel', MessageChannel::Sms)->where('status', 'sent')
                 ->where('sent_at', '>=', now()->startOfMonth())->count(),
+            'ai' => AiMessage::where('role', 'assistant')->where('created_at', '>=', now()->startOfMonth())->count(),
         };
     }
 

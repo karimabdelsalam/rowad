@@ -1209,5 +1209,15 @@
     "انتهت فترة اشتراك المؤسسة. الخدمة مستمرة لفترة سماح قصيرة ثم تتوقف حتى التجديد.": "The organization's subscription period has ended. Service continues for a short grace period, then stops until renewal.",
     "{1} تنتهي الفترة التجريبية غدًا. اختر باقتك لتستمر الخدمة.|[2,*] تنتهي الفترة التجريبية بعد :count أيام. اختر باقتك لتستمر الخدمة.": "{1} The free trial ends tomorrow. Choose a plan to keep the service running.|[2,*] The free trial ends in :count days. Choose a plan to keep the service running.",
     "{1} ينتهي اشتراك المؤسسة غدًا. جدّد لتستمر الخدمة دون انقطاع.|[2,*] ينتهي اشتراك المؤسسة بعد :count أيام. جدّد لتستمر الخدمة دون انقطاع.": "{1} The subscription ends tomorrow. Renew to keep the service running.|[2,*] The subscription ends in :count days. Renew to keep the service running.",
-    "ينتهي في": "Ends on"
+    "ينتهي في": "Ends on",
+    "المساعد الذكي غير متاح في باقة المؤسسة الحالية.": "The AI assistant is not included in the organization's current plan.",
+    "انتهى رصيد أسئلة المساعد الذكي لهذا الشهر في باقة المؤسسة. يتجدد الرصيد أول الشهر أو بترقية الباقة.": "This month's AI assistant questions for the organization's plan are used up. They renew at the start of the month or with a plan upgrade.",
+    "المساعد الذكي غير مفعّل بعد. يضيف مدير المنصة مفتاح الخدمة لتفعيله.": "The AI assistant is not enabled yet. The platform administrator adds the service key to enable it.",
+    "لم أتمكن من صياغة إجابة. أعد صياغة السؤال من فضلك.": "I couldn't put together an answer. Please rephrase the question.",
+    "المساعد مشغول حاليًا، حاول بعد قليل.": "The assistant is busy right now, please try again shortly.",
+    "تعذّر الوصول إلى خدمة الذكاء الاصطناعي. حاول مرة أخرى.": "Couldn't reach the AI service. Please try again.",
+    "المساعد الذكي والتحليلات": "AI assistant and analytics",
+    "أسئلة المساعد الذكي هذا الشهر": "AI assistant questions this month",
+    "أسئلة المساعد الذكي شهريًا": "AI assistant questions per month",
+    "سؤال": "questions"
 }

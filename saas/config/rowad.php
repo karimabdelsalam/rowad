@@ -80,6 +80,17 @@ return [
     // Password of the legacy MySQL database for rowad:import-legacy (prompted when empty).
     'legacy_db_password' => env('LEGACY_DB_PASSWORD'),
 
+    // AI assistant (Anthropic Messages API). Both the key and the model are chosen by the owner;
+    // without them the assistant shows "not configured" instead of failing.
+    'ai' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('AI_MODEL'),
+        'base_url' => env('AI_BASE_URL', 'https://api.anthropic.com'),
+        'max_tokens' => (int) env('AI_MAX_TOKENS', 2048),
+        'timeout' => (int) env('AI_TIMEOUT', 90),
+        'max_tool_rounds' => 6,
+    ],
+
     'tenancy' => [
         // Subdomains are created under this host, e.g. office1.rowad.app
         'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),
