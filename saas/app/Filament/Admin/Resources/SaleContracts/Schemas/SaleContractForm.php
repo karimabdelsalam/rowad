@@ -20,6 +20,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Schemas\Schema;
 
 /** Legacy sell form (paytype once / parts / installment). */
@@ -92,6 +93,7 @@ class SaleContractForm
                 CheckboxList::make('terms')->relationship('terms', 'title')->columns(2),
                 RichEditor::make('extra_terms'),
                 Textarea::make('notes')->rows(3),
+                SpatieMediaLibraryFileUpload::make('attachments')->label(__('المرفقات'))->collection('attachments')->multiple()->downloadable(),
             ]),
         ]);
     }

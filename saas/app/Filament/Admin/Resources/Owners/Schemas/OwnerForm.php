@@ -7,6 +7,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Schemas\Schema;
 
 class OwnerForm
@@ -43,6 +44,7 @@ class OwnerForm
                     ->columnSpanFull(),
                 Textarea::make('notes')
                     ->columnSpanFull(),
+                SpatieMediaLibraryFileUpload::make('attachments')->label(__('المرفقات'))->collection('attachments')->multiple()->downloadable()->columnSpanFull(),
             ]);
     }
 }

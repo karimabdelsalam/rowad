@@ -27,7 +27,7 @@ trait ConfiguresPanel
         $panel = $panel
             ->id($id)
             ->path($path)
-            ->login()
+            ->login($tenant ? \App\Filament\Auth\Login::class : \Filament\Auth\Pages\Login::class)
             ->font('Tajawal')
             ->colors([
                 'primary' => Color::Teal,

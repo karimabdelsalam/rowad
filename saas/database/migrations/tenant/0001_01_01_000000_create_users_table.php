@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('national_id', 30)->nullable(); // legacy idnum
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('legacy_password', 64)->nullable(); // unsalted MD5 from the old system, upgraded on first login
             $table->string('locale', 5)->default('ar');
             $table->boolean('is_active')->default(true);
             $table->boolean('is_super_admin')->default(false); // legacy user.super

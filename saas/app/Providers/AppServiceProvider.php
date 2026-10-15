@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Auth::provider('legacy-aware', fn ($app, array $config) => new \App\Auth\LegacyAwareUserProvider($app['hash'], $config['model']));
+
         Model::shouldBeStrict(! $this->app->isProduction());
 
         // Field/column labels are derived from attribute names and translated through lang/*.json.

@@ -22,6 +22,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Schemas\Schema;
 
 class RentContractForm
@@ -109,6 +110,7 @@ class RentContractForm
                 CheckboxList::make('terms')->relationship('terms', 'title')->columns(2),
                 RichEditor::make('extra_terms'),
                 Textarea::make('notes')->rows(3),
+                SpatieMediaLibraryFileUpload::make('attachments')->label(__('المرفقات'))->collection('attachments')->multiple()->downloadable(),
             ]),
         ]);
     }
