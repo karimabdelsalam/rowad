@@ -13,7 +13,9 @@ use Illuminate\Database\Eloquent\Builder;
 /** Legacy dashboard "my tasks": open tasks assigned to the signed-in user, completed from the dashboard. */
 class MyTasks extends TableWidget
 {
-    protected static ?int $sort = 5;
+    protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 6];
+
+    protected static ?int $sort = 8;
 
     public function table(Table $table): Table
     {

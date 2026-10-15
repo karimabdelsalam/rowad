@@ -4,7 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Providers\Filament\Concerns\ConfiguresPanel;
 use Filament\Navigation\NavigationGroup;
-use Filament\Pages\Dashboard;
+use App\Filament\Admin\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 

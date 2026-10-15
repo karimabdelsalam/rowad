@@ -109,7 +109,7 @@ class CreateDemoOffice extends Command
         // rented units with history: contracts started months ago, past installments collected
         $contracts = app(ContractService::class);
         $collector = app(InstallmentCollector::class);
-        foreach ([[5, 0, 5], [6, 1, 3], [7, 4, 8]] as [$unitIndex, $clientIndex, $monthsAgo]) {
+        foreach ([[5, 0, 5], [6, 1, 3], [7, 4, 8], [1, 2, 10], [4, 3, 7]] as [$unitIndex, $clientIndex, $monthsAgo]) {
             $start = now()->subMonths($monthsAgo)->startOfMonth();
             $contract = $contracts->createRent([
                 'unit_id' => $units[$unitIndex]->id, 'calendar' => 'gregorian', 'contract_date' => $start, 'start_date' => $start,
@@ -136,6 +136,11 @@ class CreateDemoOffice extends Command
         Task::create(['created_by' => $admin->id, 'assigned_to' => $admin->id, 'content' => 'معاينة فيلا 7 مع العميل المهتم', 'due_date' => now()->addDay()]);
         SupportTicket::create(['owner_id' => $owners[2]->id, 'unit_id' => $units[5]->id, 'type' => 'problem', 'subject' => 'تسريب مياه في المطبخ',
             'message' => 'أبلغني المستأجر بوجود تسريب تحت المغسلة.'] + SupportTicket::newTicketDefaults());
+        \App\Models\Letter::create(['type' => 'review', 'calendar' => 'gregorian', 'letter_date' => now(), 'created_by' => $admin->id, 'data' => ['review' => [
+            'provider' => 'سعد محمد العتيبي', 'provider_title' => 'owner', 'city_id' => $riyadh->id, 'size' => '625', 'planno' => '1120', 'plotno' => '58',
+            'amount' => '1850000', 'about' => 'أرض سكنية على شارعين في موقع مميز',
+            'plot' => ['north_type' => 'street', 'north_width' => '20', 'north_length' => '25', 'south_type' => 'neighbour', 'south_length' => '25',
+                'east_type' => 'build', 'east_plotno' => '59', 'east_length' => '25', 'west_type' => 'path', 'west_width' => '8', 'west_length' => '25']]]]);
         InboxMessage::create(['source' => 'unit_inquiry', 'unit_id' => $units[0]->id, 'name' => 'أحمد السالم', 'mobile' => '0559876543',
             'message' => 'السلام عليكم، هل الشقة متاحة للمعاينة يوم الخميس؟']);
         Date::setTestNow();

@@ -26,6 +26,7 @@ const pages = [
   { name: 'client-dashboard', path: '/client', login: 'client@demo.test', panel: 'client', full: true },
   { name: 'print-rent-contract', path: '/print/rent_contract/1', login: 'admin@demo.test', full: true },
   { name: 'print-receipt', path: '/print/receipt_voucher/1', login: 'admin@demo.test', full: true },
+  { name: 'print-letter', path: '/print/letter/1', login: 'admin@demo.test', full: true },
 ];
 
 const browser = await chromium.launch({ args: ['--host-resolver-rules=MAP *.localhost 127.0.0.1'] });

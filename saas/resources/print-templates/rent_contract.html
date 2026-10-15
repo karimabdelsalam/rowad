@@ -1,0 +1,66 @@
+<div class="doc-title">
+  <div><div class="doc-kicker">LEASE AGREEMENT</div><h1>عقد إيجار</h1></div>
+  <div class="doc-ids"><div><span>رقم العقد</span><b>{serial}</b></div><div><span>تاريخ العقد</span><b>{date}</b></div></div>
+</div>
+<p class="doc-lead">إنه في يوم <b>{day}</b> الموافق <b>{date}</b> تم الاتفاق بين الطرفين الموقعين أدناه، وهما بكامل الأهلية المعتبرة شرعًا، على ما يلي:</p>
+
+<div class="section"><h2>الطرف الأول — المؤجر</h2>
+  <table class="data"><thead><tr><th>الاسم</th><th>الجنسية</th><th>رقم الهوية / السجل</th><th>الجوال</th></tr></thead>
+  <tbody><!--{owners}--><tr><td colspan="4">—</td></tr><!--{owners}--></tbody></table>
+</div>
+<div class="section"><h2>الطرف الثاني — المستأجر</h2>
+  <table class="data"><thead><tr><th>الاسم</th><th>الجنسية</th><th>رقم الهوية / السجل</th><th>الجوال</th></tr></thead>
+  <tbody><!--{buyers}--><tr><td colspan="4">—</td></tr><!--{buyers}--></tbody></table>
+</div>
+
+<div class="section"><h2>بيانات العقار</h2>
+  <dl class="kv">
+    <div><dt>الوحدة</dt><dd>{title}</dd></div><div><dt>المبنى / المجمع</dt><dd>{parent_build}</dd></div>
+    <div><dt>التصنيف</dt><dd>{category}</dd></div><div><dt>نوع العرض</dt><dd>{type}</dd></div>
+    <div><dt>المدينة</dt><dd>{city}</dd></div><div><dt>الحي</dt><dd>{district}</dd></div>
+    <div><dt>الشارع</dt><dd>{street}</dd></div><div><dt>المنطقة</dt><dd>{zone}</dd></div>
+    <div><dt>رقم المبنى</dt><dd>{buildno}</dd></div><div><dt>رقم المخطط</dt><dd>{planno}</dd></div>
+    <div><dt>رقم القطعة</dt><dd>{platno}</dd></div><div><dt>الدور</dt><dd>{floor}</dd></div>
+    <div><dt>عدد الغرف</dt><dd>{rooms}</dd></div><div><dt>المساحة</dt><dd>{size}</dd></div>
+    <div class="wide"><dt>التأثيث</dt><dd>{furnished}</dd></div>
+    <div class="full"><dt>العنوان والوصف</dt><dd>{address} {desc}</dd></div>
+  </dl>
+</div>
+
+<div class="section"><h2>وثائق التملك</h2>
+    <table class="data"><thead><tr><th>النوع</th><th>الرقم</th><th>المصدر</th><th>التاريخ</th></tr></thead>
+    <tbody><!--{deeds}--><tr><td colspan="4">—</td></tr><!--{deeds}--></tbody></table>
+</div>
+<div class="section"><h2>العدادات والخدمات</h2>
+    <table class="data"><thead><tr><th>الخدمة</th><th>النوع</th><th>رقم العداد</th><th>القراءة</th><th>حساب السداد</th><th>رمز السداد</th></tr></thead>
+    <tbody><!--{meters}--><tr><td colspan="6">—</td></tr><!--{meters}--></tbody></table>
+</div>
+
+<div class="section"><h2>مدة العقد والسداد</h2>
+  <dl class="kv">
+    <div><dt>الاستخدام</dt><dd>{purpose}</dd></div><div><dt>مدة العقد</dt><dd>{period}</dd></div>
+    <div><dt>تاريخ البداية</dt><dd class="num">{startdate}</dd></div><div><dt>تاريخ النهاية</dt><dd class="num">{enddate}</dd></div>
+    <div class="full"><dt>دورة السداد</dt><dd>{pay_method}</dd></div>
+  </dl>
+</div>
+
+<div class="section"><h2>القيمة المالية</h2>
+  <div class="totals">
+    <div class="total-card"><span>قيمة الدفعة</span><b>{total_rent} {$}</b></div>
+    <div class="total-card"><span>منها ضريبة القيمة المضافة</span><b>{tax} {$}</b></div>
+    <div class="total-card"><span>عمولة المكتب</span><b>{commission} {$}</b></div>
+    <div class="total-card"><span>المدفوع</span><b>{paid} {$}</b></div>
+    <div class="total-card"><span>المتبقي</span><b>{remain_amount} {$}</b></div>
+    <div class="total-card accent"><span>إجمالي قيمة العقد</span><b>{all_total_rent} {$}</b></div>
+  </div>
+  <div class="amount-words">قيمة الدفعة: {rent_amount_words}<br>إجمالي قيمة العقد: {all_total_rent_words}</div>
+</div>
+
+<div class="section"><h2>جدول الدفعات</h2>{installments_table}</div>
+<div class="section terms"><h2>بنود العقد</h2>{terms}</div>
+
+<div class="signatures">
+  <div class="sign"><b>الطرف الأول (المؤجر) أو من يمثله</b><span>الاسم والتوقيع</span></div>
+  <div class="qr">{qrcode_owner}امسح للتحقق من العقد</div>
+  <div class="sign"><b>الطرف الثاني (المستأجر) أو من يمثله</b><span>الاسم والتوقيع</span></div>
+</div>

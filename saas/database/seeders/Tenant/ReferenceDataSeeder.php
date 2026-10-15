@@ -34,6 +34,11 @@ class ReferenceDataSeeder extends Seeder
         $this->titles(PropertyCategory::class, ['شقة', 'فيلا', 'دور', 'دوبلكس', 'استوديو', 'محل تجاري', 'مكتب', 'مستودع', 'أرض', 'عمارة', 'استراحة']);
         $this->titles(DeedType::class, ['صك إلكتروني', 'صك ورقي', 'حجة استحكام', 'وثيقة تملك']);
         $this->titles(MeterType::class, ['كهرباء', 'مياه', 'غاز']);
+        // legacy building_borders defaults; attributes: L length, W width, N neighbouring plot number
+        foreach ([['street', 'LW', 'شارع'], ['blocked', 'LW', 'شارع سد'], ['path', 'LW', 'ممر'], ['neighbour', 'L', 'جار'], ['facility', 'L', 'مرفق'],
+            ['build', 'NL', 'قطعة'], ['lobby', 'L', 'بهو'], ['farm', 'L', 'مزرعة'], ['rest', 'L', 'استراحة'], ['gbuilding', 'NL', 'مبنى حكومي']] as [$code, $attrs, $title]) {
+            \App\Models\Lookups\BorderType::firstOrCreate(['code' => $code], ['title' => $title, 'attributes' => str_split($attrs)]);
+        }
         $this->titles(ExpenseType::class, ['صيانة', 'كهرباء', 'مياه', 'نظافة', 'حراسة', 'رواتب', 'إيجار مكتب', 'تسويق', 'رسوم حكومية', 'أخرى']);
         $this->titles(Bank::class, [
             'مصرف الراجحي', 'البنك الأهلي السعودي', 'بنك الرياض', 'البنك السعودي البريطاني (ساب)', 'مصرف الإنماء',

@@ -8,7 +8,9 @@ use Filament\Widgets\Widget;
 /** Legacy dashboard qrcode(): printable QR codes for the owner and client portals (and the office website). */
 class PortalLinks extends Widget
 {
-    protected static ?int $sort = 7;
+    protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 4];
+
+    protected static ?int $sort = 10;
 
     protected string $view = 'filament.widgets.portal-links';
 

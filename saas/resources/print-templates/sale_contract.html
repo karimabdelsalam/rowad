@@ -1,0 +1,54 @@
+<div class="doc-title">
+  <div><div class="doc-kicker">SALE AGREEMENT</div><h1>عقد بيع</h1></div>
+  <div class="doc-ids"><div><span>رقم العقد</span><b>{serial}</b></div><div><span>تاريخ العقد</span><b>{date}</b></div></div>
+</div>
+<p class="doc-lead">إنه في يوم <b>{day}</b> الموافق <b>{date}</b> تم الاتفاق بين الطرفين الموقعين أدناه، وهما بكامل الأهلية المعتبرة شرعًا، على بيع العقار الموصوف أدناه وفق ما يلي:</p>
+
+<div class="section"><h2>الطرف الأول — البائع</h2>
+  <table class="data"><thead><tr><th>الاسم</th><th>الجنسية</th><th>رقم الهوية / السجل</th><th>الجوال</th></tr></thead>
+  <tbody><!--{owners}--><tr><td colspan="4">—</td></tr><!--{owners}--></tbody></table>
+</div>
+<div class="section"><h2>الطرف الثاني — المشتري</h2>
+  <table class="data"><thead><tr><th>الاسم</th><th>الجنسية</th><th>رقم الهوية / السجل</th><th>الجوال</th></tr></thead>
+  <tbody><!--{buyers}--><tr><td colspan="4">—</td></tr><!--{buyers}--></tbody></table>
+</div>
+
+<div class="section"><h2>بيانات العقار</h2>
+  <dl class="kv">
+    <div><dt>العقار</dt><dd>{title}</dd></div><div><dt>المبنى / المجمع</dt><dd>{parent_build}</dd></div>
+    <div><dt>التصنيف</dt><dd>{category}</dd></div><div><dt>المساحة</dt><dd>{size}</dd></div>
+    <div><dt>المدينة</dt><dd>{city}</dd></div><div><dt>الحي</dt><dd>{district}</dd></div>
+    <div><dt>رقم المخطط</dt><dd>{planno}</dd></div><div><dt>رقم القطعة</dt><dd>{platno}</dd></div>
+    <div><dt>الشارع</dt><dd>{street}</dd></div><div><dt>المنطقة</dt><dd>{zone}</dd></div>
+    <div><dt>رقم المبنى</dt><dd>{buildno}</dd></div><div><dt>عدد الغرف</dt><dd>{rooms}</dd></div>
+    <div class="full"><dt>العنوان والوصف</dt><dd>{address} {desc}</dd></div>
+  </dl>
+</div>
+
+<div class="section"><h2>القطع والحدود</h2>
+  <table class="data"><thead><tr><th>رقم القطعة</th><th>المساحة م²</th><th>شمالًا</th><th>جنوبًا</th><th>شرقًا</th><th>غربًا</th></tr></thead>
+  <tbody><!--{position}--><tr><td colspan="6">—</td></tr><!--{position}--></tbody></table>
+</div>
+<div class="section"><h2>وثائق التملك</h2>
+  <table class="data"><thead><tr><th>النوع</th><th>الرقم</th><th>المصدر</th><th>التاريخ</th></tr></thead>
+  <tbody><!--{deeds}--><tr><td colspan="4">—</td></tr><!--{deeds}--></tbody></table>
+</div>
+
+<div class="section"><h2>الثمن وطريقة السداد</h2>
+  <div class="totals">
+    <div class="total-card"><span>ثمن البيع</span><b>{amount} {$}</b></div>
+    <div class="total-card"><span>عمولة المكتب</span><b>{commission} {$}</b></div>
+    <div class="total-card accent"><span>الإجمالي</span><b>{total} {$}</b></div>
+  </div>
+  <div class="amount-words">{total_words} — <span class="badge">{pay_method}</span></div>
+  <p style="margin-top:10px">{pay_details}</p>
+</div>
+
+<div class="section"><h2>جدول السداد</h2>{installments_table}</div>
+<div class="section terms"><h2>بنود العقد</h2>{terms}</div>
+
+<div class="signatures">
+  <div class="sign"><b>الطرف الأول (البائع) أو من يمثله</b><span>الاسم والتوقيع</span></div>
+  <div class="qr">{qrcode_owner}امسح للتحقق من العقد</div>
+  <div class="sign"><b>الطرف الثاني (المشتري) أو من يمثله</b><span>الاسم والتوقيع</span></div>
+</div>

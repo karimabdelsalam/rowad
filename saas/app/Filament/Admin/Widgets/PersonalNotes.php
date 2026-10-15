@@ -14,7 +14,9 @@ use Filament\Widgets\TableWidget;
 /** Legacy dashboard personal notes (notes table): private to each user. */
 class PersonalNotes extends TableWidget
 {
-    protected static ?int $sort = 6;
+    protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 6];
+
+    protected static ?int $sort = 9;
 
     public function table(Table $table): Table
     {

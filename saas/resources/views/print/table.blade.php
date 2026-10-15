@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $title }}</title>
-    <link href="https://fonts.bunny.net/css?family=tajawal:400,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=cairo:400,600,700,800&display=swap" rel="stylesheet">
     <style>
         @page { size: A4 landscape; margin: 10mm; }
-        body { font-family: 'Tajawal', system-ui, sans-serif; color: #111827; font-size: 12px; margin: 0; padding: 8mm; }
+        body { font-family: 'Cairo', system-ui, sans-serif; color: #111827; font-size: 12px; margin: 0; padding: 8mm; }
         header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #0f766e; margin-bottom: 8px; }
         h1 { font-size: 18px; margin: 0 0 4px; }
         table { width: 100%; border-collapse: collapse; }

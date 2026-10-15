@@ -10,9 +10,9 @@ use Filament\Widgets\TableWidget;
 
 class ExpiringContracts extends TableWidget
 {
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 7;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 6];
 
     public function table(Table $table): Table
     {

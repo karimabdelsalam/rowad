@@ -49,6 +49,7 @@ class LegacyTemplateVariables
                 'rent' => $this->n((float) $c->rent_amount - (float) $c->vat_amount),
                 'total_rent' => $this->n($c->rent_amount), 'total_rent_text' => AmountInWords::words((float) $c->rent_amount),
                 'all_total_rent' => $this->n($allTotal), 'all_total_rent_text' => AmountInWords::words($allTotal),
+                'all_total_rent_words' => AmountInWords::format($allTotal), // "فقط ... ريال و... هللة لا غير" for modern templates
                 'pay_method' => $c->payment_cycle?->getLabel() ?? '',
                 'remain_amount' => $this->n($allTotal - $paid), 'paid' => $this->n($paid), 'paid_text' => AmountInWords::words($paid),
                 'commission' => $this->n($commission), 'commission_text' => AmountInWords::words($commission),
@@ -75,6 +76,7 @@ class LegacyTemplateVariables
                 'date' => $this->date($c->contract_date, $c->calendar?->value), 'day' => $this->day($c->contract_date),
                 'commission' => $this->n($commission), 'amount' => $this->n($total),
                 'total' => $this->n($total + $commission), 'total_str' => AmountInWords::words($total + $commission),
+                'total_words' => AmountInWords::format($total + $commission),
                 'pay_method' => $c->payment_type?->getLabel() ?? '', 'pay_details' => $details, 'firstvalue' => $this->n($first),
                 'qrcode_owner' => $qr, 'qrcode_buyer' => $qr,
             ],
@@ -172,6 +174,7 @@ class LegacyTemplateVariables
             LetterType::RentChange => [
                 'date' => $date, 'renter' => $renter, 'build' => e((string) $letter->unit?->title), 'contract_no' => $contract?->number ?? '',
                 'new_rent' => $this->n($letter->rent_raise_amount), 'new_rent_text' => AmountInWords::words((float) $letter->rent_raise_amount), 'end_date' => $endDate,
+                'new_rent_words' => AmountInWords::format((float) $letter->rent_raise_amount),
             ],
             LetterType::Handover => [
                 'date' => $date, 'renter' => $renter, 'build' => e((string) $letter->unit?->title), 'contract_no' => $contract?->number ?? '', 'end_date' => $endDate,
@@ -297,6 +300,7 @@ class LegacyTemplateVariables
             'district' => e((string) District::find($r['district_id'] ?? null)?->name), 'plotno' => e((string) ($r['plotno'] ?? '')),
             'planno' => e((string) ($r['planno'] ?? '')), 'size' => e((string) ($r['size'] ?? '')),
             'amount' => $this->n($r['amount'] ?? 0), 'amount_text' => AmountInWords::words((float) ($r['amount'] ?? 0)),
+            'amount_words' => AmountInWords::format((float) ($r['amount'] ?? 0)),
         ];
         foreach (UnitPlot::SIDES as $side) {
             $vars["{$side}_long"] = e((string) ($r['plot']["{$side}_length"] ?? '')).' '.__('م');

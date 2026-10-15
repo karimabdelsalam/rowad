@@ -14,11 +14,11 @@
     <title>@yield('title', Website::name())</title>
     <meta name="description" content="@yield('description', Website::text('landing_hero_subtitle'))">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=tajawal:400,500,700,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=cairo:400,600,700,800,800&display=swap" rel="stylesheet">
     <style>
         :root { --primary: {{ $primary }}; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --bg: #f8fafc; --card: #fff; --radius: 14px; }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Tajawal', system-ui, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
+        body { margin: 0; font-family: 'Cairo', system-ui, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
         a { color: inherit; text-decoration: none; }
         img { max-width: 100%; display: block; }
         .container { width: min(1180px, 100% - 32px); margin-inline: auto; }

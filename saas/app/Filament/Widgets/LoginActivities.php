@@ -16,7 +16,7 @@ class LoginActivities extends TableWidget
 {
     protected static ?int $sort = 90;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 8];
 
     public function table(Table $table): Table
     {

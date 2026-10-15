@@ -1,0 +1,17 @@
+<div class="doc-title">
+  <div><div class="doc-kicker">RECEIPT VOUCHER</div><h1>سند قبض</h1></div>
+  <div class="doc-ids"><div><span>رقم السند</span><b>{serial}</b></div><div><span>التاريخ</span><b>{date}</b></div></div>
+</div>
+<div class="hero-amount"><div><span>المبلغ</span><b>{amount} {$}</b></div><div style="text-align:end"><span>طريقة الدفع</span><b style="font-size:16px">{pay_method}</b></div></div>
+<dl class="kv cols-3">
+  <div class="full"><dt>استلمنا من</dt><dd>{name} <span class="badge">{from_type}</span></dd></div>
+  <div class="full"><dt>المبلغ كتابة</dt><dd>{amount_words}</dd></div>
+  <div class="full"><dt>وذلك عن</dt><dd>{reason}</dd></div>
+  <div><dt>العقار</dt><dd>{build}</dd></div><div><dt>ضريبة القيمة المضافة</dt><dd>{vat_amount}</dd></div><div><dt>ملاحظات</dt><dd>{notes}</dd></div>
+</dl>
+<div class="section">{pay_details}</div>
+<div class="signatures three">
+  <div class="sign"><b>المستلم</b><span>الاسم والتوقيع</span></div>
+  <div class="sign"><b>المحاسب</b><span>الاسم والتوقيع</span></div>
+  <div class="sign"><b>الختم</b><span>&nbsp;</span></div>
+</div>

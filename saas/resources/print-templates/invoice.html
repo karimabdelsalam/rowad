@@ -1,0 +1,21 @@
+<div class="doc-title">
+  <div><div class="doc-kicker">INVOICE</div><h1>فاتورة</h1></div>
+  <div class="doc-ids"><div><span>رقم الفاتورة</span><b>{serial}</b></div><div><span>تاريخ الإصدار</span><b>{date}</b></div></div>
+</div>
+<div class="two-col">
+  <dl class="kv cols-3" style="grid-template-columns:1fr"><div class="full"><dt>البائع</dt><dd>{org_arname}</dd></div><div class="full"><dt>الرقم الضريبي</dt><dd class="num" style="text-align:start">{org_vat_number}</dd></div><div class="full"><dt>العنوان</dt><dd>{org_city} — {org_address}</dd></div></dl>
+  <dl class="kv cols-3" style="grid-template-columns:1fr"><div class="full"><dt>العميل</dt><dd>{customer}</dd></div><div class="full"><dt>الرقم الضريبي للعميل</dt><dd class="num" style="text-align:start">{customer_vat_number}</dd></div><div class="full"><dt>الجنسية / الدولة</dt><dd>{customer_country}</dd></div></dl>
+</div>
+<div class="section"><h2>البنود</h2>{items_table}</div>
+<div style="display:grid;grid-template-columns:1fr 200px;gap:16px;align-items:start">
+  <div>
+    <div class="totals">
+      <div class="total-card"><span>الإجمالي قبل الضريبة</span><b>{subtotal}</b></div>
+      <div class="total-card"><span>ضريبة القيمة المضافة</span><b>{vat_total}</b></div>
+      <div class="total-card accent"><span>الإجمالي شامل الضريبة</span><b>{total} {$}</b></div>
+    </div>
+    <div class="amount-words">{total_words}</div>
+    <p class="muted">{notes}</p>
+  </div>
+  <div class="qr">{qrcode}رمز الفاتورة الإلكترونية</div>
+</div>

@@ -138,6 +138,7 @@ class LegacyImporter
         }
         $this->copy('building_reports_cats', 'unit_report_categories', fn ($r) => ['id' => $r->id, 'title' => $r->name ?? $r->title]);
         // attrs letters: L = has a length, W = width, N = neighbouring plot number
+        $this->replaceDefaults('building_borders', 'border_types');
         $this->copy('building_borders', 'border_types', fn ($r) => ['id' => $r->id, 'code' => $r->border ?? null, 'title' => $r->title,
             'attributes' => json_encode(array_values(array_filter(str_split(strtoupper((string) ($r->attrs ?? '')))))) ]);
 

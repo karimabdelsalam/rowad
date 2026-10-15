@@ -9,9 +9,9 @@ use Filament\Widgets\TableWidget;
 
 class UpcomingInstallments extends TableWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 6;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 6];
 
     public function table(Table $table): Table
     {

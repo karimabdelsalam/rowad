@@ -108,6 +108,7 @@ class DocumentData
             'unit' => e((string) $v->unit?->title),
             'vat_amount' => $this->money($v->vat_amount),
             'notes' => e((string) $v->notes),
+            'pay_details' => $this->paymentDetails($v),
         ], $this->legacy->voucher($v));
     }
 
@@ -164,11 +165,25 @@ class DocumentData
         return URL::signedRoute('documents.verify', ['type' => $contract->getMorphClass(), 'id' => $contract->id]);
     }
 
+    /** Cheque / transfer details as a styled table (legacy templates keep their own pay_details). */
+    private function paymentDetails(ReceiptVoucher|PaymentVoucher $v): string
+    {
+        $rows = array_filter([
+            __('رقم الشيك') => $v->cheque_number, __('اسم البنك') => $v->bank_name,
+            __('تاريخ الشيك') => $v->cheque_date ? $this->date($v->cheque_date, $v->calendar?->value) : null,
+        ], fn ($value) => filled($value));
+
+        return $rows === [] ? '' : '<table class="data"><thead><tr>'.collect(array_keys($rows))->map(fn ($h) => '<th>'.e($h).'</th>')->join('')
+            .'</tr></thead><tbody><tr>'.collect($rows)->map(fn ($v) => '<td>'.e((string) $v).'</td>')->join('').'</tr></tbody></table>';
+    }
+
     private function installmentsTable(RentContract|SaleContract $c): string
     {
-        $rows = $c->installments()->orderBy('due_date')->get()->map(fn ($i) => '<tr><td>'.$this->date($i->due_date, $c->calendar?->value).'</td><td>'.$this->money($i->amount).'</td></tr>')->join('');
+        $rows = $c->installments()->orderBy('due_date')->get()->values()->map(fn ($i, $n) => '<tr><td>'.($n + 1).'</td><td>'.$this->date($i->due_date, $c->calendar?->value)
+            .'</td><td>'.e((string) $i->type?->getLabel()).'</td><td class="num">'.$this->money($i->amount).'</td><td>'
+            .($i->is_collected ? '<span class="badge">'.__('مسدد').'</span>' : ((float) $i->paid_amount > 0 ? __('مسدد جزئيًا') : __('مستحق'))).'</td></tr>')->join('');
 
-        return '<table class="grid"><thead><tr><th>'.__('تاريخ الاستحقاق').'</th><th>'.__('المبلغ').'</th></tr></thead><tbody>'.$rows.'</tbody></table>';
+        return '<table class="grid"><thead><tr><th>#</th><th>'.__('تاريخ الاستحقاق').'</th><th>'.__('النوع').'</th><th>'.__('المبلغ').'</th><th>'.__('الحالة').'</th></tr></thead><tbody>'.$rows.'</tbody></table>';
     }
 
     private function terms(RentContract|SaleContract $c): string

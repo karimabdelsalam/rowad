@@ -28,7 +28,8 @@ trait ConfiguresPanel
             ->id($id)
             ->path($path)
             ->login($tenant ? \App\Filament\Auth\Login::class : \Filament\Auth\Pages\Login::class)
-            ->font('Tajawal')
+            ->font('Cairo')
+            ->darkMode(false) // charts and documents are designed for the light surface
             ->colors([
                 'primary' => self::brandTeal(),
                 'gray' => Color::Slate,
@@ -41,6 +42,7 @@ trait ConfiguresPanel
                     ->url(fn () => route('locale.switch', app()->getLocale() === 'ar' ? 'en' : 'ar')),
             ])
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('filament.locale-switch'))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.theme'))
             ->databaseNotifications($tenant)
             ->middleware([
                 EncryptCookies::class,
