@@ -30,6 +30,10 @@ abstract class ReportPage extends Page implements HasTable
         makeTable as makeBaseReportTable;
     }
 
+    /** Filters live in the URL, so a report can be bookmarked or opened pre-filtered (e.g. one bank account's transactions). */
+    #[\Livewire\Attributes\Url(as: 'filters')]
+    public ?array $tableFilters = null;
+
     /** Sidebar order and icon per report, following the legacy reports menu. */
     private const MENU = [
         'taxes' => [1, Heroicon::OutlinedReceiptPercent],
@@ -128,7 +132,9 @@ abstract class ReportPage extends Page implements HasTable
     /** Totals rows read "all <report>" instead of the model's English name. */
     protected function makeTable(): Table
     {
-        return $this->makeBaseReportTable()->modelLabel(static::title())->pluralModelLabel(static::title());
+        return $this->makeBaseReportTable()->modelLabel(static::title())->pluralModelLabel(static::title())
+            ->emptyStateHeading(__('لا توجد بيانات للفترة أو التصفية المختارة'))
+            ->emptyStateDescription(__('غيّر الفترة أو التصفية من زر التصفية أعلى الجدول.'));
     }
 
     /** Excel and print come from the table's export menu (TableExport); a CSV header action stays for quick downloads. */

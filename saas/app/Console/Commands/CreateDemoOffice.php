@@ -108,6 +108,9 @@ class CreateDemoOffice extends Command
             $units[] = $unit;
         }
 
+        $bank = \App\Models\BankAccount::create(['bank_id' => \App\Models\Lookups\Bank::query()->value('id'), 'holder_name' => 'مؤسسة الرواد العقارية',
+            'account_number' => '608010167519', 'iban' => 'SA0380000000608010167519', 'is_default' => true]);
+
         // rented units with history: contracts started months ago, past installments collected
         $contracts = app(ContractService::class);
         $collector = app(InstallmentCollector::class);
@@ -122,7 +125,7 @@ class CreateDemoOffice extends Command
             foreach ($contract->installments()->whereDate('due_date', '<', now()->subMonth())->orderBy('due_date')->get() as $installment) {
                 Date::setTestNow($installment->due_date->copy()->addDays(2)); // collected on time, as in real history
                 app(VoucherService::class)->createReceipt(['issued_at' => $installment->due_date, 'amount' => $installment->amount,
-                    'payment_method' => 'transfer', 'party_type' => 'client', 'party_id' => $clients[$clientIndex]->id, 'unit_id' => $units[$unitIndex]->id,
+                    'payment_method' => 'transfer', 'bank_account_id' => $bank->id, 'party_type' => 'client', 'party_id' => $clients[$clientIndex]->id, 'unit_id' => $units[$unitIndex]->id,
                     'reason' => 'سداد إيجار'], [$installment->id]);
             }
             Date::setTestNow($today);

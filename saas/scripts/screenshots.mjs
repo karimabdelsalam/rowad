@@ -55,6 +55,7 @@ const pages = [
   { name: 'report-rent', path: '/admin/reports/rent-report', login: 'admin@demo.test', full: true },
   { name: 'report-units', path: '/admin/reports/units-report', login: 'admin@demo.test', full: true },
   { name: 'report-profits', path: '/admin/reports/profits-report', login: 'admin@demo.test', full: true },
+  { name: 'bank-transactions', path: '/admin/reports/banking-report?filters[bank_account_id][value]=1&filters[period][from]=2025-01-01&filters[period][until]=2026-12-31', login: 'admin@demo.test' },
   { name: 'settings-numbering', path: '/admin/numbering', login: 'admin@demo.test', full: true },
   { name: 'office-files', path: '/admin/office-files', login: 'admin@demo.test' },
   { name: 'settings-website', path: '/admin/website-settings', login: 'admin@demo.test', full: true },

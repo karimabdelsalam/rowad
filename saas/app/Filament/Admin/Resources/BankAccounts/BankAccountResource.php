@@ -107,6 +107,15 @@ class BankAccountResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                // legacy bank_accounts/transactions: the account's movements
+                \Filament\Actions\Action::make('transactions')
+                    ->label(__('الحركات'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedArrowsRightLeft)
+                    ->color('gray')
+                    ->visible(fn () => \App\Filament\Admin\Clusters\Reports\Pages\BankingReport::canAccess())
+                    ->url(fn (\App\Models\BankAccount $record) => \App\Filament\Admin\Clusters\Reports\Pages\BankingReport::getUrl([
+                        'filters' => ['bank_account_id' => ['value' => $record->getKey()], 'period' => ['from' => now()->startOfYear()->toDateString(), 'until' => today()->toDateString()]],
+                    ])),
                 // legacy bank_accounts/sms: send the account details to a customer by SMS
                 \Filament\Actions\Action::make('sendBySms')
                     ->label(__('إرسال بالجوال'))

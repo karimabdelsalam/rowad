@@ -1106,5 +1106,8 @@
     "بطاقة وحدة": "Unit sheet",
     "العدادات": "Meters",
     "الأسعار والعقد الحالي": "Prices and current contract",
-    "لا يوجد": "None"
+    "لا يوجد": "None",
+    "الحركات": "Transactions",
+    "لا توجد بيانات للفترة أو التصفية المختارة": "No data for the selected period or filters",
+    "غيّر الفترة أو التصفية من زر التصفية أعلى الجدول.": "Change the period or filters with the filter button above the table."
 }
