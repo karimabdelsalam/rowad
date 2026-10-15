@@ -1096,5 +1096,9 @@
     "طلب صيانة": "Maintenance request",
     "دفعاتك القادمة": "Your upcoming payments",
     "{0} لا توجد أقساط متأخرة|{1} قسط واحد متأخر|[2,*] :count أقساط متأخرة": "{0} No overdue installments|{1} One overdue installment|[2,*] :count overdue installments",
-    "عقار نوفا": "Aqar Nova"
+    "عقار نوفا": "Aqar Nova",
+    "امسح الرمز بكاميرا جوالك للدخول إلى بوابة الملاك: كشف حسابك، وحداتك، عقودك وتحصيلاتها": "Scan with your phone camera to open the owner portal: your statement, units, contracts and collections",
+    "امسح الرمز بكاميرا جوالك للدخول إلى بوابة العملاء: عقدك، دفعاتك القادمة، وطلبات الصيانة": "Scan with your phone camera to open the client portal: your contract, upcoming payments and maintenance requests",
+    "امسح الرمز بكاميرا جوالك لتصفح الوحدات المتاحة للإيجار والبيع": "Scan with your phone camera to browse units available for rent and sale",
+    "فتح في الخرائط": "Open in Maps"
 }

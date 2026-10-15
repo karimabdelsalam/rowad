@@ -61,9 +61,12 @@ class UnitInfolist
                         TextEntry::make('address')->label(__('العنوان التفصيلي'))->placeholder('-')->columnSpan(2),
                         TextEntry::make('coordinates')->label(__('الإحداثيات'))
                             ->state(fn (Unit $record) => filled($record->latitude) && filled($record->longitude) ? $record->latitude.', '.$record->longitude : null)
-                            ->url(fn (Unit $record) => filled($record->latitude) && filled($record->longitude) ? "https://maps.google.com/?q={$record->latitude},{$record->longitude}" : null, true)
+                            ->url(fn (Unit $record) => filled($record->latitude) && filled($record->longitude) ? \App\Support\Maps::directionsUrl($record->latitude, $record->longitude) : null, true)
                             ->color('primary')->placeholder('-')->columnSpan(2),
                         TextEntry::make('address_details')->label(__('وصف الموقع'))->placeholder('-')->columnSpanFull(),
+                        \Filament\Infolists\Components\ViewEntry::make('map')->hiddenLabel()->columnSpanFull()
+                            ->view('filament.unit-map')
+                            ->visible(fn (Unit $record) => \App\Support\Maps::embedUrl($record->latitude, $record->longitude) !== null),
                     ]),
 
                     Section::make(__('الصكوك والقطع'))->icon(Heroicon::OutlinedDocumentCheck)->schema([

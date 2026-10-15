@@ -98,6 +98,8 @@ class CreateDemoOffice extends Command
                 'is_published' => $listed, 'show_price' => true, 'is_featured' => $i < 2, 'floor' => (string) ($i + 1),
                 'details' => 'وحدة مجددة بالكامل، مطبخ راكب، مكيفات سبليت، موقف خاص، قريبة من الخدمات والمدارس.',
                 'address' => $towers[$tower]->address,
+                // Riyadh: Al Olaya / Al Narjis
+                'latitude' => $tower === 0 ? 24.6905 + $i * 0.0004 : 24.8312 + $i * 0.0004, 'longitude' => $tower === 0 ? 46.6853 : 46.6619,
             ]);
             $unit->owners()->attach($owners[$i % 3]->id, ['share_percent' => 100, 'expenses_percent' => 100]);
             if ($i < 6) {

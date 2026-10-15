@@ -6,6 +6,8 @@
                     <img src="{{ $link['qr'] }}" alt="QR" width="96" height="96" style="margin:auto">
                     <div style="font-weight:700">{{ $link['label'] }}</div>
                     <a href="{{ $link['url'] }}" target="_blank" style="font-size:.75rem;color:#0f766e">{{ __('فتح') }}</a>
+                    <span style="color:#cbd5e1">·</span>
+                    <a href="{{ $link['print'] }}" target="_blank" style="font-size:.75rem;color:#0f766e">{{ __('طباعة') }}</a>
                 </div>
             @endforeach
         </div>

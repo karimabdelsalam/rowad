@@ -36,6 +36,7 @@ Route::middleware([
     })->name('site.logo');
 
     Route::get('/print/{type}/{id}', \App\Http\Controllers\PrintController::class)->middleware('auth')->whereNumber('id')->name('documents.print');
+    Route::get('/print/qr/{kind}', [\App\Http\Controllers\PrintController::class, 'qr'])->middleware('auth')->whereIn('kind', ['owner', 'client', 'site'])->name('documents.qr');
     Route::get('/verify/{type}/{id}', [\App\Http\Controllers\PrintController::class, 'verify'])->middleware('signed')->whereNumber('id')->name('documents.verify');
 
     Route::get('/impersonate/{user}/{panel}', [\App\Http\Controllers\ImpersonationController::class, 'start'])

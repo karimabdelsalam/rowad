@@ -14,17 +14,24 @@ class PortalLinks extends Widget
 
     protected string $view = 'filament.widgets.portal-links';
 
-    /** @return list<array{label: string, url: string, qr: string}> */
+    /** @return list<array{label: string, url: string, qr: string, prompt: string, print: string}> */
     public function getLinks(): array
     {
-        $links = [
-            ['label' => __('بوابة الملاك'), 'url' => url('/owner')],
-            ['label' => __('بوابة العملاء'), 'url' => url('/client')],
-        ];
-        if (\App\Support\Website::enabled()) {
-            $links[] = ['label' => __('موقع المؤسسة'), 'url' => url('/')];
-        }
+        $kinds = ['owner', 'client', ...(\App\Support\Website::enabled() ? ['site'] : [])];
 
-        return array_map(fn (array $link) => $link + ['qr' => (new QRCode)->render($link['url'])], $links);
+        return array_map(fn (string $kind) => self::link($kind) + ['print' => route('documents.qr', $kind)], $kinds);
+    }
+
+    /** @return array{label: string, url: string, qr: string, prompt: string} */
+    public static function link(string $kind): array
+    {
+        [$label, $path, $prompt] = match ($kind) {
+            'owner' => [__('بوابة الملاك'), '/owner', __('امسح الرمز بكاميرا جوالك للدخول إلى بوابة الملاك: كشف حسابك، وحداتك، عقودك وتحصيلاتها')],
+            'client' => [__('بوابة العملاء'), '/client', __('امسح الرمز بكاميرا جوالك للدخول إلى بوابة العملاء: عقدك، دفعاتك القادمة، وطلبات الصيانة')],
+            'site' => [__('موقع المؤسسة'), '/', __('امسح الرمز بكاميرا جوالك لتصفح الوحدات المتاحة للإيجار والبيع')],
+        };
+        $url = url($path);
+
+        return ['label' => $label, 'url' => $url, 'prompt' => $prompt, 'qr' => (new QRCode)->render($url)];
     }
 }

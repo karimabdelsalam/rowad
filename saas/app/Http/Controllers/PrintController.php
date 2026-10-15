@@ -52,6 +52,14 @@ class PrintController
         return view('print.document', ['html' => $html, 'title' => $title ?: __('مستند')]);
     }
 
+    /** Legacy dashboard/qrcode?print=owner|client|sales: an A4 sheet to hang in the office. */
+    public function qr(Request $request, string $kind): View
+    {
+        abort_unless($request->user()?->type === UserType::Staff && $request->user()->is_active, 403);
+
+        return view('print.qr-sheet', \App\Filament\Admin\Widgets\PortalLinks::link($kind));
+    }
+
     /** Public check behind the QR printed on contracts. */
     public function verify(string $type, int $id): View
     {

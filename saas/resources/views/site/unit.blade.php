@@ -47,6 +47,12 @@
                 @endforeach
             </table>
             @if ($details = $unit->localized('details'))<p style="white-space:pre-line;margin:0">{{ $details }}</p>@endif
+            @if ($map = \App\Support\Maps::embedUrl($unit->latitude, $unit->longitude))
+                <h2 style="margin:8px 0 0;font-size:1.2rem">{{ __('الموقع') }}</h2>
+                <iframe src="{{ $map }}" title="{{ __('الموقع') }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                    style="width:100%;height:260px;border:0;border-radius:12px;background:var(--line)"></iframe>
+                <a href="{{ \App\Support\Maps::directionsUrl($unit->latitude, $unit->longitude) }}" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700">{{ __('فتح في الخرائط') }} ↗</a>
+            @endif
             <h2 style="margin:8px 0 0;font-size:1.2rem">{{ __('اطلب معاينة أو استفسر') }}</h2>
             @include('site.partials.inquiry-form', ['action' => route('site.unit.inquiry', $unit), 'default' => __('أرغب في الاستفسار عن :unit', ['unit' => $unit->localized('title')])])
         </div></div>

@@ -38,6 +38,7 @@ const pages = [
   { name: 'client-dashboard', path: '/client', login: 'client@demo.test', panel: 'client', full: true },
   { name: 'print-rent-contract', path: '/print/rent_contract/1', login: 'admin@demo.test', full: true },
   { name: 'print-receipt', path: '/print/receipt_voucher/1', login: 'admin@demo.test', full: true },
+  { name: 'print-qr-owner', path: '/print/qr/owner', login: 'admin@demo.test', full: true },
   { name: 'print-letter', path: '/print/letter/1', login: 'admin@demo.test', full: true },
   { name: 'form-unit', path: '/admin/units/create', login: 'admin@demo.test', full: true },
   { name: 'form-rent-contract', path: '/admin/rent-contracts/create', login: 'admin@demo.test', full: true },
