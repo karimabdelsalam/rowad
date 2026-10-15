@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 40 600 600" role="img" aria-label="Aqar Nova">
+  <defs>
+    <linearGradient id="an-bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#12c2a0"/><stop offset="1" stop-color="#0b6e5c"/>
+    </linearGradient>
+    <linearGradient id="an-panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#145c4f"/><stop offset="1" stop-color="#0c3d36"/>
+    </linearGradient>
+    <linearGradient id="an-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0d7a66"/><stop offset="1" stop-color="#11b593"/>
+    </linearGradient>
+  </defs>
+  <!-- roof: dark navy wedge with a teal triangle inside -->
+  <path d="M95 497 L307 210 L415 360 L415 372 L336 340 L265 432 L150 497 Z" fill="#1b2431"/>
+  <path d="M307 210 L415 134 L415 360 Z" fill="url(#an-panel)"/>
+  <path d="M270 432 L340 344 L405 432 Z" fill="#11a586"/>
+  <!-- buildings -->
+  <path d="M432 143 L490 186 L490 466 L432 452 Z" fill="url(#an-bar)"/>
+  <path d="M508 233 L560 270 L560 490 L508 478 Z" fill="url(#an-bar)"/>
+  <path d="M562 330 L618 372 L618 515 L562 500 Z" fill="url(#an-bar)"/>
+  <!-- ground swoosh -->
+  <path d="M155 497 C 260 448, 360 430, 450 458 C 540 486, 600 530, 665 540 C 590 545, 520 520, 450 492 C 370 462, 270 462, 155 497 Z" fill="url(#an-wave)"/>
+</svg>

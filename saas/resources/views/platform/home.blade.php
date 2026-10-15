@@ -149,7 +149,7 @@
             <div>
                 <span class="eyebrow">{{ __('نظام إدارة أملاك سحابي للمنشآت العقارية في المملكة') }}</span>
                 <h1>{{ __('أدر عقاراتك وعقودك وتحصيلك') }} <span class="hl">{{ __('من مكان واحد') }}</span></h1>
-                <p class="lead">{{ __('رواد يجمع الوحدات والعقود والدفعات وحسابات الملاك والفوترة الإلكترونية في نظام واحد سهل، مع بوابة للملاك وأخرى للمستأجرين وموقع خاص لمؤسستك.') }}</p>
+                <p class="lead">{{ __('عقار نوفا يجمع الوحدات والعقود والدفعات وحسابات الملاك والفوترة الإلكترونية في نظام واحد سهل، مع بوابة للملاك وأخرى للمستأجرين وموقع خاص لمؤسستك.') }}</p>
                 <div class="cta">
                     <a class="btn btn-primary btn-lg" href="{{ route('central.signup', [], false) }}">{{ __('ابدأ تجربتك المجانية') }}</a>
                     <a class="btn btn-ghost btn-lg" href="#pricing">{{ __('شاهد الأسعار') }}</a>
@@ -162,7 +162,7 @@
             </div>
             <div class="browser">
                 <div class="chrome"><i></i><i></i><i></i><span class="url">your-company.{{ config('rowad.tenancy.base_domain') }}/admin</span></div>
-                <img src="{{ asset('images/platform/dashboard.jpg') }}" width="1440" height="900" alt="{{ __('لوحة تحكم المؤسسة في رواد') }}">
+                <img src="{{ asset('images/platform/dashboard.jpg') }}" width="1440" height="900" alt="{{ __('لوحة تحكم المؤسسة في عقار نوفا') }}">
             </div>
         </div>
     </section>
@@ -207,7 +207,7 @@
                     @endforeach
                 </ul>
             </div>
-            <div class="paper"><img src="{{ asset('images/platform/contract.jpg') }}" alt="{{ __('نموذج عقد إيجار مطبوع من رواد') }}" loading="lazy"></div>
+            <div class="paper"><img src="{{ asset('images/platform/contract.jpg') }}" alt="{{ __('نموذج عقد إيجار مطبوع من عقار نوفا') }}" loading="lazy"></div>
         </div>
     </section>
 

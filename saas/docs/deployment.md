@@ -1,7 +1,7 @@
 # دليل التشغيل على السيرفر
 
-دليل تشغيل رواد على سيرفر Linux واحد (Ubuntu 24.04). المنصة على نطاق رئيسي (مثل `rowad.sa`)، وكل مؤسسة على نطاق فرعي
-(`alrowad.rowad.sa`) بقاعدة بيانات خاصة بها.
+دليل تشغيل Aqar Nova على سيرفر Linux واحد (Ubuntu 24.04). المنصة على نطاق رئيسي (مثل `aqarnova.sa` — مثال، يُستبدل بالنطاق الفعلي)، وكل مؤسسة على نطاق فرعي
+(`alrowad.aqarnova.sa`) بقاعدة بيانات خاصة بها.
 
 > الأوامر بين `<...>` قيم تختارها أنت. الأوامر تُنفذ داخل مجلد `saas/`.
 
@@ -22,14 +22,14 @@ Node.js غير مطلوب للتشغيل (يُستخدم فقط لسكربت ل�
 
 | النوع | الاسم | القيمة |
 |---|---|---|
-| A | `rowad.sa` | IP السيرفر |
+| A | `aqarnova.sa` | IP السيرفر |
 | A | `www` | IP السيرفر |
 | A | `*` | IP السيرفر (لكل نطاقات المؤسسات الفرعية) |
 
-الشهادة يجب أن تكون Wildcard (`*.rowad.sa`)، وهذه لا تصدر إلا بتحقق DNS:
+الشهادة يجب أن تكون Wildcard (`*.aqarnova.sa`)، وهذه لا تصدر إلا بتحقق DNS:
 
 ```bash
-sudo certbot certonly --manual --preferred-challenges dns -d rowad.sa -d '*.rowad.sa'
+sudo certbot certonly --manual --preferred-challenges dns -d aqarnova.sa -d '*.aqarnova.sa'
 ```
 
 الأفضل استخدام إضافة Certbot الخاصة بمزود النطاق (Cloudflare مثلًا: `python3-certbot-dns-cloudflare`) حتى يتجدد تلقائيًا.
@@ -39,11 +39,11 @@ sudo certbot certonly --manual --preferred-challenges dns -d rowad.sa -d '*.rowa
 كل مؤسسة جديدة تُنشأ لها قاعدة باسم `tenant<uuid>`، لذا يحتاج مستخدم التطبيق صلاحية إنشاء قواعد:
 
 ```sql
-CREATE DATABASE rowad_central CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'rowad'@'localhost' IDENTIFIED BY '<كلمة-مرور-قوية>';
-GRANT ALL PRIVILEGES ON `rowad_central`.* TO 'rowad'@'localhost';
-GRANT ALL PRIVILEGES ON `tenant%`.* TO 'rowad'@'localhost';
-GRANT CREATE ON *.* TO 'rowad'@'localhost';
+CREATE DATABASE aqarnova_central CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'aqarnova'@'localhost' IDENTIFIED BY '<كلمة-مرور-قوية>';
+GRANT ALL PRIVILEGES ON `aqarnova_central`.* TO 'aqarnova'@'localhost';
+GRANT ALL PRIVILEGES ON `tenant%`.* TO 'aqarnova'@'localhost';
+GRANT CREATE ON *.* TO 'aqarnova'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -62,17 +62,17 @@ php artisan key:generate
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://rowad.sa
+APP_URL=https://aqarnova.sa
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=rowad_central
-DB_USERNAME=rowad
+DB_DATABASE=aqarnova_central
+DB_USERNAME=aqarnova
 DB_PASSWORD=<كلمة-المرور>
 
-CENTRAL_DOMAINS=rowad.sa,www.rowad.sa
-TENANT_BASE_DOMAIN=rowad.sa
+CENTRAL_DOMAINS=aqarnova.sa,www.aqarnova.sa
+TENANT_BASE_DOMAIN=aqarnova.sa
 
 # لا تضع الجلسات في قاعدة البيانات: الاتصال الافتراضي يتغير مع كل مؤسسة
 SESSION_DRIVER=file          # أو redis
@@ -86,7 +86,7 @@ MAIL_HOST=<smtp-host>
 MAIL_PORT=587
 MAIL_USERNAME=<user>
 MAIL_PASSWORD=<password>
-MAIL_FROM_ADDRESS=noreply@rowad.sa
+MAIL_FROM_ADDRESS=noreply@aqarnova.sa
 
 PLATFORM_ADMIN_EMAIL=<بريدك>
 PLATFORM_ADMIN_PASSWORD=<كلمة-مرور-قوية>
@@ -113,18 +113,18 @@ sudo chown -R www-data:www-data storage bootstrap/cache
 ```nginx
 server {
     listen 80;
-    server_name rowad.sa *.rowad.sa;
+    server_name aqarnova.sa *.aqarnova.sa;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name rowad.sa *.rowad.sa;
+    server_name aqarnova.sa *.aqarnova.sa;
     root /var/www/rowad/saas/public;
     index index.php;
 
-    ssl_certificate     /etc/letsencrypt/live/rowad.sa/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/rowad.sa/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/aqarnova.sa/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aqarnova.sa/privkey.pem;
 
     client_max_body_size 50M;   # سحابة الملفات تقبل حتى 50 ميجا
 
@@ -157,10 +157,10 @@ sudo nginx -t && sudo systemctl reload nginx
 
 الرسائل (SMS والبريد والتنبيهات) تُرسل عبر الطوابير، والتنبيهات اليومية عبر الجدولة.
 
-`/etc/supervisor/conf.d/rowad-worker.conf`:
+`/etc/supervisor/conf.d/aqarnova-worker.conf`:
 
 ```ini
-[program:rowad-worker]
+[program:aqarnova-worker]
 command=php /var/www/rowad/saas/artisan queue:work --sleep=3 --tries=3 --max-time=3600
 user=www-data
 numprocs=2
@@ -203,23 +203,23 @@ php artisan up
 
 كل مؤسسة تستطيع تنزيل نسخة كاملة من بياناتها من الإعدادات. للمنصة كلها، نسخة يومية لكل القواعد وملفات المؤسسات:
 
-`/usr/local/bin/rowad-backup.sh`:
+`/usr/local/bin/aqarnova-backup.sh`:
 
 ```bash
 #!/bin/bash
 set -euo pipefail
-DEST=/var/backups/rowad/$(date +%F)
+DEST=/var/backups/aqarnova/$(date +%F)
 mkdir -p "$DEST"
-for db in $(mysql -N -e "SHOW DATABASES" | grep -E '^(rowad_central|tenant)'); do
+for db in $(mysql -N -e "SHOW DATABASES" | grep -E '^(aqarnova_central|tenant)'); do
   mysqldump --single-transaction --routines "$db" | gzip > "$DEST/$db.sql.gz"
 done
 tar -czf "$DEST/files.tar.gz" -C /var/www/rowad/saas storage --exclude='storage/framework' --exclude='storage/logs'
-find /var/backups/rowad -maxdepth 1 -type d -mtime +14 -exec rm -rf {} +
+find /var/backups/aqarnova -maxdepth 1 -type d -mtime +14 -exec rm -rf {} +
 # انسخ $DEST إلى مكان خارج السيرفر (S3 أو سيرفر آخر) — يحدده المالك
 ```
 
 ```cron
-30 2 * * * /usr/local/bin/rowad-backup.sh
+30 2 * * * /usr/local/bin/aqarnova-backup.sh
 ```
 
 ## 9. نقل مؤسسة من نظام رواد السابق
@@ -229,7 +229,7 @@ find /var/backups/rowad -maxdepth 1 -type d -mtime +14 -exec rm -rf {} +
 3. نفّذ:
 
 ```bash
-LEGACY_DB_PASSWORD=<كلمة-مرور-القاعدة-القديمة> php artisan rowad:import-legacy <alrowad.rowad.sa-or-tenant-id> \
+LEGACY_DB_PASSWORD=<كلمة-مرور-القاعدة-القديمة> php artisan rowad:import-legacy <alrowad.aqarnova.sa-or-tenant-id> \
   --host=127.0.0.1 --database=<legacy_db> --username=<user> --media=/path/to/legacy/media
 ```
 
@@ -241,7 +241,7 @@ LEGACY_DB_PASSWORD=<كلمة-مرور-القاعدة-القديمة> php artisan
 ## 10. قائمة التحقق قبل الإطلاق
 
 - [ ] `APP_DEBUG=false` و`APP_ENV=production`.
-- [ ] شهادة Wildcard تعمل على `rowad.sa` وأي نطاق فرعي.
+- [ ] شهادة Wildcard تعمل على `aqarnova.sa` وأي نطاق فرعي.
 - [ ] `php artisan about` يظهر الكاش مفعّلًا، و`queue:work` يعمل تحت Supervisor.
 - [ ] جرّب التسجيل من الصفحة الرئيسية ثم الدخول للوحة المؤسسة الجديدة.
 - [ ] ضبط مزود SMS والبريد من إعدادات كل مؤسسة.

@@ -1,6 +1,6 @@
 @extends('platform.layout')
 
-@section('title', __('إنشاء حساب مؤسسة — رواد'))
+@section('title', __('إنشاء حساب مؤسسة — عقار نوفا'))
 
 @section('styles')
     .signup { padding: 56px 0 88px; background: radial-gradient(800px 360px at 90% 0%, rgb(20 184 166 / .12), transparent 60%), var(--soft); }

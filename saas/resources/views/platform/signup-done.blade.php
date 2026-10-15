@@ -1,6 +1,6 @@
 @extends('platform.layout')
 
-@section('title', __('تم إنشاء حساب مؤسستك — رواد'))
+@section('title', __('تم إنشاء حساب مؤسستك — عقار نوفا'))
 
 @section('styles')
     .done { padding: 72px 0 96px; background: radial-gradient(800px 360px at 50% 0%, rgb(20 184 166 / .14), transparent 60%), var(--soft); }

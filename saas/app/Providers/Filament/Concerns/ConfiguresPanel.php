@@ -42,7 +42,10 @@ trait ConfiguresPanel
                     ->url(fn () => route('locale.switch', app()->getLocale() === 'ar' ? 'en' : 'ar')),
             ])
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('filament.locale-switch'))
+            ->favicon(asset('favicon.svg'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.theme'))
+            // developer credit at the bottom of every panel page, login pages included
+            ->renderHook(PanelsRenderHook::FOOTER, fn () => view('filament.footer-credit'))
             ->databaseNotifications($tenant)
             ->middleware([
                 EncryptCookies::class,

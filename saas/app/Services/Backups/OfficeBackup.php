@@ -23,7 +23,7 @@ final class OfficeBackup
         $gz = gzopen($path, 'wb6');
         $counts = [];
 
-        gzwrite($gz, '-- Rowad office backup '.now()->toIso8601String().' — office '.tenant('id')."\n");
+        gzwrite($gz, '-- Aqar Nova backup '.now()->toIso8601String().' — office '.tenant('id')."\n");
         foreach (collect(Schema::getTableListing(schemaQualified: false))->diff(self::SKIP)->sort() as $table) {
             $counts[$table] = 0;
             gzwrite($gz, "\n-- {$table}\nDELETE FROM ".$grammar->wrapTable($table).";\n");

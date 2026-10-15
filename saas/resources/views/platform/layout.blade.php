@@ -7,8 +7,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', __('رواد — نظام إدارة الأملاك للمنشآت العقارية'))</title>
+    <title>@yield('title', __('عقار نوفا — نظام إدارة الأملاك للمنشآت العقارية'))</title>
     <meta name="description" content="{{ __('نظام سحابي متكامل لإدارة العقارات والعقود والتحصيل وحسابات الملاك، مع بوابات للملاك والمستأجرين وموقع خاص لكل مؤسسة.') }}">
+    @include('partials.favicons')
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=cairo:400,500,600,700,800&display=swap" rel="stylesheet">
     <style>
@@ -29,7 +30,11 @@
         /* header */
         header.top { position: sticky; top: 0; z-index: 20; background: rgb(255 255 255 / .9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
         header.top .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 70px; }
-        .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.35rem; color: var(--ink); }
+        .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.35rem; color: var(--ink); letter-spacing: -.01em; }
+        .brand .nova { color: #0f8a72; }
+        .brand-logo { height: 34px; width: auto; }
+        footer.site .brand .nova { color: #2dd4bf; }
+        footer.site .brand-logo { filter: brightness(1.25); }
         .brand-mark { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: #fff;
             background: linear-gradient(135deg, #14b8a6, var(--brand) 55%, var(--brand-ink)); box-shadow: 0 6px 16px rgb(15 118 110 / .3); }
         nav.links { display: flex; align-items: center; gap: 26px; font-weight: 600; color: var(--body); }
@@ -72,6 +77,8 @@
         footer.site h4 { color: #fff; margin: 0 0 12px; font-size: 1rem; }
         footer.site a:hover { color: #fff; }
         footer.site ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+        .powered-by a { color: #5eead4; font-weight: 700; }
+        .powered-by a:hover { color: #fff; }
         footer.site .bottom { border-top: 1px solid #1e293b; margin-top: 36px; padding-top: 20px; font-size: .9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 
         @media (max-width: 900px) {
@@ -88,9 +95,9 @@
 <body>
     <header class="top">
         <div class="container bar">
-            <a href="{{ route('central.home', [], false) }}" class="brand" aria-label="{{ __('رواد') }}">
-                <span class="brand-mark"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5M4.5 21V9.75L12 4.5l7.5 5.25V21M9.75 21v-6h4.5v6"/></svg></span>
-                {{ __('رواد') }}
+            <a href="{{ route('central.home', [], false) }}" class="brand" aria-label="{{ __('عقار نوفا') }}">
+                <img class="brand-logo" src="{{ asset('images/brand/mark.svg') }}" alt="" width="46" height="34">
+                <span>@if (app()->getLocale() === 'ar')عقار <span class="nova">نوفا</span>@else Aqar <span class="nova">Nova</span>@endif</span>
             </a>
             <nav class="links">
                 <a href="{{ route('central.home', [], false) }}#features">{{ __('المزايا') }}</a>
@@ -111,7 +118,7 @@
         <div class="container">
             <div class="cols">
                 <div>
-                    <a href="{{ route('central.home', [], false) }}" class="brand" style="color:#fff"><span class="brand-mark"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5M4.5 21V9.75L12 4.5l7.5 5.25V21M9.75 21v-6h4.5v6"/></svg></span>{{ __('رواد') }}</a>
+                    <a href="{{ route('central.home', [], false) }}" class="brand" style="color:#fff"><img class="brand-logo" src="{{ asset('images/brand/mark.svg') }}" alt="" width="46" height="34"><span>@if (app()->getLocale() === 'ar')عقار <span class="nova">نوفا</span>@else Aqar <span class="nova">Nova</span>@endif</span></a>
                     <p style="max-width:420px">{{ __('نظام سحابي لإدارة الأملاك صُمم للمنشآت العقارية في السعودية: العقود والتحصيل وحسابات الملاك والفوترة الإلكترونية في مكان واحد.') }}</p>
                 </div>
                 <div>
@@ -133,8 +140,8 @@
                 </div>
             </div>
             <div class="bottom">
-                <span>© {{ now()->year }} {{ __('رواد') }}. {{ __('جميع الحقوق محفوظة.') }}</span>
-                <span>{{ __('صُنع للمنشآت العقارية في المملكة العربية السعودية') }}</span>
+                <span>© {{ now()->year }} {{ __('عقار نوفا') }}. {{ __('جميع الحقوق محفوظة.') }}</span>
+                <span>{{ __('صُنع للمنشآت العقارية في المملكة العربية السعودية') }} · @include('partials.powered-by')</span>
             </div>
         </div>
     </footer>

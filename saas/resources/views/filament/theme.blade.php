@@ -1,4 +1,4 @@
-{{-- Rowad panel styling on top of Filament's defaults: softer surfaces, clearer hierarchy, Cairo throughout. --}}
+{{-- Aqar Nova panel styling on top of Filament's defaults: softer surfaces, clearer hierarchy, Cairo throughout. --}}
 <style>
     :root { --rowad-surface: #f5f7f8; --rowad-card: #ffffff; --rowad-line: #e8ecef; --rowad-ink: #0f172a; --rowad-muted: #64748b; --rowad-brand: #0f766e; --rowad-brand-dark: #0b5d57; }
     body.fi-body, .fi-layout { background: var(--rowad-surface); }
@@ -42,4 +42,11 @@
         background: rgb(255 255 255 / .14); color: #fff; border: 1px solid rgb(255 255 255 / .25); backdrop-filter: blur(6px); transition: background .15s ease; }
     .rowad-welcome__action:hover { background: rgb(255 255 255 / .24); }
     .rowad-welcome__icon { width: 18px; height: 18px; }
+</style>
+<style>
+    /* developer credit (Planova) */
+    .rowad-credit { text-align: center; font-size: .8rem; color: var(--rowad-muted); padding: 18px 16px 22px; }
+    .rowad-credit--compact { padding: 14px 0 0; }
+    .rowad-credit a { color: var(--rowad-brand); font-weight: 700; }
+    .rowad-credit a:hover { text-decoration: underline; }
 </style>

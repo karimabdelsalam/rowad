@@ -9,6 +9,7 @@
 <!doctype html>
 <html lang="{{ app()->getLocale() }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}">
 <head>
+    @include('partials.favicons')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', Website::name())</title>
@@ -55,6 +56,8 @@
         footer { background: #0f172a; color: #cbd5e1; padding: 32px 0; margin-top: 40px; }
         footer .cols { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
         .price .cycle { font-size: .8rem; font-weight: 400; color: #64748b; margin-top: 2px; }
+        footer .credit { margin-top: 6px; font-size: .85rem; opacity: .8; }
+        footer .credit a { color: #5eead4; font-weight: 700; }
         .wa { position: fixed; inset-block-end: 20px; inset-inline-end: 20px; background: #25d366; color: #fff; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 8px 20px rgb(0 0 0 / .2); font-weight: 800; }
         nav.links a { white-space: nowrap; }
         @media (max-width: 640px) {
@@ -94,7 +97,7 @@
             @if ($phone = Settings::get('phone') ?: Settings::get('mobile'))<div>{{ __('هاتف') }}: <a href="tel:{{ $phone }}" dir="ltr">{{ $phone }}</a></div>@endif
             @if ($email = Settings::get('email'))<div>{{ __('البريد') }}: <a href="mailto:{{ $email }}">{{ $email }}</a></div>@endif
         </div>
-        <div>&copy; {{ now()->year }} {{ Website::name() }}</div>
+        <div>&copy; {{ now()->year }} {{ Website::name() }}<div class="credit">@include('partials.powered-by')</div></div>
     </div>
 </footer>
 
