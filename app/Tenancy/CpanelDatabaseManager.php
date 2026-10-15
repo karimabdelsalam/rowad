@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
+use Symfony\Component\Process\Process;
 
 /**
  * Office databases on cPanel hosting. cPanel MySQL users cannot run CREATE DATABASE, so databases are
@@ -38,6 +39,11 @@ class CpanelDatabaseManager extends MySQLDatabaseManager
     private function uapi(string $function, array $params): mixed
     {
         $config = config('rowad.cpanel');
+
+        if (($config['driver'] ?? 'http') === 'cli') {
+            return $this->uapiCli($function, $params);
+        }
+
         if (blank($config['user']) || blank($config['token'])) {
             throw new RuntimeException('cPanel database manager needs CPANEL_USER and CPANEL_API_TOKEN.');
         }
@@ -54,5 +60,27 @@ class CpanelDatabaseManager extends MySQLDatabaseManager
         }
 
         return $response->json('data');
+    }
+
+    /** Hosts that disable API tokens: the uapi CLI runs as the account user and needs no token. */
+    private function uapiCli(string $function, array $params): mixed
+    {
+        $command = [config('rowad.cpanel.cli_binary'), '--output=json', 'Mysql', $function];
+        foreach ($params as $key => $value) {
+            $command[] = "{$key}={$value}";
+        }
+
+        $process = new Process($command, null, null, null, 60);
+        $process->run();
+
+        $result = json_decode($process->getOutput(), true)['result'] ?? null;
+        if (! $process->isSuccessful() || (int) ($result['status'] ?? 0) !== 1) {
+            $errors = implode(' ', (array) ($result['errors'] ?? []))
+                ?: trim($process->getErrorOutput().' '.$process->getOutput());
+
+            throw new RuntimeException("cPanel Mysql::{$function} failed: {$errors}");
+        }
+
+        return $result['data'] ?? null;
     }
 }

@@ -22,5 +22,6 @@ foreach (array_values(config('tenancy.central_domains')) as $i => $domain) {
         Route::get('/terms', [\App\Http\Controllers\Platform\PagesController::class, 'terms'])->name('central.terms');
         Route::get('/privacy', [\App\Http\Controllers\Platform\PagesController::class, 'privacy'])->name('central.privacy');
         Route::get('/sitemap.xml', [\App\Http\Controllers\Platform\PagesController::class, 'sitemap'])->name('central.sitemap');
+        Route::get('/system-cron/{token}', \App\Http\Controllers\Platform\CronController::class)->name('central.cron');
     });
 }

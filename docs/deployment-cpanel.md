@@ -74,6 +74,8 @@ ln -s ~/aqarnova/public public_html
    - أضف المستخدم للقاعدة مع **ALL PRIVILEGES**.
 2. **Security → Manage API Tokens → Create:** الاسم `aqarnova-tenancy`، وانسخ المفتاح (يظهر مرة واحدة).
    النظام يستخدمه فقط لإنشاء قاعدة كل مؤسسة جديدة ومنح `USER_app` صلاحيتها، وحذفها عند حذف المؤسسة.
+   إذا كانت الاستضافة تعطّل هذه الميزة (صفحة API Tokens غير موجودة)، فلا حاجة للمفتاح: اجعل `.env` يحتوي
+   `CPANEL_UAPI_DRIVER=cli` فيستدعي النظام أمر `uapi` المحلي الذي يعمل بصلاحية الحساب نفسه.
 
 ## 5. ملف `.env`
 
@@ -106,6 +108,8 @@ TENANCY_DB_MANAGER=cpanel
 TENANCY_DB_PREFIX=USER_t
 CPANEL_USER=USER
 CPANEL_API_TOKEN=<المفتاح-من-الخطوة-4>
+# إذا كانت الاستضافة تعطّل "Manage API Tokens": استخدم أمر uapi المحلي بدل المفتاح
+# CPANEL_UAPI_DRIVER=cli
 
 # لا Supervisor على cPanel: الطابور يعمل من الـ cron كل دقيقة
 QUEUE_WORKER=scheduler
@@ -114,6 +118,8 @@ SESSION_DRIVER=file
 CACHE_STORE=file
 SESSION_SECURE_COOKIE=true
 LOG_LEVEL=warning
+# إذا كانت الاستضافة تعطّل "Cron Jobs": رمز رابط المجدول الخارجي (انظر قسم 7)
+# CRON_TOKEN=<رمز-عشوائي-طويل>
 
 # البريد: أنشئ noreply@aqarnova.com من Email Accounts
 MAIL_MAILER=smtp
@@ -190,6 +196,9 @@ cd ~/aqarnova && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1
 
 (استبدل مسار `php` بمسار إصدار 8.3 إن لزم.) هذه المهمة وحدها تشغّل:
 إرسال الرسائل والبريد من الطابور كل دقيقة، التذكيرات اليومية 3 فجرًا، تذكيرات وانتهاء الاشتراكات، وقياس استهلاك المؤسسات كل ساعة.
+
+**إذا كانت الاستضافة تعطّل ميزة Cron Jobs:** استخدم مجدولًا خارجيًا مجانيًا مثل cron-job.org يطلب كل دقيقة
+`https://aqarnova.com/system-cron/<CRON_TOKEN>` بعد تعيين `CRON_TOKEN` (رمز عشوائي طويل) في `.env`. الرابط يشغّل الـ scheduler نفسه.
 
 ## 8. إعدادات PHP
 

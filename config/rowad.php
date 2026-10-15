@@ -93,6 +93,10 @@ return [
 
     // cPanel hosting: office databases are created through cPanel's API (see App\Tenancy\CpanelDatabaseManager).
     'cpanel' => [
+        // 'http' calls UAPI over HTTPS with an API token; 'cli' runs /usr/local/cpanel/bin/uapi locally
+        // for hosts that disable API tokens (the CLI runs as the account user and needs no token).
+        'driver' => env('CPANEL_UAPI_DRIVER', 'http'),
+        'cli_binary' => env('CPANEL_UAPI_BINARY', '/usr/local/cpanel/bin/uapi'),
         'host' => env('CPANEL_HOST', 'localhost'),
         'port' => (int) env('CPANEL_PORT', 2083),
         'user' => env('CPANEL_USER'),
@@ -116,6 +120,10 @@ return [
 
     // Rebuild the public demo office (demo.<base-domain>) every night at 04:00.
     'demo_reset_daily' => (bool) env('DEMO_RESET_DAILY', false),
+
+    // Hosts without a Cron Jobs feature: an external pinger (cron-job.org etc.) hits
+    // https://<domain>/system-cron/<token> every minute to run the scheduler.
+    'cron_token' => env('CRON_TOKEN'),
 
     'tenancy' => [
         // Subdomains are created under this host, e.g. alrowad.aqarnova.com
