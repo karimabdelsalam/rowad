@@ -3,10 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Providers\Filament\Concerns\ConfiguresPanel;
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\PortalDashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 
 /** Renters' and buyers' portal (legacy clientarea / ccp). */
 class ClientPanelProvider extends PanelProvider
@@ -16,8 +15,8 @@ class ClientPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $this->discoverIn($this->basePanel($panel, 'client', 'client'), 'Client')
-            ->brandName(fn () => __('بوابة العملاء'))
-            ->colors(['primary' => Color::Sky])
-            ->pages([Dashboard::class]);
+            // the organisation's own name and colours; the banner says which portal this is
+            ->brandName(fn () => \App\Support\Settings::get('site_name', tenant('name')) ?? __('بوابة العملاء'))
+            ->pages([PortalDashboard::class]);
     }
 }

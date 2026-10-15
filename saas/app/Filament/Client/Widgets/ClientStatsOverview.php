@@ -11,6 +11,13 @@ class ClientStatsOverview extends StatsOverviewWidget
 {
     protected static bool $isLazy = false;
 
+    protected static ?int $sort = 10;
+
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 1, 'md' => 2, 'xl' => 4];
+    }
+
     protected function getStats(): array
     {
         $s = app(DashboardStats::class)->client(Portal::client());

@@ -3,10 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Providers\Filament\Concerns\ConfiguresPanel;
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\PortalDashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 
 /** Property owners' portal (legacy ownerarea). */
 class OwnerPanelProvider extends PanelProvider
@@ -16,8 +15,8 @@ class OwnerPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $this->discoverIn($this->basePanel($panel, 'owner', 'owner'), 'Owner')
-            ->brandName(fn () => __('بوابة الملاك'))
-            ->colors(['primary' => Color::Indigo])
-            ->pages([Dashboard::class]);
+            // the organisation's own name and colours; the banner says which portal this is
+            ->brandName(fn () => \App\Support\Settings::get('site_name', tenant('name')) ?? __('بوابة الملاك'))
+            ->pages([PortalDashboard::class]);
     }
 }

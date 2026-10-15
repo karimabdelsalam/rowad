@@ -18,6 +18,12 @@ class LoginActivities extends TableWidget
 
     protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 8];
 
+    /** 8 of 12 columns next to the admin's tasks; the portals' dashboards are a single column. */
+    public function getColumnSpan(): int|string|array
+    {
+        return \Filament\Facades\Filament::getCurrentPanel()?->getId() === 'admin' ? $this->columnSpan : 'full';
+    }
+
     public function table(Table $table): Table
     {
         return $table

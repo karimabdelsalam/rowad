@@ -40,6 +40,7 @@ class WelcomeBanner extends Widget
             'gregorian' => now()->locale(app()->getLocale())->translatedFormat('l، j F Y'),
             'hijri' => Hijri::toString(now()).' هـ',
             'actions' => $actions,
+            'subtitle' => __('هذه نظرة سريعة على أداء المؤسسة اليوم'),
         ];
     }
 }
