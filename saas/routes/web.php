@@ -11,8 +11,10 @@ Route::middleware(InitializeTenancyIfNotCentral::class)
     ->name('locale.switch');
 
 // Platform (central) pages only; office domains are served by routes/tenant.php.
-foreach (config('tenancy.central_domains') as $domain) {
-    Route::domain($domain)->group(function () {
+// Only the first domain carries the canonical names (route:cache needs unique names); the
+// others get a prefix. Same paths everywhere, and the pages link with relative URLs.
+foreach (array_values(config('tenancy.central_domains')) as $i => $domain) {
+    Route::domain($domain)->name($i === 0 ? '' : "domain{$i}.")->group(function () {
         Route::get('/', [SignupController::class, 'home'])->name('central.home');
         Route::get('/signup', [SignupController::class, 'create'])->name('central.signup');
         Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:5,10')->name('central.signup.store');

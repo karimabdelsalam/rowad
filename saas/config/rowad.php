@@ -68,6 +68,15 @@ return [
         'hijri_locale' => 'ar_SA@calendar=islamic-umalqura',
     ],
 
+    // First platform administrator, created by `php artisan db:seed` (DatabaseSeeder).
+    'platform_admin' => [
+        'email' => env('PLATFORM_ADMIN_EMAIL'),
+        'password' => env('PLATFORM_ADMIN_PASSWORD'),
+    ],
+
+    // Password of the legacy MySQL database for rowad:import-legacy (prompted when empty).
+    'legacy_db_password' => env('LEGACY_DB_PASSWORD'),
+
     'tenancy' => [
         // Subdomains are created under this host, e.g. office1.rowad.app
         'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),

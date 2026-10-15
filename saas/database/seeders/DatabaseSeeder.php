@@ -23,10 +23,10 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        if ($email = env('PLATFORM_ADMIN_EMAIL')) {
+        if ($email = config('rowad.platform_admin.email')) {
             User::firstOrCreate(['email' => $email], [
                 'name' => 'Platform Admin',
-                'password' => env('PLATFORM_ADMIN_PASSWORD') ?: str()->password(16),
+                'password' => config('rowad.platform_admin.password') ?: str()->password(16),
                 'type' => 'staff',
                 'is_super_admin' => true,
             ]);

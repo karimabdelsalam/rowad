@@ -55,7 +55,7 @@ class ImportLegacyOffice extends Command
             : [
                 'driver' => $driver, 'host' => $this->option('host'), 'port' => $this->option('port'),
                 'database' => $this->option('database'), 'username' => $this->option('username'),
-                'password' => env('LEGACY_DB_PASSWORD') ?? $this->secret('Legacy database password') ?? '',
+                'password' => config('rowad.legacy_db_password') ?? $this->secret('Legacy database password') ?? '',
                 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => (string) $this->option('prefix'), 'strict' => false,
             ]]);
         DB::purge('legacy');
