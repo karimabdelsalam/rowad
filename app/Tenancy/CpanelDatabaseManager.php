@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
-use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Process;
 
 /**
  * Office databases on cPanel hosting. cPanel MySQL users cannot run CREATE DATABASE, so databases are
@@ -65,20 +65,24 @@ class CpanelDatabaseManager extends MySQLDatabaseManager
     /** Hosts that disable API tokens: the uapi CLI runs as the account user and needs no token. */
     private function uapiCli(string $function, array $params): mixed
     {
-        $command = [config('rowad.cpanel.cli_binary'), '--output=json', 'Mysql', $function];
+        return self::cli('Mysql', $function, $params);
+    }
+
+    /** Runs `uapi --output=json <Module> <function> key=value...` and returns its data (also used by rowad:doctor). */
+    public static function cli(string $module, string $function, array $params = []): mixed
+    {
+        $command = [config('rowad.cpanel.cli_binary'), '--output=json', $module, $function];
         foreach ($params as $key => $value) {
             $command[] = "{$key}={$value}";
         }
 
-        $process = new Process($command, null, null, null, 60);
-        $process->run();
-
-        $result = json_decode($process->getOutput(), true)['result'] ?? null;
-        if (! $process->isSuccessful() || (int) ($result['status'] ?? 0) !== 1) {
+        $process = Process::timeout(60)->run($command);
+        $result = json_decode($process->output(), true)['result'] ?? null;
+        if (! $process->successful() || (int) ($result['status'] ?? 0) !== 1) {
             $errors = implode(' ', (array) ($result['errors'] ?? []))
-                ?: trim($process->getErrorOutput().' '.$process->getOutput());
+                ?: trim($process->errorOutput().' '.$process->output());
 
-            throw new RuntimeException("cPanel Mysql::{$function} failed: {$errors}");
+            throw new RuntimeException("cPanel {$module}::{$function} failed: {$errors}");
         }
 
         return $result['data'] ?? null;

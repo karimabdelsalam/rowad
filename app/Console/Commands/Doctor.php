@@ -127,25 +127,39 @@ class Doctor extends Command
             return;
         }
         $c = config('rowad.cpanel');
-        if (blank($c['user']) || blank($c['token'])) {
-            $this->fail_('مفتاح cPanel', 'CPANEL_USER و CPANEL_API_TOKEN مطلوبان لإنشاء قاعدة كل مؤسسة');
+        $cli = ($c['driver'] ?? 'http') === 'cli';
+        if (! $cli && (blank($c['user']) || blank($c['token']))) {
+            $this->fail_('مفتاح cPanel', 'CPANEL_USER و CPANEL_API_TOKEN مطلوبان، أو CPANEL_UAPI_DRIVER=cli إن كانت الاستضافة تعطّل المفاتيح');
 
             return;
         }
         $prefix = (string) config('tenancy.database.prefix');
-        str_starts_with($prefix, $c['user'].'_')
-            ? $this->ok('بادئة قواعد المؤسسات', $prefix)
-            : $this->fail_('بادئة قواعد المؤسسات', "TENANCY_DB_PREFIX يجب أن تبدأ بـ {$c['user']}_");
+        filled($c['user']) && ! str_starts_with($prefix, $c['user'].'_')
+            ? $this->fail_('بادئة قواعد المؤسسات', "TENANCY_DB_PREFIX يجب أن تبدأ بـ {$c['user']}_")
+            : $this->ok('بادئة قواعد المؤسسات', $prefix);
 
-        $response = Http::withHeaders(['Authorization' => "cpanel {$c['user']}:{$c['token']}"])
-            ->withOptions(['verify' => (bool) $c['verify_ssl']])->timeout(20)
-            ->get("https://{$c['host']}:{$c['port']}/execute/StatsBar/get_stats", ['display' => 'mysqldatabases']);
-        if (! $response->successful() || (int) $response->json('status') !== 1) {
-            $this->fail_('مفتاح cPanel', 'لم يقبل cPanel المفتاح — أنشئ مفتاحًا جديدًا من Manage API Tokens');
+        try {
+            if ($cli) {
+                $stats = CpanelDatabaseManager::cli('StatsBar', 'get_stats', ['display' => 'mysqldatabases']);
+                $this->ok('اتصال cPanel', 'عبر أمر uapi المحلي');
+            } else {
+                $response = Http::withHeaders(['Authorization' => "cpanel {$c['user']}:{$c['token']}"])
+                    ->withOptions(['verify' => (bool) $c['verify_ssl']])->timeout(20)
+                    ->get("https://{$c['host']}:{$c['port']}/execute/StatsBar/get_stats", ['display' => 'mysqldatabases']);
+                if (! $response->successful() || (int) $response->json('status') !== 1) {
+                    $this->fail_('مفتاح cPanel', 'لم يقبل cPanel المفتاح — أنشئ مفتاحًا جديدًا من Manage API Tokens، أو استخدم CPANEL_UAPI_DRIVER=cli');
+
+                    return;
+                }
+                $stats = $response->json('data');
+                $this->ok('اتصال cPanel', 'المفتاح يعمل');
+            }
+        } catch (Throwable $e) {
+            $this->fail_('اتصال cPanel', 'تعذّر تشغيل أمر uapi: '.$e->getMessage());
 
             return;
         }
-        $stat = $response->json('data.0') ?? [];
+        $stat = $stats[0] ?? [];
         $used = (int) ($stat['count'] ?? 0);
         $max = $stat['max'] ?? null;
         $unlimited = $max === null || in_array(strtolower((string) $max), ['unlimited', '-1', ''], true);
@@ -180,7 +194,8 @@ class Doctor extends Command
         $file = storage_path(self::HEARTBEAT);
         $age = is_file($file) ? time() - filemtime($file) : null;
         match (true) {
-            $age === null => $this->fail_('المهام المجدولة', 'لم تعمل بعد — أضف في Cron Jobs: * * * * * cd '.base_path().' && php artisan schedule:run'),
+            $age === null => $this->fail_('المهام المجدولة', 'لم تعمل بعد — أضف في Cron Jobs: * * * * * cd '.base_path().' && php artisan schedule:run'
+                .' (أو مجدولًا خارجيًا على /system-cron/<CRON_TOKEN> إن كانت الاستضافة تعطّل Cron Jobs)'),
             $age > 180 => $this->fail_('المهام المجدولة', 'آخر تشغيل قبل '.intdiv($age, 60).' دقيقة — تأكد أن مهمة Cron تعمل كل دقيقة'),
             default => $this->ok('المهام المجدولة', 'تعمل (آخر تشغيل قبل '.$age.' ثانية)'),
         };

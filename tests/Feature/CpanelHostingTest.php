@@ -82,4 +82,41 @@ class CpanelHostingTest extends TestCase
             ->assertSee('لا توجد مؤسسة بهذا الرابط')->assertSee('http://localhost/signup', false);
         $this->getJson('http://nobody.localhost/api/v1/units')->assertNotFound();
     }
+
+    public function test_cli_driver_creates_the_database_without_an_api_token(): void
+    {
+        config(['rowad.cpanel' => ['driver' => 'cli', 'cli_binary' => '/usr/local/cpanel/bin/uapi', 'host' => 'localhost', 'port' => 2083,
+            'user' => 'aqarnova', 'token' => null, 'verify_ssl' => false]]);
+        config(['database.connections.'.config('tenancy.database.central_connection').'.username' => 'aqarnova_app']);
+        \Illuminate\Support\Facades\Process::fake(['*' => \Illuminate\Support\Facades\Process::result(json_encode(['result' => ['status' => 1, 'data' => null]]))]);
+        Http::fake();
+
+        $manager = new CpanelDatabaseManager;
+        $manager->setConnection(config('tenancy.database.central_connection'));
+        $this->assertTrue($manager->createDatabase($this->office()));
+
+        \Illuminate\Support\Facades\Process::assertRan(fn ($p) => $p->command === ['/usr/local/cpanel/bin/uapi', '--output=json', 'Mysql', 'create_database', 'name=aqarnova_tabc']);
+        \Illuminate\Support\Facades\Process::assertRan(fn ($p) => in_array('user=aqarnova_app', (array) $p->command, true));
+        Http::assertNothingSent();
+    }
+
+    public function test_cli_driver_errors_carry_the_reason(): void
+    {
+        config(['rowad.cpanel.driver' => 'cli', 'rowad.cpanel.cli_binary' => 'uapi']);
+        \Illuminate\Support\Facades\Process::fake(['*' => \Illuminate\Support\Facades\Process::result(json_encode(['result' => ['status' => 0, 'errors' => ['quota exceeded']]]))]);
+
+        $this->expectExceptionMessage('quota exceeded');
+        CpanelDatabaseManager::cli('Mysql', 'create_database', ['name' => 'x']);
+    }
+
+    public function test_external_cron_link_needs_the_secret_and_runs_the_scheduler_after_answering(): void
+    {
+        $this->get('http://localhost/system-cron/anything')->assertNotFound(); // no CRON_TOKEN set: link disabled
+
+        config(['rowad.cron_token' => 'long-secret-token']);
+        $this->get('http://localhost/system-cron/wrong')->assertNotFound();
+
+        \Illuminate\Support\Facades\Artisan::shouldReceive('call')->once()->with('schedule:run');
+        $this->get('http://localhost/system-cron/long-secret-token')->assertOk()->assertSee('ok');
+    }
 }

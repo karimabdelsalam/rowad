@@ -14,7 +14,10 @@ class CronController
     {
         abort_unless(config('rowad.cron_token') && hash_equals(config('rowad.cron_token'), $token), 404);
 
-        Artisan::call('schedule:run');
+        // Answer the pinger at once (they usually give up after ~30 s) and run the scheduler after the
+        // response is sent; working through the queue can take most of a minute.
+        ignore_user_abort(true);
+        app()->terminating(fn () => Artisan::call('schedule:run'));
 
         return response('ok');
     }
