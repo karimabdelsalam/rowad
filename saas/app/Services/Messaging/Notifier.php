@@ -21,9 +21,10 @@ class Notifier
     /**
      * @param  array<string, scalar|null>  $variables  placeholders, e.g. ['name' => 'خالد', 'amount' => '1,000.00']
      * @param  list<array{email?: ?string, mobile?: ?string, name?: ?string}>  $recipients
+     * @param  bool  $force  ignore the template's on/off switches (security codes must always go out)
      * @return list<OutgoingMessage>
      */
-    public function send(NotificationEvent $event, array $variables, array $recipients, ?string $staffAlertPermission = null): array
+    public function send(NotificationEvent $event, array $variables, array $recipients, ?string $staffAlertPermission = null, bool $force = false): array
     {
         $template = MessageTemplate::where('event', $event->value)->first();
         $messages = [];
@@ -31,10 +32,10 @@ class Notifier
         foreach ($recipients as $recipient) {
             $vars = $variables + ['name' => $recipient['name'] ?? '', 'office' => Settings::get('site_name', tenant('name'))];
 
-            if ($template?->email_enabled && filled($recipient['email'] ?? null) && filled($template->email_body)) {
+            if (($force || $template?->email_enabled) && filled($recipient['email'] ?? null) && filled($template?->email_body)) {
                 $messages[] = $this->queue(MessageChannel::Mail, $event, $recipient['email'], $this->render($template->email_subject, $vars), $this->render($template->email_body, $vars));
             }
-            if ($template?->sms_enabled && filled($recipient['mobile'] ?? null) && filled($template->sms_body)) {
+            if (($force || $template?->sms_enabled) && filled($recipient['mobile'] ?? null) && filled($template?->sms_body)) {
                 $messages[] = $this->queue(MessageChannel::Sms, $event, $recipient['mobile'], null, $this->render($template->sms_body, $vars));
             }
         }

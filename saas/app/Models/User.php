@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\UserType;
 use Database\Factories\UserFactory;
+use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,7 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
 #[Fillable(['type', 'name', 'username', 'email', 'mobile', 'national_id', 'password', 'locale', 'email_verified_at',
     'is_active', 'is_super_admin', 'sms_login_enabled', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasEmailAuthentication
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
@@ -65,6 +66,28 @@ class User extends Authenticatable implements FilamentUser
             'client' => tenancy()->initialized && $this->type === UserType::Client && $this->client()->exists(),
             default => false,
         };
+    }
+
+    /** Legacy smslogin (staff) / smslogin_clients (owners, clients) or the user's own switch. */
+    public function smsLoginRequired(): bool
+    {
+        if (blank($this->mobile) || ! tenancy()->initialized) {
+            return false;
+        }
+
+        return $this->sms_login_enabled
+            || \App\Support\Settings::enabled($this->type === UserType::Staff ? 'sms_login_staff' : 'sms_login_clients');
+    }
+
+    /** Filament's code-based second factor contract (delivered by SMS here). */
+    public function hasEmailAuthentication(): bool
+    {
+        return $this->smsLoginRequired();
+    }
+
+    public function toggleEmailAuthentication(bool $condition): void
+    {
+        $this->forceFill(['sms_login_enabled' => $condition])->save();
     }
 
     public function owner(): HasOne
