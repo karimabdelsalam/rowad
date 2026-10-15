@@ -32,6 +32,12 @@ class CollectionsChart extends ChartWidget
         ];
     }
 
+    /** Western digits on the axes, like every other figure in the panel. */
+    protected function getOptions(): array
+    {
+        return ['locale' => 'en-US'];
+    }
+
     protected function getType(): string
     {
         return 'bar';

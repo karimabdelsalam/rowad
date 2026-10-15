@@ -21,6 +21,7 @@ class UpcomingInstallments extends TableWidget
                 ->where('is_collected', false)->where('type', '!=', 'expenses')
                 ->whereDate('due_date', '<=', today()->addDays(14)))
             ->defaultSort('due_date')
+            ->emptyStateHeading(__('لا توجد أقساط مستحقة قريبًا'))
             ->paginated([5, 10])
             ->columns([
                 TextColumn::make('due_date')->date('Y-m-d')->color(fn (Installment $r) => $r->due_date->isPast() ? 'danger' : null),

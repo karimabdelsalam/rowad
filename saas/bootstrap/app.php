@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo('/admin/login');
+        // Office domains must switch to the office database before the session and the
+        // signed-in user are loaded (Livewire update requests only carry the 'web' group).
+        $middleware->web(prepend: [
+            \App\Http\Middleware\InitializeTenancyIfNotCentral::class,
+        ]);
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
         ]);

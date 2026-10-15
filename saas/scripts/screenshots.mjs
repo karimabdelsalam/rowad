@@ -1,0 +1,63 @@
+// Screenshots of the demo office for review in the chat.
+// Usage: node scripts/screenshots.mjs <out-dir> [page ...]   (server: php artisan serve --port=8000, data: php artisan rowad:demo)
+import { createRequire } from 'node:module';
+
+// local install, or a global one via NODE_PATH=$(npm root -g)
+const { chromium } = createRequire(import.meta.url)('playwright');
+
+const [outDir = 'screenshots', ...only] = process.argv.slice(2);
+const host = process.env.DEMO_HOST ?? 'http://demo.localhost:8000';
+const password = 'demo-password';
+
+const pages = [
+  { name: 'site-home', path: '/', full: true },
+  { name: 'site-unit', path: '/units/1', full: true },
+  { name: 'site-home-mobile', path: '/', mobile: true, full: true },
+  { name: 'site-home-mobile-top', path: '/', mobile: true },
+  { name: 'admin-login', path: '/admin/login' },
+  { name: 'admin-dashboard', path: '/admin', login: 'admin@demo.test', full: true },
+  { name: 'admin-units', path: '/admin/units', login: 'admin@demo.test' },
+  { name: 'admin-rent-contracts', path: '/admin/rent-contracts', login: 'admin@demo.test' },
+  { name: 'admin-installments', path: '/admin/installments', login: 'admin@demo.test' },
+  { name: 'admin-owner-transactions', path: '/admin/owner-transactions', login: 'admin@demo.test' },
+  { name: 'admin-settings', path: '/admin/general-settings', login: 'admin@demo.test' },
+  { name: 'owner-dashboard', path: '/owner', login: 'owner@demo.test', panel: 'owner', full: true },
+  { name: 'owner-statement', path: '/owner/owner-transactions', login: 'owner@demo.test', panel: 'owner' },
+  { name: 'client-dashboard', path: '/client', login: 'client@demo.test', panel: 'client', full: true },
+  { name: 'print-rent-contract', path: '/print/rent_contract/1', login: 'admin@demo.test', full: true },
+  { name: 'print-receipt', path: '/print/receipt_voucher/1', login: 'admin@demo.test', full: true },
+];
+
+const browser = await chromium.launch({ args: ['--host-resolver-rules=MAP *.localhost 127.0.0.1'] });
+const sessions = {};
+
+async function context(page) {
+  const key = (page.login ?? 'guest') + (page.mobile ? '-m' : '');
+  if (sessions[key]) return sessions[key];
+  const ctx = await browser.newContext(page.mobile
+    ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, locale: 'ar-SA' }
+    : { viewport: { width: 1440, height: 900 }, locale: 'ar-SA' });
+  if (page.login) {
+    const p = await ctx.newPage();
+    await p.goto(`${host}/${page.panel ?? 'admin'}/login`, { waitUntil: 'networkidle' });
+    await p.fill('input[id="form.email"], input[type="email"], input[autocomplete="username"]', page.login);
+    await p.fill('input[type="password"]', password);
+    await Promise.all([p.waitForURL(u => !u.pathname.endsWith('/login'), { timeout: 30000 }), p.keyboard.press('Enter')]);
+    await p.close();
+  }
+  return (sessions[key] = ctx);
+}
+
+for (const page of pages.filter(p => only.length === 0 || only.includes(p.name))) {
+  const ctx = await context(page);
+  const p = await ctx.newPage();
+  await p.goto(host + page.path, { waitUntil: 'networkidle', timeout: 60000 });
+  // lazy widgets load when scrolled into view
+  await p.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 150)); } window.scrollTo(0, 0); });
+  await p.waitForLoadState('networkidle');
+  await p.waitForTimeout(1500);
+  await p.screenshot({ path: `${outDir}/${page.name}.png`, fullPage: !!page.full });
+  console.log(`${outDir}/${page.name}.png`);
+  await p.close();
+}
+await browser.close();

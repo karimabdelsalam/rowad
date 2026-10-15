@@ -30,7 +30,7 @@ trait ConfiguresPanel
             ->login($tenant ? \App\Filament\Auth\Login::class : \Filament\Auth\Pages\Login::class)
             ->font('Tajawal')
             ->colors([
-                'primary' => Color::Teal,
+                'primary' => self::brandTeal(),
                 'gray' => Color::Slate,
             ])
             ->sidebarCollapsibleOnDesktop()
@@ -89,5 +89,17 @@ trait ConfiguresPanel
             ->discoverPages(in: "{$dir}/Pages", for: "App\\Filament\\{$namespace}\\Pages")
             ->discoverWidgets(in: "{$dir}/Widgets", for: "App\\Filament\\{$namespace}\\Widgets")
             ->discoverClusters(in: "{$dir}/Clusters", for: "App\\Filament\\{$namespace}\\Clusters");
+    }
+
+    /**
+     * Teal shifted one shade darker so buttons (shade 600) are #0f766e — the landing page colour —
+     * with white text at an accessible contrast, instead of a pale teal with dark text.
+     */
+    protected static function brandTeal(): array
+    {
+        $t = Color::Teal;
+
+        return [50 => $t[50], 100 => $t[100], 200 => $t[200], 300 => $t[300], 400 => $t[500], 500 => $t[600],
+            600 => $t[700], 700 => $t[800], 800 => $t[900], 900 => $t[950], 950 => $t[950]];
     }
 }

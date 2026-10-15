@@ -75,8 +75,9 @@ class LandingPageTest extends TestCase
     {
         $listed = $this->unit('فيلا حي الملقا', ['rooms' => 6, 'details' => 'فيلا واسعة مع حديقة']);
         $hidden = $this->unit('مخفية', ['is_published' => false]);
+        $this->unit('شقة مشابهة'); // renders the "similar units" cards too
 
-        $this->get($this->host."/units/{$listed->id}")->assertOk()->assertSee('فيلا واسعة مع حديقة');
+        $this->get($this->host."/units/{$listed->id}")->assertOk()->assertSee('فيلا واسعة مع حديقة')->assertSee('شقة مشابهة');
         $this->get($this->host."/units/{$hidden->id}")->assertNotFound();
         $this->get($this->host.'/?rooms=7')->assertOk()->assertDontSee('فيلا حي الملقا');
         $this->get($this->host.'/?rooms=5')->assertOk()->assertSee('فيلا حي الملقا');

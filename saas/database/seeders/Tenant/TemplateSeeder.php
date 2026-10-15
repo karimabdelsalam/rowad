@@ -63,8 +63,25 @@ class TemplateSeeder extends Seeder
     private function printTemplates(): array
     {
         return [
-            'rent_contract' => ['عقد إيجار', '<h3 style="text-align:center">عقد إيجار رقم {serial}</h3><p>{number} — {doc_date}</p><p>إنه في يوم {today} الموافق {today_date} تم الاتفاق بين المؤجر: {owners} والمستأجر: {renters} على تأجير الوحدة {unit} الكائنة في {location} لمدة {period} تبدأ من {start_date} وتنتهي في {end_date} بقيمة إيجارية {rent_amount} ({rent_amount_words}) تدفع {payment_cycle}.</p>{terms}<p>{qrcode_owner} {qrcode_renter}</p>'],
-            'sale_contract' => ['عقد بيع', '<h3 style="text-align:center">عقد بيع رقم {serial}</h3><p>تم الاتفاق بين البائع: {owners} والمشتري: {buyers} على بيع الوحدة {unit} بمبلغ إجمالي {total_amount} ({total_amount_words}) — {payment_type}.</p>{installments_table}{terms}'],
+            'rent_contract' => ['عقد إيجار', '<h2 style="text-align:center;margin:0 0 4px">عقد إيجار</h2><p style="text-align:center;color:#4b5563;margin:0 0 16px">رقم العقد: {serial} — تاريخ العقد: {date}</p>'
+                .'<p>إنه في يوم {day} الموافق {date} تم الاتفاق بين كل من:</p>'
+                .'<table class="grid"><tr><th style="width:28%">الطرف الأول (المؤجر)</th><td>{owners}</td></tr><tr><th>الطرف الثاني (المستأجر)</th><td>{renters}</td></tr></table>'
+                .'<p>على استئجار الوحدة الموضحة أدناه وفق البيانات والبنود التالية:</p>'
+                .'<table class="grid"><tr><th>الوحدة</th><td>{unit}</td><th>الموقع</th><td>{location}</td></tr>'
+                .'<tr><th>مدة العقد</th><td>{period}</td><th>دورة الدفع</th><td>{payment_cycle}</td></tr>'
+                .'<tr><th>تاريخ البداية</th><td>{start_date}</td><th>تاريخ النهاية</th><td>{end_date}</td></tr>'
+                .'<tr><th>قيمة الدفعة</th><td colspan="3">{rent_amount} ({rent_amount_words})</td></tr></table>'
+                .'<h4>بنود العقد</h4>{terms}<h4>جدول الدفعات</h4>{installments_table}'
+                .'<table style="width:100%;margin-top:28px"><tr><td style="text-align:center;width:35%"><b>الطرف الأول (المؤجر)</b><br><br>الاسم: ....................<br><br>التوقيع: ....................</td>'
+                .'<td style="text-align:center">{qrcode_owner}<br><small>امسح الرمز للتحقق من العقد</small></td>'
+                .'<td style="text-align:center;width:35%"><b>الطرف الثاني (المستأجر)</b><br><br>الاسم: ....................<br><br>التوقيع: ....................</td></tr></table>'],
+            'sale_contract' => ['عقد بيع', '<h2 style="text-align:center;margin:0 0 4px">عقد بيع</h2><p style="text-align:center;color:#4b5563;margin:0 0 16px">رقم العقد: {serial} — تاريخ العقد: {date}</p>'
+                .'<p>إنه في يوم {day} الموافق {date} تم الاتفاق بين كل من:</p>'
+                .'<table class="grid"><tr><th style="width:28%">الطرف الأول (البائع)</th><td>{owners}</td></tr><tr><th>الطرف الثاني (المشتري)</th><td>{buyers}</td></tr></table>'
+                .'<p>على بيع الوحدة {unit} بمبلغ إجمالي قدره {total_amount} ({total_amount_words})، وطريقة السداد: {payment_type}.</p>'
+                .'<h4>جدول السداد</h4>{installments_table}<h4>بنود العقد</h4>{terms}'
+                .'<table style="width:100%;margin-top:28px"><tr><td style="text-align:center;width:50%"><b>الطرف الأول (البائع)</b><br><br>التوقيع: ....................</td>'
+                .'<td style="text-align:center"><b>الطرف الثاني (المشتري)</b><br><br>التوقيع: ....................</td></tr></table>'],
             'receipt_voucher' => ['سند قبض', '<h3 style="text-align:center">سند قبض رقم {serial}</h3><p>{doc_date}</p><p>استلمنا من: {party} مبلغ {amount} ({amount_words}) وذلك عن: {reason} — طريقة الدفع: {payment_method}</p>'],
             'payment_voucher' => ['سند صرف', '<h3 style="text-align:center">سند صرف رقم {serial}</h3><p>{doc_date}</p><p>صرفنا إلى: {party} مبلغ {amount} ({amount_words}) وذلك عن: {reason} — طريقة الدفع: {payment_method}</p>'],
             'invoice' => ['فاتورة', '<h3 style="text-align:center">فاتورة رقم {serial}</h3><p>{doc_date}</p><p>العميل: {customer}</p>{items_table}<p>الإجمالي: {total}</p>'],

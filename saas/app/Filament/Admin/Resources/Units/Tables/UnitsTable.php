@@ -34,16 +34,16 @@ class UnitsTable
             ->columns([
                 TextColumn::make('title')->searchable()->sortable(),
                 TextColumn::make('building.title')->searchable()->sortable(),
-                TextColumn::make('number')->searchable()->toggleable(),
-                TextColumn::make('category.title')->label(__('التصنيف'))->toggleable(),
+                TextColumn::make('number')->searchable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('category.title')->label(__('التصنيف'))->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('offer_type')->badge(),
                 TextColumn::make('status')->badge()->sortable(),
                 TextColumn::make('owners.full_name')->label(__('الملاك'))->listWithLineBreaks()->limitList(2)->expandableLimitedList(),
                 TextColumn::make('rent_amount')->numeric(2)->sortable()->toggleable(),
                 TextColumn::make('rooms')->numeric()->sortable()->toggleable(),
-                TextColumn::make('area')->numeric(2)->sortable()->toggleable(),
-                TextColumn::make('city.name')->toggleable(),
-                IconColumn::make('is_active')->boolean()->toggleable(),
+                TextColumn::make('area')->numeric(2)->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('city.name')->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('is_active')->boolean()->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_published')->label(__('على الموقع'))->boolean()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('floor')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('district.name')->toggleable(isToggledHiddenByDefault: true),
@@ -85,6 +85,7 @@ class UnitsTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                \Filament\Actions\ActionGroup::make([
                 EditAction::make(),
                 Action::make('toggleActive')
                     ->label(fn (Unit $record) => $record->is_active ? __('تعطيل') : __('تفعيل'))
@@ -96,6 +97,7 @@ class UnitsTable
                         return $user !== null && ($user->is_super_admin || $user->can('units.activate'));
                     })
                     ->action(fn (Unit $record) => $record->update(['is_active' => ! $record->is_active])),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

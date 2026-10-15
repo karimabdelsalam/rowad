@@ -29,6 +29,7 @@ class DocumentData
         return $this->renderer->render('rent_contract', [
             'number' => $c->number,
             'date' => $this->date($c->contract_date, $c->calendar?->value),
+            'day' => $this->dayName($c->contract_date), // legacy {day}: weekday of the contract date
             'owners' => $this->people($c->unit->owners, 'share_percent'),
             'renters' => $this->people($c->clients, 'share_percent'),
             'unit' => e($c->unit->title),
@@ -55,6 +56,7 @@ class DocumentData
         return $this->renderer->render('sale_contract', [
             'number' => $c->number,
             'date' => $this->date($c->contract_date, $c->calendar?->value),
+            'day' => $this->dayName($c->contract_date), // legacy {day}: weekday of the contract date
             'owners' => $this->people($c->unit->owners, 'share_percent'),
             'buyers' => $this->people($c->clients, 'share_percent'),
             'unit' => e($c->unit->title),
@@ -154,6 +156,11 @@ class DocumentData
     private function people($people, string $pivot): string
     {
         return e($people->map(fn ($p) => ($p->full_name).(isset($p->pivot) && (float) $p->pivot->{$pivot} < 100 ? ' ('.(float) $p->pivot->{$pivot}.'%)' : ''))->join('، '));
+    }
+
+    private function dayName(?\DateTimeInterface $date): string
+    {
+        return $date === null ? '' : \Carbon\Carbon::instance($date)->locale(app()->getLocale())->translatedFormat('l');
     }
 
     private function qr(string $data): string

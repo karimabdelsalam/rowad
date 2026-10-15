@@ -756,5 +756,11 @@
     "عملية": "Operation",
     "سجل العمليات": "Activity log",
     "إرسال بالجوال": "Send by SMS",
-    "رقم الحساب": "Account number"
+    "رقم الحساب": "Account number",
+    "سنويًا": "per year",
+    "شهريًا": "per month",
+    "يوميًا": "per day",
+    "الدفع": "Payment",
+    "لا توجد عقود تنتهي خلال 60 يومًا": "No contracts ending within 60 days",
+    "لا توجد أقساط مستحقة قريبًا": "No installments due soon"
 }

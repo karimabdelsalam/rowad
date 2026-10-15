@@ -9,6 +9,12 @@ The owner asked for continuous, uninterrupted progress on the Laravel/SaaS rewri
 - Stop only for something truly destructive or a decision only the owner can make
   (e.g. payment provider contracts, production credentials).
 
+## Rule #2: Show designed pages in the conversation
+Whenever a page with visible design is built or changed (landing page, panels, portals,
+print documents, login, emails), take a screenshot (Playwright/Chromium against a local
+demo office) and send it to the owner in the chat with SendUserFile while working.
+Script: `saas/scripts/screenshots.mjs`, demo data: `php artisan rowad:demo`.
+
 ## Project layout
 - `/` (root) — legacy PHP system (Smarty, ezSQL), upgraded to run on PHP 8.4. Kept as reference.
 - `docs/feature-inventory.md` — the parity contract: every feature of the legacy

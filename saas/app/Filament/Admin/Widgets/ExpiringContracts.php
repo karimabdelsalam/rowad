@@ -23,6 +23,7 @@ class ExpiringContracts extends TableWidget
                 ->whereBetween('end_date', [today(), today()->addDays(60)]))
             ->defaultSort('end_date')
             ->paginated([5, 10])
+            ->emptyStateHeading(__('لا توجد عقود تنتهي خلال 60 يومًا'))
             ->columns([
                 TextColumn::make('number'),
                 TextColumn::make('unit.title'),

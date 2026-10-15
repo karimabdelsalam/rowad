@@ -54,8 +54,15 @@
         .pagination .active { background: var(--primary); color: #fff; border-color: var(--primary); }
         footer { background: #0f172a; color: #cbd5e1; padding: 32px 0; margin-top: 40px; }
         footer .cols { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+        .price .cycle { font-size: .8rem; font-weight: 400; color: #64748b; margin-top: 2px; }
         .wa { position: fixed; inset-block-end: 20px; inset-inline-end: 20px; background: #25d366; color: #fff; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 8px 20px rgb(0 0 0 / .2); font-weight: 800; }
-        @media (max-width: 640px) { nav.links .hide-sm { display: none; } .hero { padding: 40px 0 72px; } }
+        nav.links a { white-space: nowrap; }
+        @media (max-width: 640px) {
+            nav.links .hide-sm { display: none; } .hero { padding: 40px 0 72px; }
+            header.top .bar { gap: 10px; min-height: 60px; }
+            .brand span { font-size: 1rem; line-height: 1.3; }
+            nav.links { gap: 10px; } nav.links .btn { padding: 6px 12px; font-size: .85rem; }
+        }
     </style>
     @stack('head')
 </head>
@@ -92,7 +99,7 @@
 </footer>
 
 @if ($whatsapp)
-    <a class="wa" href="https://wa.me/{{ $whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp">WA</a>
+    <a class="wa" href="https://wa.me/{{ $whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg></a>
 @endif
 </body>
 </html>

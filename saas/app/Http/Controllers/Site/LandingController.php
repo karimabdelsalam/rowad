@@ -64,7 +64,7 @@ class LandingController
 
         return view('site.unit', [
             'unit' => $unit,
-            'similar' => Unit::listed()->with(['city', 'media'])->whereKeyNot($unit->getKey())
+            'similar' => Unit::listed()->with(['city', 'district', 'category', 'media'])->whereKeyNot($unit->getKey())
                 ->where('property_category_id', $unit->property_category_id)->limit(3)->get(),
         ]);
     }
