@@ -107,6 +107,22 @@ class BankAccountResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                // legacy bank_accounts/sms: send the account details to a customer by SMS
+                \Filament\Actions\Action::make('sendBySms')
+                    ->label(__('إرسال بالجوال'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedDevicePhoneMobile)
+                    ->color('gray')
+                    ->schema([\Filament\Forms\Components\TextInput::make('mobile')->label(__('رقم الجوال'))->tel()->required()->maxLength(20)])
+                    ->action(function (\App\Models\BankAccount $record, array $data) {
+                        $text = collect([
+                            $record->bank?->title,
+                            $record->holder_name,
+                            filled($record->account_number) ? __('رقم الحساب').' '.$record->account_number : null,
+                            filled($record->iban) ? 'IBAN '.$record->iban : null,
+                        ])->filter()->implode("\n");
+                        app(\App\Services\Messaging\Notifier::class)->direct(\App\Enums\MessageChannel::Sms, $data['mobile'], null, $text, 'bank_account_sms');
+                        \Filament\Notifications\Notification::make()->title(__('تم إرسال الرسالة إلى الطابور'))->success()->send();
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),

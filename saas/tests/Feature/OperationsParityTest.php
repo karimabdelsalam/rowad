@@ -209,4 +209,17 @@ class OperationsParityTest extends TestCase
         $this->flushSession();
         $this->actingAs($clientUser)->get("{$this->host}/client/units")->assertOk()->assertSee('شقة المراجعة');
     }
+
+    public function test_bank_account_details_are_sent_by_sms(): void
+    {
+        $this->admin();
+        $account = \App\Models\BankAccount::create(['holder_name' => 'مكتب الرواد', 'account_number' => '123456789', 'iban' => 'SA0380000000608010167519']);
+
+        Livewire::test(\App\Filament\Admin\Resources\BankAccounts\Pages\ManageBankAccounts::class)
+            ->callTableAction('sendBySms', $account, ['mobile' => '0551234567']);
+
+        $sms = OutgoingMessage::where('event', 'bank_account_sms')->sole();
+        $this->assertSame('0551234567', $sms->recipient);
+        $this->assertStringContainsString('SA0380000000608010167519', $sms->body);
+    }
 }
