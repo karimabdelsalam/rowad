@@ -383,4 +383,28 @@ class AiAssistantTest extends TestCase
         $this->assertSame('تذكير: سداد الإيجار قبل 5 من الشهر. شكرًا لكم', $draft['body']);
         $this->assertNull($draft['subject']);
     }
+
+    public function test_owner_dashboard_summary_reads_only_their_own_data(): void
+    {
+        $mine = $this->makeUnit([[100, 100]], ['title' => 'عمارتي 1']);
+        $this->makeUnit([[100, 100]], ['title' => 'عمارة جاري']);
+        $owner = app(PortalAccounts::class)->issue($mine->owners()->first(), 'own@office.test', 'secret-pass-1')['user'];
+        $this->fakeAnalysis('- **وحدة واحدة** مؤجرة');
+        $this->actingAs($owner);
+        \Filament\Facades\Filament::setCurrentPanel('owner');
+
+        \Livewire\Livewire::test(\App\Filament\Owner\Widgets\OwnerAiSummary::class)
+            ->assertSee('ملخصي الذكي')
+            ->call('generate')
+            ->assertSee('<strong>وحدة واحدة</strong>', false);
+
+        $request = $this->sent[0]['messages'][0]['content'];
+        $this->assertStringContainsString('عمارتي 1', $request);
+        $this->assertStringNotContainsString('عمارة جاري', $request);
+
+        // Another owner does not see it.
+        $other = app(PortalAccounts::class)->issue(\App\Models\Owner::where('id', '!=', $mine->owners()->first()->id)->first(), 'other@office.test', 'secret-pass-1')['user'];
+        $this->actingAs($other);
+        \Livewire\Livewire::test(\App\Filament\Owner\Widgets\OwnerAiSummary::class)->assertDontSee('وحدة واحدة');
+    }
 }

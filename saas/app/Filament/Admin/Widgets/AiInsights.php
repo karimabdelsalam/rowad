@@ -60,6 +60,9 @@ class AiInsights extends Widget
             'insight' => $latest,
             'isToday' => $latest?->created_at->isToday() ?? false,
             'chatUrl' => $latest ? AssistantPage::getUrl(['c' => $latest->ai_conversation_id]) : AssistantPage::getUrl(),
+            'title' => __('رؤى ذكية'),
+            'subtitle' => __('ملخص يومي بالذكاء الاصطناعي لأرقام مؤسستك'),
+            'empty' => __('اضغط "توليد الرؤى" ليقرأ المساعد التحصيل والمتأخرات والإشغال والعقود القريبة من الانتهاء، ويكتب لك أهم الملاحظات وأولويات اليوم.'),
         ];
     }
 }

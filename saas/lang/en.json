@@ -1307,5 +1307,10 @@
     "مختصر ومباشر": "Short and direct",
     "حازم ومهذب": "Firm but polite",
     "اللغة": "Language",
-    "تمت كتابة المسودة. راجعها قبل الحفظ.": "Draft written. Review it before saving."
+    "تمت كتابة المسودة. راجعها قبل الحفظ.": "Draft written. Review it before saving.",
+    "ملخصي :date": "My summary :date",
+    "ملخصي الذكي": "My AI summary",
+    "ملخص بالذكاء الاصطناعي لبياناتك": "An AI summary of your data",
+    "اضغط \"توليد الرؤى\" ليلخّص لك المساعد وضع وحداتك: المستحق لك، المحصّل هذه السنة، الإشغال، والمتأخرات.": "Press \"Generate insights\" and the assistant summarises your units: what you are owed, what you received this year, occupancy and arrears.",
+    "اضغط \"توليد الرؤى\" ليلخّص لك المساعد عقدك ودفعاتك القادمة وأي مبالغ متأخرة.": "Press \"Generate insights\" and the assistant summarises your contract, upcoming payments and any overdue amounts."
 }

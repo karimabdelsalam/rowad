@@ -24,8 +24,8 @@
             <div class="ai-ins__head">
                 <div class="ai-ins__title">
                     <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $sparkle }}"/></svg></span>
-                    <span>{{ __('رؤى ذكية') }}
-                        <small>{{ $insight ? __('آخر تحديث :time', ['time' => $insight->created_at->format('Y-m-d H:i')]) : __('ملخص يومي بالذكاء الاصطناعي لأرقام مؤسستك') }}</small>
+                    <span>{{ $title }}
+                        <small>{{ $insight ? __('آخر تحديث :time', ['time' => $insight->created_at->format('Y-m-d H:i')]) : $subtitle }}</small>
                     </span>
                 </div>
                 <div class="ai-ins__actions">
@@ -41,7 +41,7 @@
             @if ($insight)
                 <div class="ai-ins__body ai-md">{!! \App\Filament\Pages\AssistantPage::markdown($insight->content) !!}</div>
             @else
-                <p class="ai-ins__empty">{{ __('اضغط "توليد الرؤى" ليقرأ المساعد التحصيل والمتأخرات والإشغال والعقود القريبة من الانتهاء، ويكتب لك أهم الملاحظات وأولويات اليوم.') }}</p>
+                <p class="ai-ins__empty">{{ $empty }}</p>
             @endif
         </div>
     </div>
