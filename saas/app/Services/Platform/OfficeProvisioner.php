@@ -1,0 +1,99 @@
+<?php
+
+namespace App\Services\Platform;
+
+use App\Exceptions\BusinessRuleException;
+use App\Models\Plan;
+use App\Models\Subscription;
+use App\Models\Tenant;
+use App\Models\User;
+use App\Support\Settings;
+use Illuminate\Support\Str;
+use Stancl\Tenancy\Database\Models\Domain;
+
+/**
+ * Creates a subscribing office: tenant row, its own database (migrated and
+ * seeded by the TenantCreated pipeline), its subdomain, a trial or paid
+ * subscription and the first administrator.
+ */
+class OfficeProvisioner
+{
+    public const RESERVED_SUBDOMAINS = ['www', 'admin', 'platform', 'api', 'app', 'mail', 'static', 'cdn', 'help', 'support'];
+
+    /**
+     * @param array{name:string, email?:?string, phone?:?string, subdomain:string, plan_id?:?int,
+     *              admin_name:string, admin_email:string, admin_password:string, locale?:string} $data
+     */
+    public function provision(array $data): Tenant
+    {
+        $subdomain = $this->normaliseSubdomain($data['subdomain']);
+        $domain = $subdomain.'.'.config('rowad.tenancy.base_domain');
+        if (Domain::where('domain', $domain)->exists()) {
+            throw new BusinessRuleException(__('النطاق :domain مستخدم من قبل', ['domain' => $domain]));
+        }
+
+        $plan = isset($data['plan_id']) ? Plan::findOrFail($data['plan_id']) : null;
+
+        $tenant = Tenant::create([
+            'name' => $data['name'],
+            'email' => $data['email'] ?? $data['admin_email'],
+            'phone' => $data['phone'] ?? null,
+            'plan_id' => $plan?->id,
+            'status' => Tenant::STATUS_TRIAL,
+            'trial_ends_at' => now()->addDays($plan?->trial_days ?? 14),
+        ]);
+        $tenant->domains()->create(['domain' => $domain]);
+
+        if ($plan !== null) {
+            Subscription::create([
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'status' => 'trialing',
+                'amount' => 0,
+                'starts_at' => now(),
+                'ends_at' => $tenant->trial_ends_at,
+                'gateway' => 'manual',
+            ]);
+        }
+
+        $tenant->run(function () use ($data) {
+            $admin = User::create([
+                'type' => 'staff',
+                'name' => $data['admin_name'],
+                'email' => $data['admin_email'],
+                'password' => $data['admin_password'],
+                'locale' => $data['locale'] ?? 'ar',
+                'email_verified_at' => now(),
+            ]);
+            $admin->assignRole('admin');
+            Settings::set('site_name', $data['name'], 'identity');
+            Settings::set('locale', $data['locale'] ?? 'ar', 'localization');
+        });
+
+        return $tenant;
+    }
+
+    public function normaliseSubdomain(string $subdomain): string
+    {
+        $subdomain = Str::of($subdomain)->lower()->trim()->replaceMatches('/[^a-z0-9-]/', '')->trim('-')->toString();
+
+        if (strlen($subdomain) < 3 || strlen($subdomain) > 40) {
+            throw new BusinessRuleException(__('النطاق الفرعي يجب أن يكون من 3 إلى 40 حرفًا إنجليزيًا أو رقمًا'));
+        }
+        if (in_array($subdomain, self::RESERVED_SUBDOMAINS, true)) {
+            throw new BusinessRuleException(__('هذا النطاق محجوز'));
+        }
+
+        return $subdomain;
+    }
+
+    public function suspend(Tenant $tenant): void
+    {
+        $tenant->update(['status' => Tenant::STATUS_SUSPENDED]);
+    }
+
+    public function activate(Tenant $tenant): void
+    {
+        $tenant->update(['status' => Tenant::STATUS_ACTIVE]);
+    }
+}

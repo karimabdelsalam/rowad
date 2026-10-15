@@ -63,6 +63,7 @@ trait ConfiguresPanel
             $panel->middleware([
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
+                \App\Http\Middleware\EnsureOfficeIsAccessible::class,
             ], isPersistent: true);
         }
 

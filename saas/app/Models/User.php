@@ -21,7 +21,7 @@ use Spatie\Permission\Traits\HasRoles;
  * Inside a tenant: staff, owners and clients of one office.
  * On the central connection: platform administrators.
  */
-#[Fillable(['type', 'name', 'username', 'email', 'mobile', 'national_id', 'password', 'locale',
+#[Fillable(['type', 'name', 'username', 'email', 'mobile', 'national_id', 'password', 'locale', 'email_verified_at',
     'is_active', 'is_super_admin', 'sms_login_enabled', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser

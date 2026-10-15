@@ -17,6 +17,7 @@ Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
+    \App\Http\Middleware\EnsureOfficeIsAccessible::class,
 ])->group(function () {
     Route::get('/', [LandingController::class, 'home'])->name('site.home');
     Route::get('/units/{unit}', [LandingController::class, 'show'])->name('site.unit');
