@@ -220,4 +220,58 @@ class AiAssistantTest extends TestCase
         $this->assertCount(12, $details['installments']);
         $this->assertSame(1500.0, $details['installments'][0]['paid']);
     }
+
+    public function test_chat_page_asks_and_shows_the_answer(): void
+    {
+        $this->fakeApi('office_overview', answer: '**الإشغال** ممتاز');
+        $admin = $this->staff();
+        $this->actingAs($admin);
+        \Filament\Facades\Filament::setCurrentPanel('admin');
+
+        \Livewire\Livewire::test(\App\Filament\Admin\Pages\Assistant::class)
+            ->assertSee('كيف أساعدك اليوم؟')
+            ->call('send', 'كيف الأداء؟')
+            ->assertSet('pending', 'كيف الأداء؟')
+            ->call('answer')
+            ->assertSet('pending', null)
+            ->assertSee('<strong>الإشغال</strong>', false)
+            ->assertSee('نظرة عامة على المؤسسة');
+
+        // Another user cannot open it.
+        $conversation = \App\Models\AiConversation::sole();
+        $this->actingAs($this->staff('agent'));
+        \Livewire\Livewire::test(\App\Filament\Admin\Pages\Assistant::class)
+            ->call('open', $conversation->id)
+            ->assertSet('conversationId', null)
+            ->call('deleteConversation', $conversation->id);
+        $this->assertNotNull($conversation->fresh());
+    }
+
+    public function test_html_in_answers_is_never_rendered(): void
+    {
+        $html = \App\Filament\Pages\AssistantPage::markdown('<script>alert(1)</script> [x](javascript:alert(1))');
+
+        $this->assertStringNotContainsString('<script>', $html);
+        $this->assertStringNotContainsString('href="javascript', $html);
+    }
+
+    public function test_assistant_is_hidden_when_the_plan_has_no_ai_and_errors_keep_the_question(): void
+    {
+        $admin = $this->staff();
+        $this->actingAs($admin);
+        \Filament\Facades\Filament::setCurrentPanel('admin');
+        config(['rowad.ai.api_key' => null]);
+
+        \Livewire\Livewire::test(\App\Filament\Admin\Pages\Assistant::class)
+            ->assertSee('غير مفعّل')
+            ->call('send', 'سؤال')
+            ->call('answer')
+            ->assertSet('question', 'سؤال')
+            ->assertSee('غير مفعّل');
+
+        $plan = Plan::create(['slug' => 'noai', 'name_ar' => 'بدون', 'name_en' => 'No AI', 'monthly_price' => 1, 'features' => []]);
+        $this->tenant->update(['plan_id' => $plan->id]);
+        $this->tenant->unsetRelation('plan');
+        $this->assertFalse(\App\Filament\Admin\Pages\Assistant::canAccess());
+    }
 }

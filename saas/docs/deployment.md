@@ -90,6 +90,10 @@ MAIL_FROM_ADDRESS=noreply@aqarnova.sa
 
 PLATFORM_ADMIN_EMAIL=<بريدك>
 PLATFORM_ADMIN_PASSWORD=<كلمة-مرور-قوية>
+
+# المساعد الذكي: مفتاح Anthropic ورقم النموذج (من صفحة Models في docs.anthropic.com)
+ANTHROPIC_API_KEY=<مفتاح>
+AI_MODEL=<رقم-النموذج>
 ```
 
 ثم:
@@ -151,7 +155,7 @@ sudo ln -s /etc/nginx/sites-available/rowad /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-في `php.ini` (FPM): `upload_max_filesize = 50M` و`post_max_size = 55M` و`memory_limit = 512M`.
+في `php.ini` (FPM): `upload_max_filesize = 50M` و`post_max_size = 55M` و`memory_limit = 512M`، وفي Nginx `fastcgi_read_timeout 180;` لأن إجابة المساعد الذكي قد تستغرق أكثر من دقيقة.
 
 ## 6. عامل الطوابير والمهام المجدولة
 

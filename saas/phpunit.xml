@@ -18,6 +18,9 @@
         </include>
     </source>
     <php>
+        <env name="ANTHROPIC_API_KEY" value="" force="true"/>
+        <env name="AI_MODEL" value="" force="true"/>
+        <env name="AI_BASE_URL" value="https://api.anthropic.com" force="true"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_LOCALE" value="ar"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

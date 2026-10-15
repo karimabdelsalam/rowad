@@ -56,4 +56,9 @@
     .dark .rowad-plan-notice--danger { background: rgb(239 68 68 / .12); border-color: rgb(239 68 68 / .3); color: #fca5a5; }
     .rowad-plan-notice__icon { width: 20px; height: 20px; flex: none; }
     .rowad-plan-notice a { margin-inline-start: auto; text-decoration: underline; font-weight: 700; }
+    .rowad-ai-shortcut { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700; color: #fff;
+        background: linear-gradient(135deg, #14b8a6, #0f766e); box-shadow: 0 4px 12px rgb(15 118 110 / .25); margin-inline-end: 6px; }
+    .rowad-ai-shortcut:hover { filter: brightness(1.08); }
+    .rowad-ai-shortcut svg { width: 18px; height: 18px; }
+    @media (max-width: 640px) { .rowad-ai-shortcut span { display: none; } .rowad-ai-shortcut { padding: 8px; } }
 </style>
