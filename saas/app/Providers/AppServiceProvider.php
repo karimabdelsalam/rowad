@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Models;
+use Filament\Forms\Components\Field;
+use Filament\Infolists\Components\Entry;
+use Filament\Tables\Columns\Column;
+use Filament\Tables\Filters\BaseFilter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
@@ -17,6 +21,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::shouldBeStrict(! $this->app->isProduction());
+
+        // Field/column labels are derived from attribute names and translated through lang/*.json.
+        Field::configureUsing(fn (Field $field) => $field->translateLabel());
+        Column::configureUsing(fn (Column $column) => $column->translateLabel());
+        Entry::configureUsing(fn (Entry $entry) => $entry->translateLabel());
+        BaseFilter::configureUsing(fn (BaseFilter $filter) => $filter->translateLabel());
 
         // Stable aliases stored in *_type columns (vouchers.party, installments.contract,
         // media, activity log, permissions) so class renames never break stored data.

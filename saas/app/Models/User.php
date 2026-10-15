@@ -29,6 +29,15 @@ class User extends Authenticatable implements FilamentUser
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
+    /** Mirrors the column defaults so new instances are complete before a refresh. */
+    protected $attributes = [
+        'type' => 'staff',
+        'locale' => 'ar',
+        'is_active' => true,
+        'is_super_admin' => false,
+        'sms_login_enabled' => false,
+    ];
+
     protected function casts(): array
     {
         return [
