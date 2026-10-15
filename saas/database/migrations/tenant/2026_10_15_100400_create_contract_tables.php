@@ -21,7 +21,6 @@ return new class extends Migration
             $table->id();
             $table->string('number', 50)->nullable()->unique();
             $table->foreignId('unit_id')->constrained()->restrictOnDelete();
-            $table->foreignId('client_id')->constrained()->restrictOnDelete(); // renter (legacy buyer)
             $table->foreignId('employee_id')->nullable()->constrained()->nullOnDelete(); // agent for commission
             $table->string('calendar', 10)->default('gregorian');
             $table->date('contract_date');                       // postdate
@@ -29,11 +28,11 @@ return new class extends Migration
             $table->date('end_date');
             $table->string('period_unit', 10);                   // day, month, year (legacy period)
             $table->unsignedSmallInteger('period_count');        // periodnum
-            $table->string('payment_cycle', 12);                 // day, month, quartyear, midyear, year
+            $table->string('payment_cycle', 12);                 // day, month, quarter, half_year, year
             $table->decimal('rent_amount', 14, 2);               // amount per payment cycle (rentvalue)
             $table->decimal('yearly_rent', 14, 2)->nullable();
             $table->decimal('commission', 14, 2)->default(0);
-            $table->string('commission_cycle', 12)->nullable();  // once, day, month, quartyear, midyear, year
+            $table->string('commission_cycle', 12)->nullable();  // once, day, month, quarter, half_year, year
             $table->boolean('vat_applicable')->default(false);
             $table->decimal('vat_percent', 5, 2)->default(0);
             $table->string('usage', 20)->nullable();             // residential, commercial (usein)
@@ -55,7 +54,6 @@ return new class extends Migration
             $table->id();
             $table->string('number', 50)->nullable()->unique();
             $table->foreignId('unit_id')->constrained()->restrictOnDelete();
-            $table->foreignId('client_id')->constrained()->restrictOnDelete(); // buyer
             $table->foreignId('employee_id')->nullable()->constrained()->nullOnDelete();
             $table->string('calendar', 10)->default('gregorian');
             $table->date('contract_date');
@@ -72,6 +70,15 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        // Legacy contract.buyer JSON {id[], share[]}: one or more renters/buyers per contract.
+        Schema::create('contract_clients', function (Blueprint $table) {
+            $table->id();
+            $table->morphs('contract');
+            $table->foreignId('client_id')->constrained()->restrictOnDelete();
+            $table->decimal('share_percent', 5, 2)->default(100);
+            $table->unique(['contract_type', 'contract_id', 'client_id'], 'contract_client_unique');
         });
 
         // Legacy rightsid lists on rent/sell contracts.
@@ -101,7 +108,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        foreach (['letters', 'contract_term_selections', 'sale_contracts', 'rent_contracts', 'contract_terms'] as $name) {
+        foreach (['letters', 'contract_term_selections', 'contract_clients', 'sale_contracts', 'rent_contracts', 'contract_terms'] as $name) {
             Schema::dropIfExists($name);
         }
     }

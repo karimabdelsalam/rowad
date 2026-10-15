@@ -67,14 +67,14 @@ return new class extends Migration
             $table->decimal('daily_rent', 14, 2)->nullable();          // rent_day
             $table->decimal('monthly_rent', 14, 2)->nullable();        // rent_month
             $table->string('rent_period', 10)->nullable();             // day, month, year
-            $table->string('rent_payment_cycle', 12)->nullable();      // day, month, quartyear, midyear, year
+            $table->string('rent_payment_cycle', 12)->nullable();      // day, month, quarter, half_year, year
             $table->decimal('rent_commission', 14, 2)->nullable();     // rentcomm
             $table->decimal('sale_commission', 14, 2)->nullable();     // salecomm
             $table->boolean('vat_applicable')->default(false);         // tax
 
             // Recurring property-management fee charged to owners (legacy mcost*).
             $table->decimal('management_fee', 14, 2)->nullable();
-            $table->string('management_fee_cycle', 12)->nullable();    // once, month, quartyear, midyear, year
+            $table->string('management_fee_cycle', 12)->nullable();    // once, month, quarter, half_year, year
             $table->date('management_fee_start_date')->nullable();
             $table->date('management_fee_next_date')->nullable()->index();
 

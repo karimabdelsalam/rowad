@@ -11,14 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Platform administrators (same columns as tenant users so one User model serves both).
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('type', 20)->default('staff')->index(); // staff, owner, client
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('username')->nullable()->unique();
+            $table->string('email')->nullable()->unique();
+            $table->string('mobile', 30)->nullable()->index();
+            $table->string('national_id', 30)->nullable(); // legacy idnum
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('locale', 5)->default('ar');
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_super_admin')->default(false); // legacy user.super
+            $table->boolean('sms_login_enabled')->default(false);
+            $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

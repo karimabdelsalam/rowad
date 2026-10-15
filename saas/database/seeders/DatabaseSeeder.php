@@ -2,24 +2,34 @@
 
 namespace Database\Seeders;
 
+use App\Models\Plan;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/** Central database: subscription plans and the first platform administrator. */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        foreach ([
+            ['basic', 'الأساسية', 'Basic', 199, 1990, 50, 3, 1024, 200, ['owner_portal']],
+            ['professional', 'الاحترافية', 'Professional', 449, 4490, 300, 10, 10240, 1000, ['owner_portal', 'client_portal', 'zatca', 'campaigns']],
+            ['enterprise', 'المؤسسات', 'Enterprise', 999, 9990, null, null, 51200, 5000, ['owner_portal', 'client_portal', 'zatca', 'campaigns', 'api', 'custom_domain']],
+        ] as $i => [$slug, $ar, $en, $monthly, $yearly, $units, $users, $storage, $sms, $features]) {
+            Plan::updateOrCreate(['slug' => $slug], [
+                'name_ar' => $ar, 'name_en' => $en, 'monthly_price' => $monthly, 'yearly_price' => $yearly,
+                'max_units' => $units, 'max_users' => $users, 'max_storage_mb' => $storage, 'max_sms_per_month' => $sms,
+                'features' => $features, 'trial_days' => 14, 'sort_order' => $i,
+            ]);
+        }
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        if ($email = env('PLATFORM_ADMIN_EMAIL')) {
+            User::firstOrCreate(['email' => $email], [
+                'name' => 'Platform Admin',
+                'password' => env('PLATFORM_ADMIN_PASSWORD') ?: str()->password(16),
+                'type' => 'staff',
+                'is_super_admin' => true,
+            ]);
+        }
     }
 }

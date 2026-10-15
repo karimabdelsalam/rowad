@@ -81,8 +81,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('unit_id')->constrained()->restrictOnDelete();
             $table->morphs('contract'); // RentContract | SaleContract
-            // day_rent, month_rent, year_rent_month, year_rent_quartyear, year_rent_midyear,
-            // year_rent_year, instant_sell, parts_sell, installs_sell, expenses
+            // App\Enums\InstallmentType: day_rent, month_rent, year_rent_month/quarter/half_year/year,
+            // instant_sale, parts_sale, installment_sale, expenses
             $table->string('type', 30)->index();
             $table->string('calendar', 10)->default('gregorian');
             $table->date('due_date')->index();
@@ -106,13 +106,13 @@ return new class extends Migration
         // Legacy transactions: owner ledger (what the office owes owners and vice versa).
         Schema::create('owner_transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('owner_id')->nullable()->constrained()->nullOnDelete(); // null = office/company
+            $table->foreignId('owner_id')->nullable()->constrained()->nullOnDelete(); // null = office's own entry (commission2, comp_tax)
             $table->foreignId('unit_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('transaction_type_id')->constrained()->restrictOnDelete();
             $table->foreignId('installment_id')->nullable()->constrained()->nullOnDelete();
             $table->nullableMorphs('contract');
             $table->string('source', 10)->nullable(); // rent, sell, build
-            $table->string('direction', 6);           // credit (owed to owner), debit (owed by owner)
+            $table->string('direction', 6);           // debit = owed to owner, credit = deducted from owner
             $table->decimal('amount', 14, 2);
             $table->decimal('vat_amount', 14, 2)->default(0);
             $table->date('due_date')->index();

@@ -11,8 +11,8 @@ return new class extends Migration
     {
         $table->string('first_name');                       // legacy fname
         $table->string('father_name')->nullable();          // legacy fathname
-        $table->string('grandfather_name')->nullable();     // legacy famname
-        $table->string('family_name')->nullable();          // legacy lname
+        $table->string('grandfather_name')->nullable();     // legacy lname (legacy display order: fname fathname lname famname)
+        $table->string('family_name')->nullable();          // legacy famname
         $table->string('full_name')->index();               // denormalised for search/sort
         $table->string('id_type', 30)->nullable();          // national_id, iqama, passport, cr
         $table->string('id_number', 50)->nullable()->index();
