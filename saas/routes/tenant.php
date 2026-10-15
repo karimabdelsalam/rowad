@@ -24,6 +24,12 @@ Route::middleware([
     Route::post('/contact', [LandingController::class, 'inquire'])->name('site.contact');
     Route::post('/units/{unit}/inquiry', [LandingController::class, 'inquire'])->name('site.unit.inquiry');
     Route::get('/media/{media}', MediaController::class)->name('site.media');
+    Route::get('/branding/logo', function () {
+        $path = \App\Support\Settings::get('logo');
+        abort_unless(filled($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->response($path, headers: ['Cache-Control' => 'public, max-age=3600']);
+    })->name('site.logo');
 
     Route::get('/impersonate/{user}/{panel}', [\App\Http\Controllers\ImpersonationController::class, 'start'])
         ->middleware('signed')->name('portal.impersonate');

@@ -21,6 +21,7 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset()
             ->profile()
             ->pages([Dashboard::class])
+            ->widgets([])
             ->navigationGroups([
                 NavigationGroup::make(fn () => __('العقارات')),
                 NavigationGroup::make(fn () => __('العقود')),

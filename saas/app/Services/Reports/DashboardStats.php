@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Services\Reports;
+
+use App\Enums\ContractStatus;
+use App\Enums\LedgerDirection;
+use App\Enums\UnitStatus;
+use App\Models\Client;
+use App\Models\Installment;
+use App\Models\Owner;
+use App\Models\OwnerTransaction;
+use App\Models\RentContract;
+use App\Models\SaleContract;
+use App\Models\Unit;
+use Illuminate\Database\Eloquent\Builder;
+
+/** Figures behind the dashboards (legacy dashboard collectStats / graphicStats / collectOwnerStats). */
+class DashboardStats
+{
+    /** @return array<string, float|int> */
+    public function office(): array
+    {
+        $units = Unit::where('is_active', true);
+        $total = (clone $units)->count();
+        $rented = (clone $units)->where('status', UnitStatus::Rented)->count();
+        $pending = Installment::where('is_collected', false)->where('type', '!=', 'expenses');
+
+        return [
+            'units' => $total,
+            'rented' => $rented,
+            'available' => (clone $units)->where('status', UnitStatus::Available)->count(),
+            'occupancy' => $total > 0 ? round($rented / $total * 100, 1) : 0.0,
+            'due_this_month' => $this->remaining((clone $pending)->whereBetween('due_date', [today()->startOfMonth(), today()->endOfMonth()])),
+            'overdue' => $this->remaining((clone $pending)->whereDate('due_date', '<', today())),
+            'collected_this_month' => round((float) Installment::where('is_collected', true)
+                ->whereBetween('collected_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount'), 2),
+            'owners_payable' => $this->balance(OwnerTransaction::whereNotNull('owner_id')),
+            'active_contracts' => RentContract::where('status', ContractStatus::Active)->count(),
+        ];
+    }
+
+    /** @return array{labels: list<string>, collected: list<float>, due: list<float>} */
+    public function monthlyCollections(int $year): array
+    {
+        $collected = $due = array_fill(1, 12, 0.0);
+
+        Installment::where('is_collected', true)->whereYear('collected_at', $year)->get(['amount', 'collected_at'])
+            ->each(function ($i) use (&$collected) { $collected[(int) $i->collected_at->format('n')] += (float) $i->amount; });
+        Installment::where('type', '!=', 'expenses')->whereYear('due_date', $year)->get(['amount', 'due_date'])
+            ->each(function ($i) use (&$due) { $due[(int) $i->due_date->format('n')] += (float) $i->amount; });
+
+        return [
+            'labels' => array_map(fn ($m) => now()->setDate($year, $m, 1)->translatedFormat('M'), range(1, 12)),
+            'collected' => array_values(array_map(fn ($v) => round($v, 2), $collected)),
+            'due' => array_values(array_map(fn ($v) => round($v, 2), $due)),
+        ];
+    }
+
+    /** @return array<string, float|int> */
+    public function owner(Owner $owner): array
+    {
+        $units = Unit::whereHas('owners', fn (Builder $q) => $q->whereKey($owner->getKey()));
+
+        return [
+            'units' => (clone $units)->count(),
+            'rented' => (clone $units)->where('status', UnitStatus::Rented)->count(),
+            'balance' => $owner->outstandingBalance(),
+            'received_this_year' => round((float) OwnerTransaction::where('owner_id', $owner->id)->where('direction', LedgerDirection::Debit)
+                ->where('is_settled', true)->whereYear('settled_at', now()->year)->sum('amount'), 2),
+        ];
+    }
+
+    /** @return array{next: ?Installment, outstanding: float, overdue: float, contracts: int} */
+    public function client(Client $client): array
+    {
+        $mine = Installment::whereHasMorph('contract', [RentContract::class, SaleContract::class],
+            fn (Builder $q) => $q->whereHas('clients', fn (Builder $q) => $q->whereKey($client->getKey())))
+            ->where('is_collected', false);
+
+        return [
+            'next' => (clone $mine)->orderBy('due_date')->first(),
+            'outstanding' => $this->remaining(clone $mine),
+            'overdue' => $this->remaining((clone $mine)->whereDate('due_date', '<', today())),
+            'contracts' => $client->rentContracts()->where('status', ContractStatus::Active)->count()
+                + $client->saleContracts()->where('status', ContractStatus::Active)->count(),
+        ];
+    }
+
+    private function remaining(Builder $installments): float
+    {
+        return round((float) $installments->sum('amount') - (float) $installments->sum('paid_amount'), 2);
+    }
+
+    private function balance(Builder $entries): float
+    {
+        $rows = (clone $entries)->where('is_settled', false)->selectRaw('direction, SUM(amount) as total')->groupBy('direction')->pluck('total', 'direction');
+
+        return round((float) ($rows['debit'] ?? 0) - (float) ($rows['credit'] ?? 0), 2);
+    }
+}

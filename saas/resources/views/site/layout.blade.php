@@ -63,7 +63,7 @@
 <header class="top">
     <div class="container bar">
         <a href="{{ route('site.home') }}" class="brand">
-            @if ($logo)<img src="{{ $logo }}" alt="">@endif
+            @if ($logo)<img src="{{ route('site.logo') }}" alt="">@endif
             <span>{{ Website::name() }}</span>
         </a>
         <nav class="links">
