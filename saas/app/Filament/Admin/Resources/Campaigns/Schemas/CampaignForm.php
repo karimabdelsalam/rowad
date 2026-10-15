@@ -3,45 +3,38 @@
 namespace App\Filament\Admin\Resources\Campaigns\Schemas;
 
 use App\Enums\MessageChannel;
-use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class CampaignForm
 {
+    public static function audiences(): array
+    {
+        return [
+            'owners' => __('كل الملاك'),
+            'clients' => __('كل العملاء'),
+            'renters' => __('المستأجرون الحاليون'),
+            'buyers' => __('المشترون'),
+            'employees' => __('الموظفون'),
+            'subscribers' => __('القائمة البريدية'),
+        ];
+    }
+
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                Select::make('channel')
-                    ->options(MessageChannel::class)
-                    ->required(),
-                TextInput::make('audience')
-                    ->required(),
-                TextInput::make('subject'),
-                Textarea::make('body')
-                    ->required()
-                    ->columnSpanFull(),
-                TextInput::make('status')
-                    ->required()
-                    ->default('draft'),
-                TextInput::make('recipients_count')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                TextInput::make('sent_count')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                TextInput::make('failed_count')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                DateTimePicker::make('scheduled_at'),
-                TextInput::make('created_by')
-                    ->numeric(),
-            ]);
+        $isSms = fn (Get $get) => ($get('channel') instanceof MessageChannel ? $get('channel')->value : $get('channel')) === 'sms';
+
+        return $schema->columns(2)->components([
+            Select::make('channel')->options(MessageChannel::class)->default('mail')->required()->live(),
+            Select::make('audience')->options(self::audiences())->required(),
+            TextInput::make('subject')->required(fn (Get $get) => ! $isSms($get))->hidden($isSms)->columnSpanFull(),
+            RichEditor::make('body')->required()->hidden($isSms)->columnSpanFull(),
+            Textarea::make('body')->required()->visible($isSms)->maxLength(612)->rows(4)->columnSpanFull()
+                ->helperText(__('الرسالة العربية الواحدة 70 حرفًا')),
+        ]);
     }
 }

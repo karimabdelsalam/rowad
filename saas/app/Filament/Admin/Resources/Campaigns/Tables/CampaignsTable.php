@@ -52,8 +52,27 @@ class CampaignsTable
                 //
             ])
             ->recordActions([
+                \Filament\Actions\Action::make('send')
+                    ->label(__('إرسال الآن'))
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPaperAirplane)
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (\App\Models\Campaign $record) => __('سيتم الإرسال إلى :n مستلم', [
+                        'n' => app(\App\Services\Messaging\CampaignService::class)->recipients($record->audience)
+                            ->pluck($record->channel->value === 'sms' ? 'mobile' : 'email')->filter()->unique()->count(),
+                    ]))
+                    ->visible(fn (\App\Models\Campaign $record) => $record->status === 'draft'
+                        && (auth()->user()?->is_super_admin || auth()->user()?->can('campaigns.send')))
+                    ->action(function (\App\Models\Campaign $record) {
+                        try {
+                            $n = app(\App\Services\Messaging\CampaignService::class)->send($record);
+                            \Filament\Notifications\Notification::make()->title(__('تمت جدولة :n رسالة', ['n' => $n]))->success()->send();
+                        } catch (\App\Exceptions\BusinessRuleException $e) {
+                            \Filament\Notifications\Notification::make()->title($e->getMessage())->danger()->send();
+                        }
+                    }),
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->visible(fn (\App\Models\Campaign $record) => $record->status === 'draft'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
