@@ -44,9 +44,25 @@ class InstallmentResource extends PortalResource
                 TextColumn::make('type')->badge(),
                 TextColumn::make('amount')->numeric(2),
                 TextColumn::make('paid_amount')->state(fn (\App\Models\Installment $record) => $record->paidTotal())->numeric(2),
+                TextColumn::make('remaining')->label(__('المتبقي'))->state(fn (\App\Models\Installment $record) => $record->remainingAmount())->numeric(2),
                 IconColumn::make('is_collected')->boolean(),
             ])
-            ->filters([TernaryFilter::make('is_collected')]);
+            // legacy owner "my payments": filter by property and by tenant
+            ->filters([
+                TernaryFilter::make('is_collected'),
+                \Filament\Tables\Filters\SelectFilter::make('unit_id')->label(__('الوحدة'))
+                    ->options(fn () => \App\Models\Unit::whereHas('owners', fn (Builder $q) => $q->whereKey(Portal::owner()->getKey()))->orderBy('title')->pluck('title', 'id')->all()),
+                \Filament\Tables\Filters\SelectFilter::make('building')->label(__('العقار'))
+                    ->options(fn () => \App\Models\Building::whereHas('units.owners', fn (Builder $q) => $q->whereKey(Portal::owner()->getKey()))->orderBy('title')->pluck('title', 'id')->all())
+                    ->query(fn (Builder $query, array $data) => filled($data['value'] ?? null) ? $query->whereHas('unit', fn (Builder $q) => $q->where('building_id', $data['value'])) : $query),
+                \Filament\Tables\Filters\Filter::make('tenant')->label(__('المستأجر'))
+                    ->schema([\Filament\Forms\Components\TextInput::make('name')->label(__('اسم المستأجر'))])
+                    ->query(fn (Builder $query, array $data) => filled($term = trim((string) ($data['name'] ?? '')))
+                        ? $query->whereHasMorph('contract', [\App\Models\RentContract::class, \App\Models\SaleContract::class],
+                            fn (Builder $q) => $q->whereHas('clients', fn (Builder $q) => $q->where('full_name', 'like', "%{$term}%")))
+                        : $query)
+                    ->indicateUsing(fn (array $data) => filled($data['name'] ?? null) ? __('المستأجر').': '.$data['name'] : null),
+            ]);
     }
 
     public static function getPages(): array

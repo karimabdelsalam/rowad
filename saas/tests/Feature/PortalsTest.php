@@ -77,6 +77,22 @@ class PortalsTest extends TestCase
         $this->get("{$this->host}/owner/owner-transactions")->assertOk()->assertSee('11,111')->assertDontSee('22,222');
     }
 
+    public function test_owner_filters_collections_by_unit_and_tenant_within_their_own_units(): void
+    {
+        $s = $this->scenario();
+        $this->actingAs($s['A']['owner']);
+        \Filament\Facades\Filament::setCurrentPanel('owner');
+        $mine = $s['A']['contract']->installments()->get();
+        $s['B']['contract']->clients()->first()->update(['first_name' => 'سلمان', 'family_name' => 'العتيبي']);
+        $tenantA = $s['A']['contract']->clients()->first()->full_name;
+        $tenantB = 'سلمان العتيبي';
+
+        \Livewire\Livewire::test(\App\Filament\Owner\Resources\Installments\Pages\ManageInstallments::class)
+            ->filterTable('tenant', ['name' => $tenantA])->assertCanSeeTableRecords($mine)
+            ->filterTable('tenant', ['name' => $tenantB])->assertCountTableRecords(0)
+            ->assertTableFilterExists('unit_id');
+    }
+
     public function test_client_sees_only_their_contracts_and_payments(): void
     {
         $s = $this->scenario();
