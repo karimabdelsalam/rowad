@@ -222,7 +222,23 @@ find /var/backups/aqarnova -maxdepth 1 -type d -mtime +14 -exec rm -rf {} +
 30 2 * * * /usr/local/bin/aqarnova-backup.sh
 ```
 
-## 9. نقل مؤسسة من نظام رواد السابق
+## 9. النطاق الخاص لمؤسسة (باقة المؤسسات)
+
+1. المؤسسة تضيف في لوحة نطاقها سجل `CNAME` من `alrowad.com.sa` (أو `www`) إلى `aqarnova.sa`، أو سجل `A` إلى IP السيرفر للنطاق الجذري.
+2. من لوحة المنصة: المؤسسات ← تعديل المؤسسة ← النطاقات ← "إضافة نطاق خاص".
+3. على السيرفر، شهادة للنطاق وكتلة Nginx له (نفس إعداد القسم 5 مع تغيير الاسم والشهادة):
+
+```bash
+sudo certbot certonly --nginx -d alrowad.com.sa -d www.alrowad.com.sa
+sudo cp /etc/nginx/sites-available/rowad /etc/nginx/sites-available/alrowad.com.sa
+# عدّل server_name و ssl_certificate في الملف الجديد ثم:
+sudo ln -s /etc/nginx/sites-available/alrowad.com.sa /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+يبقى النطاق الفرعي على المنصة يعمل دائمًا ولا يمكن حذفه (روابط البوابات والرسائل ورموز QR تعتمد عليه).
+
+## 10. نقل مؤسسة من نظام رواد السابق
 
 1. أنشئ المؤسسة من لوحة المنصة (`/platform`) أو من صفحة التسجيل.
 2. استورد قاعدة القديم في MySQL على السيرفر (قاعدة مؤقتة)، وانسخ مجلد `media` القديم.
@@ -238,7 +254,7 @@ LEGACY_DB_PASSWORD=<كلمة-مرور-القاعدة-القديمة> php artisan
 - كلمات مرور المستخدمين القديمة (MD5) تعمل عند أول دخول وتُحوَّل تلقائيًا لتشفير آمن.
 - راجع الأعداد في نهاية الأمر (وحدات، عقود، مجموع الإيجارات) مع النظام القديم قبل الاعتماد، ثم احذف القاعدة المؤقتة.
 
-## 10. قائمة التحقق قبل الإطلاق
+## 11. قائمة التحقق قبل الإطلاق
 
 - [ ] `APP_DEBUG=false` و`APP_ENV=production`.
 - [ ] شهادة Wildcard تعمل على `aqarnova.sa` وأي نطاق فرعي.

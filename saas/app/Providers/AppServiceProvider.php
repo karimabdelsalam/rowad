@@ -33,8 +33,14 @@ class AppServiceProvider extends ServiceProvider
         BaseFilter::configureUsing(fn (BaseFilter $filter) => $filter->translateLabel());
 
         // Same date look in every browser (native inputs follow the OS locale, e.g. mm/dd/yyyy); week starts on Saturday.
+        \Filament\Forms\Components\DateTimePicker::configureUsing(fn (\Filament\Forms\Components\DateTimePicker $picker) => $picker::class === \Filament\Forms\Components\DateTimePicker::class
+            ? $picker->native(false)->displayFormat("Y-m-d\u{200E} H:i")->seconds(false)->firstDayOfWeek(6) // LRM keeps date and time in order inside RTL
+            : $picker);
         \Filament\Forms\Components\DatePicker::configureUsing(fn (\Filament\Forms\Components\DatePicker $picker) => $picker
             ->native(false)->displayFormat('Y-m-d')->firstDayOfWeek(6)->closeOnDateSelection());
+
+        // Plan storage quota for every upload (legacy total_file_size check).
+        \Filament\Forms\Components\BaseFileUpload::configureUsing(fn (\Filament\Forms\Components\BaseFileUpload $upload) => $upload->rule(new \App\Rules\WithinStoragePlan));
 
         // Arabic UI with Western digits (Saudi business convention, as in the legacy system).
         Table::configureUsing(fn (Table $table) => $table->defaultNumberLocale('en'));

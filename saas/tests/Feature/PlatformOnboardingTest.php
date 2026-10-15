@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Platform\Resources\Tenants\Pages\CreateTenant;
+use App\Filament\Platform\Resources\Tenants\Pages\EditTenant;
+use App\Filament\Platform\Resources\Tenants\RelationManagers\DomainsRelationManager;
 use App\Filament\Platform\Resources\Tenants\Pages\ListTenants;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -97,6 +99,40 @@ class PlatformOnboardingTest extends TestCase
                 $this->addToAssertionCount(1);
             }
         }
+    }
+
+    public function test_platform_admin_signs_in_through_the_login_form(): void
+    {
+        $this->platformAdmin();
+        Filament::setCurrentPanel('platform');
+
+        Livewire::test(\Filament\Auth\Pages\Login::class)
+            ->fillForm(['email' => 'root@rowad.test', 'password' => 'secret-password'])
+            ->call('authenticate')
+            ->assertHasNoFormErrors();
+        $this->assertAuthenticated();
+    }
+
+    public function test_platform_admin_links_an_office_to_its_own_domain(): void
+    {
+        $tenant = app(OfficeProvisioner::class)->provision(['name' => 'مكتب', 'subdomain' => 'own', 'admin_name' => 'a',
+            'admin_email' => 'a@a.test', 'admin_password' => 'secret-pass']);
+        tenancy()->end();
+
+        $this->actingAs($this->platformAdmin());
+        Filament::setCurrentPanel('platform');
+        $manager = fn () => Livewire::test(DomainsRelationManager::class, ['ownerRecord' => $tenant, 'pageClass' => EditTenant::class]);
+
+        $manager()->callTableAction('create', data: ['domain' => 'not a domain'])->assertHasTableActionErrors(['domain']);
+        $manager()->callTableAction('create', data: ['domain' => 'own.localhost'])->assertHasTableActionErrors(['domain']);
+        $manager()->callTableAction('create', data: ['domain' => 'https://Own-Office.SA/'])->assertHasNoTableActionErrors();
+        $this->assertSame(['own.localhost', 'own-office.sa'], $tenant->domains()->orderBy('id')->pluck('domain')->all());
+
+        $subdomain = $tenant->domains()->where('domain', 'own.localhost')->sole();
+        $manager()->assertTableActionHidden('delete', $subdomain);
+
+        auth()->logout();
+        $this->get('http://own-office.sa/admin/login')->assertOk();
     }
 
     public function test_suspended_office_is_blocked_until_reactivated(): void

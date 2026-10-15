@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\MessageChannel;
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Admin\Pages\Subscription;
+use App\Filament\Admin\Resources\OfficeFiles\Pages\ManageOfficeFiles;
 use App\Filament\Admin\Resources\Campaigns\CampaignResource;
 use App\Filament\Admin\Resources\Units\Pages\CreateUnit;
 use App\Filament\Admin\Resources\Units\Pages\ListUnits;
@@ -17,6 +18,7 @@ use App\Support\PlanLimits;
 use App\Support\Settings;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -37,7 +39,7 @@ class PlanLimitsTest extends TestCase
     {
         parent::setUp();
         $this->plan = Plan::create(['slug' => 'mini', 'name_ar' => 'مصغرة', 'name_en' => 'Mini', 'monthly_price' => 99, 'is_active' => true,
-            'max_units' => 2, 'max_users' => 5, 'max_sms_per_month' => 1, 'features' => ['client_portal']]);
+            'max_units' => 2, 'max_users' => 5, 'max_storage_mb' => 100, 'max_sms_per_month' => 1, 'features' => ['client_portal']]);
         Plan::create(['slug' => 'pro', 'name_ar' => 'احترافية', 'name_en' => 'Pro', 'monthly_price' => 399, 'is_active' => true, 'features' => array_keys(PlanLimits::FEATURES)]);
         Plan::create(['slug' => 'starter', 'name_ar' => 'مبتدئة', 'name_en' => 'Starter', 'monthly_price' => 49, 'is_active' => true, 'features' => []]);
         $tenant = $this->initializeTenancy(['plan_id' => $this->plan->id]);
@@ -140,5 +142,18 @@ class PlanLimitsTest extends TestCase
         $this->tenant->update(['plan_id' => $pro->id]);
         $this->tenant->unsetRelation('plan');
         Livewire::test(Subscription::class)->assertActionHidden('requestUpgrade');
+    }
+
+    public function test_uploads_stop_when_plan_storage_is_full(): void
+    {
+        $this->actingAs($this->admin());
+        $upload = fn () => Livewire::test(ManageOfficeFiles::class)
+            ->callAction('create', ['title' => 'ملف', 'file' => UploadedFile::fake()->create('a.pdf', 10, 'application/pdf')]);
+
+        $upload()->assertHasNoActionErrors();
+
+        $this->tenant->forceFill(['usage' => ['storage_mb' => 100.5]])->save();
+        $upload()->assertHasActionErrors(['file']);
+        $this->assertSame(1, \App\Models\OfficeFile::count());
     }
 }

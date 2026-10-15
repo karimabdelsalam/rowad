@@ -1140,5 +1140,13 @@
     "رسائل SMS هذا الشهر": "SMS this month",
     "فترة تجريبية": "Trial",
     "الخدمة غير متاحة": "Service unavailable",
-    ":used من :limit": ":used of :limit"
+    ":used من :limit": ":used of :limit",
+    "امتلأت مساحة التخزين في باقتك (:limit ميجا). احذف ملفات غير مطلوبة أو اطلب ترقية الباقة.": "Your plan's storage is full (:limit MB). Delete files you no longer need or request a plan upgrade.",
+    "هذا النطاق مستخدم لمؤسسة أخرى أو مضاف بالفعل.": "This domain is already used by another organization or already added.",
+    "صيغة النطاق غير صالحة.": "Invalid domain format.",
+    "أضف في لوحة النطاق سجل CNAME يشير إلى :target، ثم أصدر شهادة SSL للنطاق على السيرفر.": "In the domain's DNS settings add a CNAME record pointing to :target, then issue an SSL certificate for the domain on the server.",
+    "تنبيه: باقة المؤسسة الحالية لا تشمل النطاق الخاص.": "Note: the organization's current plan does not include a custom domain.",
+    "نطاق المنصة": "Platform subdomain",
+    "إضافة نطاق خاص": "Add custom domain",
+    "النطاق": "Domain"
 }
