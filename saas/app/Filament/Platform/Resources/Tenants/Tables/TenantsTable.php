@@ -52,6 +52,15 @@ class TenantsTable
                     ->icon(Heroicon::OutlinedArrowTrendingUp)
                     ->tooltip(fn (Tenant $record) => $record->upgrade_request['note'] ?? null)
                     ->placeholder('-'),
+                // AI questions this month against the plan's quota (measured hourly by rowad:usage)
+                TextColumn::make('ai_usage')->label(__('الذكاء الاصطناعي'))->toggleable()
+                    ->state(fn (Tenant $record) => isset($record->usage['ai_messages'])
+                        ? number_format($record->usage['ai_messages']).' / '.($record->plan?->max_ai_messages_per_month ? number_format($record->plan->max_ai_messages_per_month) : '∞')
+                        : null)
+                    ->tooltip(fn (Tenant $record) => isset($record->usage['ai_input_tokens'])
+                        ? __('رموز هذا الشهر: :in إدخال، :out إخراج', ['in' => number_format($record->usage['ai_input_tokens']), 'out' => number_format($record->usage['ai_output_tokens'] ?? 0)])
+                        : null)
+                    ->placeholder('-'),
                 TextColumn::make('email')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')->dateTime('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])

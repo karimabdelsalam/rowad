@@ -165,4 +165,25 @@ class SubscriptionLifecycleTest extends TestCase
             ->assertHasActionErrors(['confirm_name']);
         $this->assertNotNull(Tenant::find($this->office->id));
     }
+
+    public function test_platform_sees_each_office_ai_use_this_month(): void
+    {
+        $this->office->run(function () {
+            $user = User::create(['name' => 'a', 'email' => 'ai@ofuq.test', 'password' => 'secret-password']);
+            $conversation = \App\Models\AiConversation::create(['user_id' => $user->id, 'panel' => 'admin']);
+            $conversation->messages()->create(['role' => 'user', 'content' => 'س']);
+            $conversation->messages()->create(['role' => 'assistant', 'content' => 'ج', 'input_tokens' => 1200, 'output_tokens' => 300]);
+            $conversation->messages()->create(['role' => 'assistant', 'content' => 'ج', 'input_tokens' => 800, 'output_tokens' => 200,
+                'created_at' => now()->subMonth()]); // last month does not count
+        });
+
+        $this->artisan('rowad:usage')->assertSuccessful();
+        $usage = $this->office->fresh()->usage;
+        $this->assertSame([1, 1200, 300], [$usage['ai_messages'], $usage['ai_input_tokens'], $usage['ai_output_tokens']]);
+
+        $this->actingAs($this->platformAdmin());
+        Filament::setCurrentPanel('platform');
+        Livewire::test(\App\Filament\Platform\Widgets\AiUsage::class)->assertSee('مكتب الأفق')->assertSee('1 / 100');
+        Livewire::test(ListTenants::class)->assertSee('1 / 100');
+    }
 }

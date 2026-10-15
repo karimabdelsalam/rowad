@@ -1312,5 +1312,11 @@
     "ملخصي الذكي": "My AI summary",
     "ملخص بالذكاء الاصطناعي لبياناتك": "An AI summary of your data",
     "اضغط \"توليد الرؤى\" ليلخّص لك المساعد وضع وحداتك: المستحق لك، المحصّل هذه السنة، الإشغال، والمتأخرات.": "Press \"Generate insights\" and the assistant summarises your units: what you are owed, what you received this year, occupancy and arrears.",
-    "اضغط \"توليد الرؤى\" ليلخّص لك المساعد عقدك ودفعاتك القادمة وأي مبالغ متأخرة.": "Press \"Generate insights\" and the assistant summarises your contract, upcoming payments and any overdue amounts."
+    "اضغط \"توليد الرؤى\" ليلخّص لك المساعد عقدك ودفعاتك القادمة وأي مبالغ متأخرة.": "Press \"Generate insights\" and the assistant summarises your contract, upcoming payments and any overdue amounts.",
+    "الذكاء الاصطناعي": "AI",
+    "رموز هذا الشهر: :in إدخال، :out إخراج": "Tokens this month: :in input, :out output",
+    "استهلاك الذكاء الاصطناعي هذا الشهر": "AI usage this month",
+    ":messages سؤال · :in رمز إدخال · :out رمز إخراج": ":messages questions · :in input tokens · :out output tokens",
+    "لم تستخدم أي مؤسسة المساعد الذكي هذا الشهر بعد.": "No organization has used the AI assistant this month yet.",
+    ":tokens رمز": ":tokens tokens"
 }
