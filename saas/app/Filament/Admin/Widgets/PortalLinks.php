@@ -22,7 +22,7 @@ class PortalLinks extends Widget
             ['label' => __('بوابة العملاء'), 'url' => url('/client')],
         ];
         if (\App\Support\Website::enabled()) {
-            $links[] = ['label' => __('موقع المكتب'), 'url' => url('/')];
+            $links[] = ['label' => __('موقع المؤسسة'), 'url' => url('/')];
         }
 
         return array_map(fn (array $link) => $link + ['qr' => (new QRCode)->render($link['url'])], $links);

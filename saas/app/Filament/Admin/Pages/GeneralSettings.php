@@ -94,8 +94,8 @@ class GeneralSettings extends Page
         return $schema->statePath('data')->components([
             Tabs::make()->persistTabInQueryString()->tabs([
                 Tab::make(__('بيانات المنشأة'))->columns(2)->schema([
-                    TextInput::make('site_name')->label(__('اسم المكتب'))->required(),
-                    TextInput::make('site_name_en')->label(__('اسم المكتب بالإنجليزية')),
+                    TextInput::make('site_name')->label(__('اسم المؤسسة'))->required(),
+                    TextInput::make('site_name_en')->label(__('اسم المؤسسة بالإنجليزية')),
                     FileUpload::make('logo')->label(__('الشعار'))->image()->disk('public')->directory('branding')->columnSpanFull(),
                     TextInput::make('address1')->label(__('المدينة')),
                     TextInput::make('address2')->label(__('العنوان')),
@@ -118,7 +118,7 @@ class GeneralSettings extends Page
                     TextInput::make('vat_percent')->label(__('نسبة ضريبة القيمة المضافة %'))->numeric()->minValue(0)->maxValue(100)->required(),
                     $tax('residential_tax', __('ضريبة السكني')),
                     $tax('commercial_tax', __('ضريبة التجاري')),
-                    $tax('income_tax', __('ضريبة دخل المكتب (على العمولات ورسوم الإدارة)')),
+                    $tax('income_tax', __('ضريبة دخل المؤسسة (على العمولات ورسوم الإدارة)')),
                     $tax('owner_tax', __('ضريبة على المالك')),
                 ]),
                 Tab::make(__('البريد الإلكتروني'))->columns(2)->schema([

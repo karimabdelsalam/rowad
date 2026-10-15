@@ -25,8 +25,8 @@ class TenantForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make(__('بيانات المكتب'))->columns(2)->schema([
-                TextInput::make('name')->label(__('اسم المكتب'))->required()->maxLength(150),
+            Section::make(__('بيانات المؤسسة'))->columns(2)->schema([
+                TextInput::make('name')->label(__('اسم المؤسسة'))->required()->maxLength(150),
                 TextInput::make('email')->email(),
                 TextInput::make('phone')->tel(),
                 Select::make('plan_id')->relationship('plan', 'name_ar')->preload(),
@@ -41,7 +41,7 @@ class TenantForm
                 Select::make('status')->options(self::statuses())->required()->visibleOn('edit'),
                 DateTimePicker::make('trial_ends_at')->visibleOn('edit'),
             ]),
-            Section::make(__('مدير المكتب'))->columns(2)->visibleOn('create')->schema([
+            Section::make(__('مدير المؤسسة'))->columns(2)->visibleOn('create')->schema([
                 TextInput::make('admin_name')->label(__('الاسم'))->required(),
                 TextInput::make('admin_email')->label(__('البريد الإلكتروني'))->email()->required(),
                 TextInput::make('admin_password')->label(__('كلمة المرور'))->password()->revealable()->required()->minLength(8),

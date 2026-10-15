@@ -47,7 +47,7 @@ class PlanForm
                     ->options([
                         'owner_portal' => __('بوابة الملاك'),
                         'client_portal' => __('بوابة العملاء'),
-                        'landing_page' => __('موقع المكتب'),
+                        'landing_page' => __('موقع المؤسسة'),
                         'zatca' => __('الفوترة الإلكترونية ZATCA'),
                         'campaigns' => __('الرسائل الجماعية'),
                         'api' => __('واجهة برمجية API'),

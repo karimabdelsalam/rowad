@@ -34,7 +34,7 @@ class TaxesReport extends ReportPage
                 TextColumn::make('due_date')->date('Y-m-d')->sortable(),
                 TextColumn::make('type.title')->label(__('النوع')),
                 TextColumn::make('unit.title'),
-                TextColumn::make('owner.full_name')->label(__('المالك'))->placeholder(__('المكتب')),
+                TextColumn::make('owner.full_name')->label(__('المالك'))->placeholder(__('المؤسسة')),
                 TextColumn::make('is_settled')->label(__('مسوّى'))->badge()->formatStateUsing(fn ($state) => $state ? __('نعم') : __('لا')),
                 TextColumn::make('amount')->numeric(2)->summarize(Sum::make('sum')->numeric(2)),
             ])

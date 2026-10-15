@@ -13,6 +13,6 @@ class CorporateTaxesReport extends TaxesReport
 
     protected static function title(): string
     {
-        return __('تقرير ضريبة دخل المكتب');
+        return __('تقرير ضريبة دخل المؤسسة');
     }
 }

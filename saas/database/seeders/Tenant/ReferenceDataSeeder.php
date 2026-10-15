@@ -20,9 +20,9 @@ class ReferenceDataSeeder extends Seeder
         foreach ([
             ['payment', 'حصة المالك من المبلغ المحصل', true],
             ['tax', 'ضريبة القيمة المضافة', false],
-            ['commission', 'عمولة المكتب على المالك', false],
-            ['commission2', 'عمولة المكتب على المستأجر/المشتري', true],
-            ['comp_tax', 'ضريبة دخل المكتب', false],
+            ['commission', 'عمولة المؤسسة على المالك', false],
+            ['commission2', 'عمولة المؤسسة على المستأجر/المشتري', true],
+            ['comp_tax', 'ضريبة دخل المؤسسة', false],
             ['owner_tax', 'ضريبة على المالك', false],
             ['mancost', 'رسوم إدارة العقار', false],
             ['outgoings', 'مصروفات على العقار', false],
@@ -63,7 +63,7 @@ class ReferenceDataSeeder extends Seeder
     {
         return [
             'identity' => [
-                'site_name' => tenant('name') ?? 'مكتب عقاري', 'site_name_en' => null, 'logo' => null,
+                'site_name' => tenant('name') ?? 'مؤسسة عقارية', 'site_name_en' => null, 'logo' => null,
                 'address1' => null, 'address2' => null, 'phone' => null, 'mobile' => null, 'fax' => null,
                 'email' => tenant('email'), 'vat_number' => null, 'commercial_register' => null, 'billing_info' => null,
             ],

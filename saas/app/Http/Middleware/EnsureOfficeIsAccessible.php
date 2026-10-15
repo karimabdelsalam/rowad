@@ -13,7 +13,7 @@ class EnsureOfficeIsAccessible
     {
         if (tenancy()->initialized && ! tenant()->isAccessible()) {
             return $request->is('api/*') || $request->expectsJson()
-                ? response()->json(['message' => __('حساب المكتب موقوف أو انتهت فترته التجريبية')], 402)
+                ? response()->json(['message' => __('حساب المؤسسة موقوف أو انتهت فترته التجريبية')], 402)
                 : response()->view('errors.office-unavailable', ['tenant' => tenant()], 402);
         }
 

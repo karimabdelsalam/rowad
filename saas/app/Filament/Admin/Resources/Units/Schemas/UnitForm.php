@@ -174,7 +174,7 @@ class UnitForm
                     })->all()),
 
                 Tab::make(__('النشر على الموقع'))->columns(3)->schema([
-                    Toggle::make('is_published')->label(__('عرض الوحدة على موقع المكتب'))->helperText(__('تظهر فقط إذا كانت متاحة للإيجار')),
+                    Toggle::make('is_published')->label(__('عرض الوحدة على موقع المؤسسة'))->helperText(__('تظهر فقط إذا كانت متاحة للإيجار')),
                     Toggle::make('show_price')->label(__('إظهار السعر'))->default(true),
                     Toggle::make('is_featured')->label(__('وحدة مميزة')),
                     TextInput::make('title_en')->label(__('العنوان بالإنجليزية'))->columnSpan(3),

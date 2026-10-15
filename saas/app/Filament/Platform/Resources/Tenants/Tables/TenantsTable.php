@@ -21,7 +21,7 @@ class TenantsTable
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['plan', 'domains']))
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('name')->label(__('اسم المكتب'))->searchable()->sortable(),
+                TextColumn::make('name')->label(__('اسم المؤسسة'))->searchable()->sortable(),
                 TextColumn::make('domains.domain')->label(__('النطاقات'))->listWithLineBreaks()->copyable(),
                 TextColumn::make('plan.name_ar')->label(__('الخطة'))->badge(),
                 TextColumn::make('status')->badge()
@@ -43,7 +43,7 @@ class TenantsTable
             ->recordActions([
                 EditAction::make(),
                 Action::make('open')
-                    ->label(__('فتح لوحة المكتب'))
+                    ->label(__('فتح لوحة المؤسسة'))
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->url(fn (Tenant $record) => request()->getScheme().'://'.$record->domains->first()?->domain.'/admin', shouldOpenInNewTab: true),
                 Action::make('suspend')

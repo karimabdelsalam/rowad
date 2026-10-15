@@ -128,7 +128,7 @@ class PlatformOnboardingTest extends TestCase
 
     public function test_platform_console_is_for_super_admins_on_the_central_domain_only(): void
     {
-        $this->actingAs($this->platformAdmin())->get('http://localhost/platform/tenants')->assertOk()->assertSee('المكاتب المشتركة');
+        $this->actingAs($this->platformAdmin())->get('http://localhost/platform/tenants')->assertOk()->assertSee('المؤسسات المشتركة');
 
         $regular = User::create(['name' => 'x', 'email' => 'x@x.test', 'password' => 'secret-password']);
         $this->actingAs($regular)->get('http://localhost/platform/tenants')->assertForbidden();

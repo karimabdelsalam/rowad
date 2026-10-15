@@ -36,7 +36,7 @@ class OwnerTransactionsTable
             ->defaultSort('due_date', 'desc')
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
-                TextColumn::make('owner.full_name')->label(__('المالك'))->placeholder(__('المكتب'))->searchable(),
+                TextColumn::make('owner.full_name')->label(__('المالك'))->placeholder(__('المؤسسة'))->searchable(),
                 TextColumn::make('unit.title')->label(__('الوحدة'))->searchable(),
                 TextColumn::make('type.title')->label(__('النوع')),
                 TextColumn::make('direction')->badge(),

@@ -3,7 +3,7 @@
         <div>
             <p class="rowad-welcome__date">{{ $gregorian }} <span>·</span> {{ $hijri }}</p>
             <h2 class="rowad-welcome__title">{{ $greeting }}، {{ $name }}</h2>
-            <p class="rowad-welcome__sub">{{ __('هذه نظرة سريعة على أداء المكتب اليوم') }}</p>
+            <p class="rowad-welcome__sub">{{ __('هذه نظرة سريعة على أداء المؤسسة اليوم') }}</p>
         </div>
         @if ($actions)
             <div class="rowad-welcome__actions">

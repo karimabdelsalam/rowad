@@ -47,7 +47,7 @@ class CreateDemoOffice extends Command
         $existing?->delete();
 
         $tenant = $provisioner->provision([
-            'name' => 'مكتب الرواد العقاري', 'subdomain' => 'demo', 'admin_name' => 'عبدالله الشهري',
+            'name' => 'مؤسسة الرواد العقارية', 'subdomain' => 'demo', 'admin_name' => 'عبدالله الشهري',
             'admin_email' => 'admin@demo.test', 'admin_password' => self::PASSWORD,
             'plan_id' => Plan::where('slug', 'professional')->value('id'), 'phone' => '0112345678',
         ]);
@@ -67,7 +67,7 @@ class CreateDemoOffice extends Command
             'address1' => 'الرياض', 'address2' => 'حي العليا، طريق الملك فهد', 'vat_number' => '300123456700003',
             'landing_hero_title' => 'وحدات سكنية وتجارية للإيجار في الرياض',
             'landing_hero_subtitle' => 'شقق وفلل ومكاتب مُدارة باحترافية — تواصل معنا واحجز معاينتك اليوم',
-            'landing_about' => 'مكتب الرواد العقاري يدير أكثر من 300 وحدة سكنية وتجارية في الرياض منذ 2009، ويخدم الملاك والمستأجرين بعقود موثقة ومتابعة دقيقة للتحصيل والصيانة.',
+            'landing_about' => 'مؤسسة الرواد العقارية تدير أكثر من 300 وحدة سكنية وتجارية في الرياض منذ 2009، ويخدم الملاك والمستأجرين بعقود موثقة ومتابعة دقيقة للتحصيل والصيانة.',
             'landing_hero_title_en' => 'Homes and offices for rent in Riyadh', 'landing_whatsapp' => '966551234567',
         ] as $key => $value) {
             Settings::set($key, $value);

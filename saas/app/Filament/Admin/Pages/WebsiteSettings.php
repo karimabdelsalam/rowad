@@ -39,7 +39,7 @@ class WebsiteSettings extends Page
 
     public static function getNavigationLabel(): string
     {
-        return __('موقع المكتب');
+        return __('موقع المؤسسة');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
@@ -49,7 +49,7 @@ class WebsiteSettings extends Page
 
     public function getTitle(): string
     {
-        return __('موقع المكتب');
+        return __('موقع المؤسسة');
     }
 
     public static function canAccess(): bool
@@ -74,8 +74,8 @@ class WebsiteSettings extends Page
                 Textarea::make('site_closed_message')->label(__('رسالة إغلاق الموقع'))->rows(2)->columnSpanFull()
                     ->helperText(__('تظهر للزوار بدل الموقع أثناء إغلاقه. اتركها فارغة للتحويل إلى صفحة الدخول.'))
                     ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => ! $get('landing_enabled')),
-                TextInput::make('site_name')->label(__('اسم المكتب')),
-                TextInput::make('site_name_en')->label(__('اسم المكتب بالإنجليزية')),
+                TextInput::make('site_name')->label(__('اسم المؤسسة')),
+                TextInput::make('site_name_en')->label(__('اسم المؤسسة بالإنجليزية')),
                 TextInput::make('landing_whatsapp')->label(__('رقم واتساب'))->tel()->helperText(__('بالصيغة الدولية مثل 9665xxxxxxxx')),
                 ColorPicker::make('landing_primary_color')->label(__('اللون الرئيسي')),
             ]),

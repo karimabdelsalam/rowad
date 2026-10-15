@@ -22,9 +22,9 @@ class TenantResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $modelLabel = 'مكتب';
+    protected static ?string $modelLabel = 'مؤسسة';
 
-    protected static ?string $pluralModelLabel = 'المكاتب المشتركة';
+    protected static ?string $pluralModelLabel = 'المؤسسات المشتركة';
 
     public static function form(Schema $schema): Schema
     {

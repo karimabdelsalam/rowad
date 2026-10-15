@@ -28,7 +28,7 @@ class PaymentVoucherForm
                         VoucherService::CHARGE_OWNERS => __('ملاك الوحدة (حسب نسب المصروفات)'),
                         VoucherService::CHARGE_CONTRACT => __('المستأجر/المشتري الحالي للوحدة'),
                     ])
-                    ->placeholder(__('مصروف على المكتب'))
+                    ->placeholder(__('مصروف على المؤسسة'))
                     ->visible(fn (Get $get) => filled($get('unit_id'))),
                 Toggle::make('with_vat')->label(__('إضافة ضريبة القيمة المضافة على المبلغ')),
                 Select::make('owner_transaction_ids')
