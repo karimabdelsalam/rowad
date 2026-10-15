@@ -36,7 +36,7 @@ class RenterReport extends ReportPage
                 TextColumn::make('unit.title'),
                 TextColumn::make('type')->badge(),
                 TextColumn::make('amount')->numeric(2)->summarize(Sum::make('sum')->numeric(2)),
-                TextColumn::make('paid_amount')->numeric(2)->summarize(Sum::make('sum')->numeric(2)),
+                ...self::paidColumns(),
                 IconColumn::make('is_collected')->boolean(),
             ])
             ->filters([

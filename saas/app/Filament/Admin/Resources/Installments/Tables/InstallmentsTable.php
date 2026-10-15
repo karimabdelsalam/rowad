@@ -43,7 +43,7 @@ class InstallmentsTable
                     ->state(fn (Installment $record) => $record->contract?->number ?? '#'.$record->contract_id),
                 TextColumn::make('type')->badge(),
                 TextColumn::make('amount')->numeric(2)->sortable(),
-                TextColumn::make('paid_amount')->numeric(2)->toggleable(),
+                TextColumn::make('paid_amount')->state(fn (Installment $record) => $record->paidTotal())->numeric(2)->toggleable(),
                 TextColumn::make('remaining')
                     ->label(__('المتبقي'))
                     ->state(fn (Installment $record) => $record->remainingAmount())

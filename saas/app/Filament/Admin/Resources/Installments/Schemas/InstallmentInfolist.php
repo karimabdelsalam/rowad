@@ -35,7 +35,8 @@ class InstallmentInfolist
                 TextEntry::make('vat_percent')
                     ->numeric(),
                 TextEntry::make('paid_amount')
-                    ->numeric(),
+                    ->state(fn (\App\Models\Installment $record) => $record->paidTotal())
+                    ->numeric(2),
                 IconEntry::make('is_collected')
                     ->boolean(),
                 TextEntry::make('collected_at')

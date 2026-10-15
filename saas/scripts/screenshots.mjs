@@ -27,6 +27,19 @@ const pages = [
   { name: 'print-rent-contract', path: '/print/rent_contract/1', login: 'admin@demo.test', full: true },
   { name: 'print-receipt', path: '/print/receipt_voucher/1', login: 'admin@demo.test', full: true },
   { name: 'print-letter', path: '/print/letter/1', login: 'admin@demo.test', full: true },
+  { name: 'form-unit', path: '/admin/units/create', login: 'admin@demo.test', full: true },
+  { name: 'form-rent-contract', path: '/admin/rent-contracts/create', login: 'admin@demo.test', full: true },
+  { name: 'form-sale-contract', path: '/admin/sale-contracts/create', login: 'admin@demo.test', full: true },
+  { name: 'form-receipt', path: '/admin/receipt-vouchers/create', login: 'admin@demo.test', full: true },
+  { name: 'form-owner', path: '/admin/owners/create', login: 'admin@demo.test', full: true },
+  { name: 'view-unit', path: '/admin/units/6', login: 'admin@demo.test', full: true },
+  { name: 'view-rent-contract', path: '/admin/rent-contracts/1', login: 'admin@demo.test', full: true },
+  { name: 'view-sale-contract', path: '/admin/sale-contracts/1', login: 'admin@demo.test', full: true },
+  { name: 'report-income', path: '/admin/reports/income-report', login: 'admin@demo.test', full: true },
+  { name: 'report-rent', path: '/admin/reports/rent-report', login: 'admin@demo.test', full: true },
+  { name: 'report-units', path: '/admin/reports/units-report', login: 'admin@demo.test', full: true },
+  { name: 'report-profits', path: '/admin/reports/profits-report', login: 'admin@demo.test', full: true },
+  { name: 'settings-website', path: '/admin/website-settings', login: 'admin@demo.test', full: true },
 ];
 
 const browser = await chromium.launch({ args: ['--host-resolver-rules=MAP *.localhost 127.0.0.1'] });

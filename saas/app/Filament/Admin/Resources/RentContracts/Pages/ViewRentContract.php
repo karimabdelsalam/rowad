@@ -3,8 +3,10 @@
 namespace App\Filament\Admin\Resources\RentContracts\Pages;
 
 use App\Filament\Admin\Resources\RentContracts\RentContractResource;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Icons\Heroicon;
 
 class ViewRentContract extends ViewRecord
 {
@@ -13,6 +15,12 @@ class ViewRentContract extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('print')
+                ->label(__('طباعة العقد'))
+                ->icon(Heroicon::OutlinedPrinter)
+                ->color('gray')
+                ->url(fn () => route('documents.print', ['type' => 'rent_contract', 'id' => $this->record->getKey()]))
+                ->openUrlInNewTab(),
             EditAction::make(),
         ];
     }

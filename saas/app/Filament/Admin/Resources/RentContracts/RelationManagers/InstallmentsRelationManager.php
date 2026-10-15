@@ -24,6 +24,14 @@ class InstallmentsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return InstallmentsTable::configure($table)->filters([])->defaultSort('due_date');
+        $table = InstallmentsTable::configure($table)->filters([])->defaultSort('due_date')
+            ->modelLabel(__('قسط'))->pluralModelLabel(__('أقساط'));
+
+        // the unit and contract are the page itself
+        foreach (['unit.title', 'contract_label'] as $column) {
+            $table->getColumn($column)?->hidden();
+        }
+
+        return $table;
     }
 }

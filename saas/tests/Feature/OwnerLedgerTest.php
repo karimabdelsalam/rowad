@@ -108,6 +108,29 @@ class OwnerLedgerTest extends TestCase
         $this->assertSame(1, OwnerTransaction::whereHas('type', fn ($q) => $q->where('code', 'payment'))->count());
     }
 
+    public function test_full_collection_counts_as_paid_and_moves_the_contracts_next_payment(): void
+    {
+        $first = $this->installment([[100, 100]], ['amount' => 1000]);
+        $contract = $first->contract;
+        $second = $contract->installments()->create(['unit_id' => $contract->unit_id, 'type' => 'year_rent_month', 'due_date' => '2026-06-01', 'amount' => 1000]);
+        $contract->refreshNextPayment();
+        $this->assertSame('2026-05-01', $contract->fresh()->next_payment_date->toDateString());
+
+        $collector = app(InstallmentCollector::class);
+        $collector->collect($first->fresh());
+
+        $first = $first->fresh();
+        $this->assertSame(1000.0, $first->paidTotal());
+        $this->assertSame(0.0, $first->remainingAmount());
+        $this->assertSame('2026-06-01', $contract->fresh()->next_payment_date->toDateString());
+
+        $collector->collectPartial($second->fresh(), 300);
+        $this->assertSame('700.00', $contract->fresh()->next_payment_amount);
+
+        $collector->uncollect($first);
+        $this->assertSame('2026-05-01', $contract->fresh()->next_payment_date->toDateString());
+    }
+
     public function test_partial_payments_accumulate_and_close_the_installment_when_complete(): void
     {
         $installment = $this->installment([[100, 100]], ['amount' => 1000, 'buyer_commission' => 0, 'seller_commission' => 0, 'vat_amount' => 0]);

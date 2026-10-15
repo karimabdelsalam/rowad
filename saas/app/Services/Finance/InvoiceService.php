@@ -46,7 +46,7 @@ class InvoiceService
                 'client_id' => $client?->id,
                 'customer_name' => $client?->displayName(),
                 'customer_vat_number' => $client?->vat_number,
-                'paid_amount' => $installments->sum(fn (Installment $i) => (float) $i->paid_amount + ($i->is_collected ? $i->remainingAmount() : 0)),
+                'paid_amount' => $installments->sum(fn (Installment $i) => $i->paidTotal()),
             ]);
             Installment::whereKey($installments->modelKeys())->update(['invoice_id' => $invoice->id]);
 

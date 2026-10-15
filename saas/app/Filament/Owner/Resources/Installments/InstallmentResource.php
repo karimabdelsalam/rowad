@@ -43,7 +43,7 @@ class InstallmentResource extends PortalResource
                 TextColumn::make('unit.title'),
                 TextColumn::make('type')->badge(),
                 TextColumn::make('amount')->numeric(2),
-                TextColumn::make('paid_amount')->numeric(2),
+                TextColumn::make('paid_amount')->state(fn (\App\Models\Installment $record) => $record->paidTotal())->numeric(2),
                 IconColumn::make('is_collected')->boolean(),
             ])
             ->filters([TernaryFilter::make('is_collected')]);

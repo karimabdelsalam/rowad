@@ -46,7 +46,7 @@ class InstallmentResource extends PortalResource
                 TextColumn::make('due_date')->date('Y-m-d')->sortable(),
                 TextColumn::make('unit.title'),
                 TextColumn::make('amount')->numeric(2),
-                TextColumn::make('paid_amount')->numeric(2),
+                TextColumn::make('paid_amount')->state(fn (\App\Models\Installment $record) => $record->paidTotal())->numeric(2),
                 TextColumn::make('remaining')->label(__('المتبقي'))->state(fn (Installment $record) => $record->remainingAmount())->numeric(2),
                 IconColumn::make('is_collected')->label(__('مسدد'))->boolean(),
             ])

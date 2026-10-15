@@ -53,6 +53,13 @@ class RentContract extends Model implements HasMedia
         ];
     }
 
+    /** Legacy nextpay: the earliest uncollected installment, kept on the contract for lists and reminders. */
+    public function refreshNextPayment(): void
+    {
+        $next = $this->installments()->where('is_collected', false)->orderBy('due_date')->first();
+        $this->update(['next_payment_date' => $next?->due_date, 'next_payment_amount' => $next ? $next->remainingAmount() : null]);
+    }
+
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);

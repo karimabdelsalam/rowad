@@ -4,6 +4,7 @@ namespace App\Services\Installments;
 
 use App\Exceptions\BusinessRuleException;
 use App\Models\Installment;
+use App\Models\RentContract;
 use App\Models\ReceiptVoucher;
 use App\Services\Ledger\OwnerLedger;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ class InstallmentCollector
             ])->save();
 
             $this->ledger->recordCollection($installment);
+            $this->refreshContract($installment);
 
             return $installment;
         });
@@ -60,6 +62,7 @@ class InstallmentCollector
             if ($settleOwners) {
                 $this->ledger->settleForInstallment($installment);
             }
+            $this->refreshContract($installment);
 
             return $installment->refresh();
         });
@@ -84,6 +87,7 @@ class InstallmentCollector
             $installment->ownerTransactions()->whereNotNull('parent_id')->delete();
             $installment->ownerTransactions()->delete();
             $installment->forceFill(['is_collected' => false, 'collected_at' => null])->save();
+            $this->refreshContract($installment);
 
             return $installment;
         });
@@ -98,8 +102,18 @@ class InstallmentCollector
         DB::transaction(function () use ($installment) {
             $installment->payments()->delete();
             $installment->forceFill(['paid_amount' => 0])->save();
+            $this->refreshContract($installment);
         });
 
         return $installment;
+    }
+
+    private function refreshContract(Installment $installment): void
+    {
+        $contract = $installment->relationLoaded('contract') ? $installment->contract
+            : ($installment->contract_type === (new RentContract)->getMorphClass() ? RentContract::find($installment->contract_id) : null);
+        if ($contract instanceof RentContract) {
+            $contract->refreshNextPayment();
+        }
     }
 }

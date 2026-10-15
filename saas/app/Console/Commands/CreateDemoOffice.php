@@ -127,6 +127,18 @@ class CreateDemoOffice extends Command
         }
         $collector->collect($units[5]->installments()->where('is_collected', false)->orderBy('due_date')->first());
 
+        // a land sold in quarterly installments after a down payment, the passed ones collected
+        $land = Unit::create(['title' => 'أرض سكنية 58 — حي الملقا', 'offer_type' => 'sale', 'city_id' => $riyadh->id, 'area' => 625,
+            'plan_number' => '1120', 'plot_number' => '58', 'address' => 'حي الملقا', 'is_published' => false]);
+        $land->owners()->attach($owners[1]->id, ['share_percent' => 100, 'expenses_percent' => 100]);
+        $sold = now()->subMonths(8)->startOfMonth();
+        $sale = $contracts->createSale(['unit_id' => $land->id, 'calendar' => 'gregorian', 'contract_date' => $sold, 'total_amount' => 950000,
+            'payment_type' => 'installment', 'payment_plan' => ['first_payment' => 250000, 'count' => 8, 'cycle' => 'quarter', 'start_date' => $sold->toDateString()],
+        ], [$clients[4]->id => 100]);
+        foreach ($sale->installments()->whereDate('due_date', '<', now())->get() as $installment) {
+            $collector->collect($installment);
+        }
+
         // portal accounts
         app(PortalAccounts::class)->issue($owners[2], 'owner@demo.test', self::PASSWORD);
         app(PortalAccounts::class)->issue($clients[0], 'client@demo.test', self::PASSWORD);

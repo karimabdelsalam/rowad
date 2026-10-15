@@ -42,6 +42,7 @@ class ReportsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modelLabel(__('تقرير'))->pluralModelLabel(__('تقارير'))
             ->defaultSort('issued_at', 'desc')
             ->columns([
                 TextColumn::make('title')->label(__('العنوان'))->searchable(),

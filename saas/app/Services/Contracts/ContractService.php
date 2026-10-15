@@ -45,7 +45,7 @@ class ContractService
             ]);
             $this->syncParties($contract, $parties, $termIds);
             $this->scheduler->schedule($contract);
-            $this->refreshNextPayment($contract);
+            $contract->refreshNextPayment();
             $this->occupyUnitIfStarted($contract);
 
             return $contract->refresh();
@@ -68,7 +68,7 @@ class ContractService
             $contract->update($attributes);
             $this->syncParties($contract, $parties, $termIds);
             $this->scheduler->schedule($contract);
-            $this->refreshNextPayment($contract);
+            $contract->refreshNextPayment();
             $this->occupyUnitIfStarted($contract);
 
             return $contract->refresh();
@@ -196,12 +196,6 @@ class ContractService
     {
         $contract->clients()->sync(collect($parties)->mapWithKeys(fn ($share, $clientId) => [$clientId => ['share_percent' => $share]])->all());
         $contract->terms()->sync($termIds);
-    }
-
-    private function refreshNextPayment(RentContract $contract): void
-    {
-        $next = $contract->installments()->where('is_collected', false)->orderBy('due_date')->first();
-        $contract->update(['next_payment_date' => $next?->due_date, 'next_payment_amount' => $next?->amount]);
     }
 
     private function occupyUnitIfStarted(RentContract $contract): void

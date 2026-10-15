@@ -74,9 +74,17 @@ class Installment extends Model
         return $this->hasMany(OwnerTransaction::class);
     }
 
+    /** SQL for what was actually paid: a full collection does not touch paid_amount (that holds partial payments only). */
+    public const PAID_SQL = 'CASE WHEN is_collected = 1 THEN amount ELSE paid_amount END';
+
+    public function paidTotal(): float
+    {
+        return $this->is_collected ? round((float) $this->amount, 2) : round((float) $this->paid_amount, 2);
+    }
+
     public function remainingAmount(): float
     {
-        return round((float) $this->amount - (float) $this->paid_amount, 2);
+        return $this->is_collected ? 0.0 : round((float) $this->amount - (float) $this->paid_amount, 2);
     }
 
     public function scopePending(Builder $query): Builder

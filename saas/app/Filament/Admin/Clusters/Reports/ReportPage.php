@@ -8,12 +8,16 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\EmbeddedTable;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use App\Models\Installment;
 use Filament\Tables\Columns\Column;
+use Filament\Tables\Columns\Summarizers\Summarizer;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -70,6 +74,20 @@ abstract class ReportPage extends Page implements HasTable
                 filled($data['from'] ?? null) ? __('من').' '.$data['from'] : null,
                 filled($data['until'] ?? null) ? __('إلى').' '.$data['until'] : null,
             ]));
+    }
+
+    /** Paid and remaining columns for installment reports; a fully collected installment counts as paid in full. */
+    protected static function paidColumns(): array
+    {
+        $total = fn (string $sql) => Summarizer::make()->label(__('filament-tables::table.summary.summarizers.sum.label'))->numeric(2)
+            ->using(fn ($query) => (float) $query->sum(DB::raw($sql)));
+
+        return [
+            TextColumn::make('paid_amount')->state(fn (Installment $record) => $record->paidTotal())->numeric(2)
+                ->summarize($total(Installment::PAID_SQL)),
+            TextColumn::make('remaining')->label(__('المتبقي'))->state(fn (Installment $record) => $record->remainingAmount())->numeric(2)
+                ->summarize($total('amount - ('.Installment::PAID_SQL.')')),
+        ];
     }
 
     protected function getHeaderActions(): array
