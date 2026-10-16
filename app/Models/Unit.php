@@ -49,6 +49,7 @@ class Unit extends Model implements HasMedia
             'market_value' => 'decimal:2',
             'daily_rent' => 'decimal:2',
             'monthly_rent' => 'decimal:2',
+            'sale_price' => 'decimal:2',
             'rent_period' => RentPeriodUnit::class,
             'rent_payment_cycle' => PaymentCycle::class,
             'rent_commission' => 'decimal:2',
@@ -147,10 +148,28 @@ class Unit extends Model implements HasMedia
         return $this->morphTo();
     }
 
-    /** Units listed on the office's public landing page. */
+    /** Units listed on the office's public website: published and still available, for rent or for sale. */
     public function scopeListed(Builder $query): Builder
     {
-        return $query->available()->where('is_published', true)->where('offer_type', OfferType::Rent);
+        return $query->available()->where('is_published', true);
+    }
+
+    /**
+     * The price a visitor sees: the asking price for a sale, the rent and its period for a rental.
+     *
+     * @return array{amount: float, per: ?string}|null null when hidden or not set
+     */
+    public function publicPrice(): ?array
+    {
+        if (! $this->show_price) {
+            return null;
+        }
+        if ($this->offer_type === OfferType::Sale) {
+            return (float) $this->sale_price > 0 ? ['amount' => (float) $this->sale_price, 'per' => null] : null;
+        }
+
+        return (float) $this->rent_amount > 0 ? ['amount' => (float) $this->rent_amount,
+            'per' => ['year' => __('سنويًا'), 'month' => __('شهريًا'), 'day' => __('يوميًا')][$this->rent_period?->value ?? 'year'] ?? null] : null;
     }
 
     /** Title/details in the visitor's language, falling back to Arabic. */

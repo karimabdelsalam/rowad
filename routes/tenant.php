@@ -60,6 +60,15 @@ Route::middleware([
             'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox", // an SVG logo opened directly cannot run scripts
         ]);
     })->name('site.logo');
+    Route::get('/branding/hero', function () {
+        $path = \App\Support\Settings::get('landing_hero_image');
+        abort_unless(filled($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->response($path, headers: [
+            'Cache-Control' => 'public, max-age=3600', 'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        ]);
+    })->name('site.hero');
 
     Route::get('/print/{type}/{id}', \App\Http\Controllers\PrintController::class)->middleware('auth')->whereNumber('id')->name('documents.print');
     Route::get('/print/qr/{kind}', [\App\Http\Controllers\PrintController::class, 'qr'])->middleware('auth')->whereIn('kind', ['owner', 'client', 'site'])->name('documents.qr');

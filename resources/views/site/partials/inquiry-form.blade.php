@@ -1,13 +1,15 @@
 @if (session('inquiry_sent'))
     <div class="alert">{{ __('تم استلام رسالتك، سنتواصل معك قريبًا.') }}</div>
 @endif
-<form method="post" action="{{ $action }}" class="inquiry" style="display:grid;gap:12px">
+<form method="post" action="{{ $action }}" class="inquiry">
     @csrf
-    <input type="text" name="website" value="" tabindex="-1" autocomplete="off" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;opacity:0" aria-hidden="true">
-    <input type="text" name="name" value="{{ old('name') }}" placeholder="{{ __('الاسم') }}" required maxlength="100">
-    <input type="tel" name="mobile" value="{{ old('mobile') }}" placeholder="{{ __('الجوال') }}" dir="ltr" maxlength="30">
-    <input type="email" name="email" value="{{ old('email') }}" placeholder="{{ __('البريد الإلكتروني') }}" dir="ltr" maxlength="150">
-    <textarea name="message" rows="4" placeholder="{{ __('رسالتك') }}" required maxlength="2000">{{ old('message', $default ?? '') }}</textarea>
-    @if ($errors->any())<div class="error">{{ $errors->first() }}</div>@endif
-    <button class="btn btn-primary" type="submit">{{ __('إرسال') }}</button>
+    <input type="text" name="website" value="" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+    <div class="two">
+        <label class="field"><span>{{ __('الاسم') }}</span><input type="text" name="name" value="{{ old('name') }}" required maxlength="100" autocomplete="name"></label>
+        <label class="field"><span>{{ __('الجوال') }}</span><input type="tel" name="mobile" value="{{ old('mobile') }}" dir="ltr" maxlength="30" autocomplete="tel" placeholder="05xxxxxxxx"></label>
+    </div>
+    <label class="field"><span>{{ __('البريد الإلكتروني') }} <small style="font-weight:500">({{ __('اختياري') }})</small></span><input type="email" name="email" value="{{ old('email') }}" dir="ltr" maxlength="150" autocomplete="email"></label>
+    <label class="field"><span>{{ __('رسالتك') }}</span><textarea name="message" rows="4" required maxlength="2000">{{ old('message', $default ?? '') }}</textarea></label>
+    @if ($errors->any() && ! $errors->has('slot'))<div class="error">{{ $errors->first() }}</div>@endif
+    <button class="btn btn-primary btn-block" type="submit">{{ __('إرسال') }}</button>
 </form>

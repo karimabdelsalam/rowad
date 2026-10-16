@@ -31,7 +31,7 @@ class WebsiteSettings extends Page
     public const KEYS = [
         'landing_enabled', 'site_name', 'site_name_en', 'landing_hero_title', 'landing_hero_title_en',
         'landing_hero_subtitle', 'landing_hero_subtitle_en', 'landing_about', 'landing_about_en',
-        'landing_whatsapp', 'landing_primary_color', 'site_closed_message',
+        'landing_whatsapp', 'landing_primary_color', 'site_closed_message', 'landing_hero_image',
     ];
 
     /** @var array<string, mixed> */
@@ -78,6 +78,9 @@ class WebsiteSettings extends Page
                 TextInput::make('site_name_en')->label(__('اسم المؤسسة بالإنجليزية')),
                 TextInput::make('landing_whatsapp')->label(__('رقم واتساب'))->tel()->helperText(__('بالصيغة الدولية مثل 9665xxxxxxxx')),
                 ColorPicker::make('landing_primary_color')->label(__('اللون الرئيسي')),
+                \Filament\Forms\Components\FileUpload::make('landing_hero_image')->label(__('صورة الواجهة'))->image()->disk('public')->directory('branding')
+                    ->maxSize(4096)->imagePreviewHeight('120')->columnSpanFull()
+                    ->helperText(__('صورة عريضة لأعلى الصفحة الرئيسية (1600×900 أو أكبر). بدونها تُستخدم صورة أبرز وحدة معروضة.')),
             ]),
             Section::make(__('المحتوى بالعربية'))->schema([
                 TextInput::make('landing_hero_title')->label(__('العنوان الرئيسي')),

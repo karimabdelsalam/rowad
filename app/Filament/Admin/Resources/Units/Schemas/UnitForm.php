@@ -147,6 +147,9 @@ class UnitForm
                 ]),
 
                 Tab::make(__('الأسعار والعمولات'))->columns(3)->schema([
+                    TextInput::make('sale_price')->label(__('سعر البيع المطلوب'))->numeric()->minValue(0)->suffix(__('ر.س'))
+                        ->visible(fn (Get $get) => ($get('offer_type') instanceof OfferType ? $get('offer_type') : OfferType::tryFrom((string) $get('offer_type'))) === OfferType::Sale)
+                        ->helperText(__('يظهر على موقع المؤسسة للوحدات المعروضة للبيع.')),
                     TextInput::make('rent_amount')->numeric()->minValue(0),
                     TextInput::make('monthly_rent')->numeric()->minValue(0),
                     TextInput::make('daily_rent')->numeric()->minValue(0),
@@ -182,7 +185,7 @@ class UnitForm
                     })->all()),
 
                 Tab::make(__('النشر على الموقع'))->columns(3)->schema([
-                    Toggle::make('is_published')->label(__('عرض الوحدة على موقع المؤسسة'))->helperText(__('تظهر فقط إذا كانت متاحة للإيجار')),
+                    Toggle::make('is_published')->label(__('عرض الوحدة على موقع المؤسسة'))->helperText(__('تظهر ما دامت متاحة (للإيجار أو للبيع)، وتختفي تلقائيًا عند تأجيرها أو بيعها.')),
                     Toggle::make('show_price')->label(__('إظهار السعر'))->default(true),
                     Toggle::make('is_featured')->label(__('وحدة مميزة')),
                     TextInput::make('title_en')->label(__('العنوان بالإنجليزية'))->columnSpan(3),

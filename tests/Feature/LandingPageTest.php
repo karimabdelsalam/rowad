@@ -40,12 +40,13 @@ class LandingPageTest extends TestCase
         return $this->makeUnit([[100, 100]], $attributes + ['title' => $title, 'is_published' => true, 'rent_amount' => 30000]);
     }
 
-    public function test_home_lists_only_published_available_rent_units(): void
+    public function test_home_lists_published_available_units_for_rent_and_sale(): void
     {
         $this->unit('شقة الياسمين المتاحة');
         $this->unit('شقة غير منشورة', ['is_published' => false]);
         $this->unit('شقة مؤجرة', ['status' => 'rented']);
-        $this->unit('أرض للبيع', ['offer_type' => 'sale']);
+        $this->unit('فيلا للبيع في الملقا', ['offer_type' => 'sale', 'sale_price' => 2350000]);
+        $this->unit('أرض مباعة', ['offer_type' => 'sale', 'status' => 'sold']);
         $this->unit('وحدة موقوفة', ['is_active' => false]);
 
         $this->get($this->host.'/')
@@ -53,10 +54,26 @@ class LandingPageTest extends TestCase
             ->assertSee('مكتب النخبة العقاري')
             ->assertSee('شقة الياسمين المتاحة')
             ->assertSee('30,000')
+            ->assertSee('فيلا للبيع في الملقا')
+            ->assertSee('2,350,000')
             ->assertDontSee('شقة غير منشورة')
             ->assertDontSee('شقة مؤجرة')
-            ->assertDontSee('أرض للبيع')
+            ->assertDontSee('أرض مباعة')
             ->assertDontSee('وحدة موقوفة');
+
+        $this->get($this->host.'/?offer=sale')->assertOk()->assertSee('فيلا للبيع في الملقا')->assertDontSee('شقة الياسمين المتاحة');
+        $this->get($this->host.'/?offer=rent')->assertOk()->assertSee('شقة الياسمين المتاحة')->assertDontSee('فيلا للبيع في الملقا');
+        $this->get($this->host.'/?max_price=100000')->assertOk()->assertSee('شقة الياسمين المتاحة')->assertDontSee('فيلا للبيع في الملقا');
+    }
+
+    public function test_sale_unit_page_shows_the_asking_price_and_hidden_prices_stay_hidden(): void
+    {
+        $villa = $this->unit('فيلا للبيع في الملقا', ['offer_type' => 'sale', 'sale_price' => 2350000, 'rent_amount' => null]);
+        $hidden = $this->unit('شقة بسعر خاص', ['show_price' => false, 'rent_amount' => 77777]);
+
+        $this->get($this->host."/units/{$villa->id}")->assertOk()->assertSee(__('سعر البيع'))->assertSee('2,350,000');
+        $this->get($this->host."/units/{$hidden->id}")->assertOk()->assertSee(__('السعر عند التواصل'))->assertDontSee('77,777');
+        $this->get($this->host.'/?sort=price_desc')->assertOk()->assertSeeInOrder(['فيلا للبيع في الملقا', 'شقة بسعر خاص']);
     }
 
     public function test_another_office_never_sees_these_units(): void

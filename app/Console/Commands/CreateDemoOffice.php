@@ -81,7 +81,7 @@ class CreateDemoOffice extends Command
             'site_name_en' => 'Al Rowad Real Estate', 'phone' => '0112345678', 'mobile' => '0551234567', 'email' => 'info@alrowad.sa',
             'address1' => 'الرياض', 'address2' => 'حي العليا، طريق الملك فهد', 'vat_number' => '300123456700003',
             'commercial_register' => '1010234567', 'fal_license_number' => '1100012345',
-            'landing_hero_title' => 'وحدات سكنية وتجارية للإيجار في الرياض',
+            'landing_hero_title' => 'وحدات سكنية وتجارية للإيجار والبيع في الرياض',
             'landing_hero_subtitle' => 'شقق وفلل ومكاتب مُدارة باحترافية — تواصل معنا واحجز معاينتك اليوم',
             'landing_about' => 'مؤسسة الرواد العقارية تدير أكثر من 300 وحدة سكنية وتجارية في الرياض منذ 2009، ويخدم الملاك والمستأجرين بعقود موثقة ومتابعة دقيقة للتحصيل والصيانة.',
             'landing_hero_title_en' => 'Homes and offices for rent in Riyadh', 'landing_whatsapp' => '966551234567',
@@ -90,6 +90,8 @@ class CreateDemoOffice extends Command
         }
         Storage::disk('public')->put('branding/demo-logo.svg', $this->logo());
         Settings::set('logo', 'branding/demo-logo.svg');
+        Storage::disk('public')->put('branding/demo-hero.jpg', $this->skyline());
+        Settings::set('landing_hero_image', 'branding/demo-hero.jpg', 'website');
 
         $riyadh = City::firstOrCreate(['name' => 'الرياض'], ['country_code' => 'SA']);
         $ibans = ['SA2180000000608010167001', 'SA5510000000012345670002'];
@@ -142,6 +144,17 @@ class CreateDemoOffice extends Command
                 $unit->addMediaFromString($this->photo($palette[$i], $title))->usingFileName("unit-{$i}.jpg")->toMediaCollection('photos');
             }
             $units[] = $unit;
+        }
+
+        // two units for sale on the website, beside the rentals
+        $malqa = \App\Models\District::firstOrCreate(['name' => 'الملقا', 'city_id' => $riyadh->id]);
+        foreach ([['فيلا 22 — حي الملقا', $malqa, 6, 450, 2350000, 5, 'فيلا حديثة بتشطيب فاخر: مجلس رجال ومجلس نساء، 6 غرف نوم، مسبح، حديقة خلفية، وغرفة سائق. صك إلكتروني جاهز للإفراغ.'],
+            ['شقة تمليك 9 — النرجس', $districts[1], 4, 190, 890000, 6, 'شقة تمليك بالدور الثاني بمدخل خاص، 4 غرف، صالة واسعة ومطبخ راكب، مع موقف مظلل. قريبة من طريق الملك سلمان.']] as $k => [$title, $district, $rooms, $area, $price, $color, $details]) {
+            $unit = Unit::create(['title' => $title, 'offer_type' => 'sale', 'city_id' => $riyadh->id, 'district_id' => $district->id, 'rooms' => $rooms, 'area' => $area,
+                'sale_price' => $price, 'is_published' => true, 'show_price' => true, 'is_featured' => $k === 0, 'floor' => $k === 0 ? null : '2', 'details' => $details,
+                'address' => $district->name, 'latitude' => 24.8102 + $k * 0.02, 'longitude' => 46.6013 + $k * 0.05]);
+            $unit->owners()->attach($owners[$k]->id, ['share_percent' => 100, 'expenses_percent' => 100]);
+            $unit->addMediaFromString($this->photo($palette[$color], $title))->usingFileName("sale-{$k}.jpg")->toMediaCollection('photos');
         }
 
         $bank = \App\Models\BankAccount::create(['bank_id' => \App\Models\Lookups\Bank::query()->value('id'), 'holder_name' => 'مؤسسة الرواد العقارية',
@@ -306,6 +319,44 @@ class CreateDemoOffice extends Command
   <text x="108" y="78" font-family="Cairo, Tahoma, Arial, sans-serif" font-size="20" font-weight="600" fill="#0f766e">للخدمات العقارية</text>
 </svg>
 SVG;
+    }
+
+    /** The website's hero for the demo: a city skyline at dusk, lit windows (drawn, so no stock photo is needed). */
+    private function skyline(): string
+    {
+        [$w, $h] = [1920, 900];
+        mt_srand(7); // the same picture on every rebuild
+        $img = imagecreatetruecolor($w, $h);
+        $stops = [[0, [11, 18, 40]], [.55, [22, 78, 99]], [.82, [214, 128, 84]], [1, [246, 190, 120]]];
+        for ($y = 0; $y < $h; $y++) {
+            $t = $y / $h;
+            for ($s = 0; $s < count($stops) - 1 && $t > $stops[$s + 1][0]; $s++);
+            [$t0, $c0] = $stops[$s];
+            [$t1, $c1] = $stops[min($s + 1, count($stops) - 1)];
+            $k = $t1 > $t0 ? ($t - $t0) / ($t1 - $t0) : 0;
+            imageline($img, 0, $y, $w, $y, imagecolorallocate($img, ...array_map(fn ($a, $b) => (int) ($a + ($b - $a) * $k), $c0, $c1)));
+        }
+        $lit = [imagecolorallocate($img, 255, 214, 140), imagecolorallocate($img, 255, 236, 190), imagecolorallocate($img, 120, 200, 210)];
+        foreach ([[[16, 40, 52], 380, 640], [[10, 28, 38], 520, 900]] as [$rgb, $minH, $maxH]) { // far row, then near row
+            $color = imagecolorallocate($img, ...$rgb);
+            for ($x = -40; $x < $w; $x += mt_rand(70, 150)) {
+                $bw = mt_rand(60, 130);
+                $top = $h - mt_rand($minH, $maxH) * ($x > 1050 && $x < 1250 && $maxH === 900 ? 1.25 : 1) * .62;
+                imagefilledrectangle($img, $x, (int) $top, $x + $bw, $h, $color);
+                for ($wy = (int) $top + 14; $wy < $h - 20; $wy += 22) {
+                    for ($wx = $x + 10; $wx < $x + $bw - 12; $wx += 18) {
+                        if (mt_rand(0, 100) < 22) {
+                            imagefilledrectangle($img, $wx, $wy, $wx + 7, $wy + 10, $lit[mt_rand(0, 2)]);
+                        }
+                    }
+                }
+            }
+        }
+        ob_start();
+        imagejpeg($img, null, 82);
+        imagedestroy($img);
+
+        return (string) ob_get_clean();
     }
 
     private function photo(array $rgb, string $label): string

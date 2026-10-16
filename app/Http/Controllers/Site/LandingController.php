@@ -35,27 +35,51 @@ class LandingController
             'rooms' => ['nullable', 'integer', 'min:0', 'max:50'],
             'max_price' => ['nullable', 'numeric', 'min:0'],
             'q' => ['nullable', 'string', 'max:100'],
+            'offer' => ['nullable', 'in:rent,sale'],
+            'sort' => ['nullable', 'in:newest,price_asc,price_desc'],
         ]);
+        // the price a visitor compares: the asking price for sale units, the rent for the others
+        $price = "CASE WHEN offer_type = 'sale' THEN sale_price ELSE rent_amount END";
 
         $units = Unit::listed()
             ->with(['city', 'district', 'category', 'media'])
+            ->when($filters['offer'] ?? null, fn ($q, $v) => $q->where('offer_type', $v))
             ->when($filters['city'] ?? null, fn ($q, $v) => $q->where('city_id', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('property_category_id', $v))
             ->when($filters['rooms'] ?? null, fn ($q, $v) => $q->where('rooms', '>=', $v))
-            ->when($filters['max_price'] ?? null, fn ($q, $v) => $q->where('rent_amount', '<=', $v))
+            ->when($filters['max_price'] ?? null, fn ($q, $v) => $q->whereRaw("{$price} <= (? + 0)", [$v]))
             ->when($filters['q'] ?? null, fn ($q, $v) => $q->where(fn ($q) => $q->where('title', 'like', "%{$v}%")->orWhere('title_en', 'like', "%{$v}%")))
+            ->when(($filters['sort'] ?? null) === 'price_asc', fn ($q) => $q->orderByRaw("{$price} IS NULL, {$price} ASC"))
+            ->when(($filters['sort'] ?? null) === 'price_desc', fn ($q) => $q->orderByRaw("{$price} IS NULL, {$price} DESC"))
             ->orderByDesc('is_featured')
             ->latest('id')
             ->paginate(12)
             ->withQueryString();
+
+        $counts = Unit::listed()->selectRaw('offer_type, count(*) as n')->groupBy('offer_type')->pluck('n', 'offer_type');
 
         return view('site.home', [
             'units' => $units,
             'filters' => $filters,
             'cities' => City::whereHas('units', fn ($q) => $q->listed())->orderBy('name')->get(),
             'categories' => PropertyCategory::whereHas('units', fn ($q) => $q->listed())->orderBy('title')->get(),
-            'totalListed' => Unit::listed()->count(),
+            'totalListed' => (int) $counts->sum(),
+            'counts' => ['rent' => (int) ($counts['rent'] ?? 0), 'sale' => (int) ($counts['sale'] ?? 0)],
+            'hero' => $this->heroImage(),
         ]);
+    }
+
+    /** The office's own hero photo, else the best listed unit's first photo, else none (a gradient is drawn). */
+    private function heroImage(): ?string
+    {
+        $path = \App\Support\Settings::get('landing_hero_image');
+        if (filled($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            return route('site.hero');
+        }
+        $unit = Unit::listed()->whereHas('media', fn ($q) => $q->where('collection_name', 'photos'))
+            ->orderByDesc('is_featured')->latest('id')->first();
+
+        return $unit?->coverPhotoUrl('');
     }
 
     public function show(Unit $unit): View
@@ -68,7 +92,8 @@ class LandingController
             'unit' => $unit,
             'slots' => ViewingSchedule::enabled() ? app(ViewingSchedule::class)->slots($unit) : [],
             'similar' => Unit::listed()->with(['city', 'district', 'category', 'media'])->whereKeyNot($unit->getKey())
-                ->where('property_category_id', $unit->property_category_id)->limit(3)->get(),
+                ->where('offer_type', $unit->offer_type)
+                ->orderByRaw('property_category_id = ? DESC', [(int) $unit->property_category_id])->latest('id')->limit(3)->get(),
         ]);
     }
 

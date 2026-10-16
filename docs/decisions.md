@@ -716,3 +716,30 @@
 - The platform console's sign-in page had no side panel (that panel is drawn for office panels only),
   which left an empty half-screen. It now has its own Aqar Nova panel, a heading for the operations
   team, and a note sending office users to their office's link.
+
+## Office website redesign; units for sale on it (2026-10-16)
+
+- The website now lists every published, available unit, for rent and for sale. Until now it showed
+  rentals only.
+  - Sale units get an asking price (`units.sale_price`, a field shown when the offer is "for sale").
+  - The publishing toggle says units disappear automatically once rented or sold.
+- Home page:
+  - A hero that uses the office's own photo (new setting "صورة الواجهة" in website settings),
+    otherwise the featured unit's photo, otherwise a gradient. It shows live counts (available /
+    for rent / for sale / cities).
+  - A search card with For rent / For sale tabs and labelled fields.
+  - Results with type chips and sorting by price. Price filters and sorting compare the asking price
+    for sale units and the rent for the others.
+  - Unit cards with an offer badge, a featured badge, photo count, location, icon features, and the
+    price with its period.
+  - A "why us" section, the office's about text, and a contact section with call / WhatsApp / email /
+    address cards beside the form.
+  - A footer with portal links.
+- Unit page:
+  - Breadcrumb, a photo gallery with a full-screen viewer, and a specifications grid.
+  - A price card that stays in view while scrolling, with book-a-viewing, WhatsApp (pre-filled with
+    the unit's name and link) and call buttons, plus the office card.
+  - A share button (system share sheet, or copy the link) and similar units of the same offer type.
+  - On phones, a bottom action bar with the price, WhatsApp, call and book.
+  - Open Graph tags so shared links show the unit's photo.
+- The demo office gets two units for sale and a drawn city-skyline hero image.
