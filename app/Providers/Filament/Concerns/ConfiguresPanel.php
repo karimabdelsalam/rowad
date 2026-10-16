@@ -28,12 +28,17 @@ trait ConfiguresPanel
             ->id($id)
             ->path($path)
             ->login($tenant ? \App\Filament\Auth\Login::class : \Filament\Auth\Pages\Login::class)
-            ->font('Cairo')
+            ->font('Cairo', url: '/fonts/cairo/cairo.css', provider: \Filament\FontProviders\LocalFontProvider::class) // self-hosted
+            ->defaultAvatarProvider(\App\Filament\Support\InitialsAvatar::class)
+            ->spa(hasPrefetching: true) // page changes swap the content only; links prefetch on hover
+            ->spaUrlExceptions(['*/print/*', '*/sign/*', '*/pay/*', '*/media/*', '*/locale/*', '*/demo/*', '*/impersonate/*',
+                '*/platform-access/*', '*/reactivate*', '*/branding/*', '*/manifest/*', '*/logout'])
             ->darkMode(false) // charts and documents are designed for the light surface
             ->colors([
                 'primary' => self::brandTeal(),
                 'gray' => Color::Slate,
             ])
+            ->maxContentWidth(\Filament\Support\Enums\Width::Full) // use the whole screen; wide tables shouldn't scroll beside empty margins
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16.5rem')
             ->collapsedSidebarWidth('4.25rem')
@@ -48,7 +53,7 @@ trait ConfiguresPanel
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.theme'))
             // developer credit at the bottom of every panel page, login pages included
             ->renderHook(PanelsRenderHook::FOOTER, fn () => view('filament.footer-credit'))
-            ->databaseNotifications($tenant)
+            ->databaseNotifications($tenant, isLazy: false) // rendered with the page instead of a second request
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

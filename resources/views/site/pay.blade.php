@@ -14,8 +14,7 @@
     <meta name="robots" content="noindex">
     <title>{{ __('سداد قسط') }} — {{ $name }}</title>
     @include('partials.favicons')
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=cairo:400,600,700,800&display=swap" rel="stylesheet">
+    <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     @if (! $paid)
         <link rel="stylesheet" href="https://cdn.moyasar.com/mpf/1.15.0/moyasar.css">
         <script src="https://cdn.moyasar.com/mpf/1.15.0/moyasar.js"></script>

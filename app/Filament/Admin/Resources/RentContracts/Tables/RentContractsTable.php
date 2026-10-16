@@ -29,23 +29,27 @@ class RentContractsTable
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['unit', 'clients']))
             ->defaultSort('id', 'desc')
             ->columns([
-                TextColumn::make('number')->searchable()->sortable(),
-                TextColumn::make('unit.title')->searchable()->sortable(),
-                TextColumn::make('clients.full_name')->label(__('المستأجرون'))->listWithLineBreaks()->searchable(),
-                TextColumn::make('start_date')->date('Y-m-d')->sortable(),
-                TextColumn::make('end_date')->date('Y-m-d')->sortable(),
-                TextColumn::make('ejar_status')->label(__('منصة إيجار'))->badge()->toggleable()
-                    ->description(fn ($record) => $record->ejar_number),
-                TextColumn::make('payment_cycle')->badge(),
-                TextColumn::make('rent_amount')->numeric(2)->sortable(),
-                TextColumn::make('next_payment_date')->date('Y-m-d')->sortable(),
-                TextColumn::make('next_payment_amount')->numeric(2)->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('status')->badge()->color(fn (ContractStatus $state) => match ($state) {
+                TextColumn::make('number')->label(__('العقد'))->searchable()->sortable()->weight('bold')
+                    ->description(fn ($record) => $record->unit?->title),
+                TextColumn::make('clients.full_name')->label(__('المستأجرون'))->listWithLineBreaks()->limitList(2)->searchable(),
+                TextColumn::make('end_date')->label(__('المدة'))->sortable()
+                    ->state(fn ($record) => $record->start_date?->format('Y-m-d').' ← '.$record->end_date?->format('Y-m-d'))
+                    ->description(fn ($record) => $record->status === ContractStatus::Active && $record->end_date
+                        ? trans_choice('{0} ينتهي اليوم|{1} يتبقى يوم|[2,*] يتبقى :count يومًا', max(0, (int) today()->diffInDays($record->end_date, false))) : null)
+                    ->color(fn ($record) => $record->status === ContractStatus::Active && $record->end_date?->isBefore(today()->addDays(60)) ? 'warning' : null),
+                TextColumn::make('rent_amount')->label(__('الإيجار'))->numeric(2)->sortable()->weight('medium')
+                    ->description(fn ($record) => $record->payment_cycle?->getLabel()),
+                TextColumn::make('next_payment_date')->label(__('الدفعة القادمة'))->date('Y-m-d')->sortable()->placeholder('-')
+                    ->description(fn ($record) => $record->next_payment_amount !== null ? number_format((float) $record->next_payment_amount, 2) : null)
+                    ->color(fn ($record) => $record->next_payment_date?->isBefore(today()) ? 'danger' : null),
+                TextColumn::make('ejar_status')->label(__('منصة إيجار'))->badge()->toggleable(),
+                TextColumn::make('status')->label(__('الحالة'))->badge()->color(fn (ContractStatus $state) => match ($state) {
                     ContractStatus::Active => 'success',
                     ContractStatus::Ended => 'gray',
                     default => 'danger',
                 }),
-                TextColumn::make('created_at')->dateTime('Y-m-d')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('unit.title')->label(__('الوحدة'))->searchable()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label(__('أنشئ'))->dateTime('Y-m-d')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')->options(ContractStatus::class),
@@ -70,14 +74,14 @@ class RentContractsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                \Filament\Actions\Action::make('print')
-                    ->label(__('طباعة'))
-                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
-                    ->url(fn ($record) => route('documents.print', ['type' => 'rent_contract', 'id' => $record->getKey()]))
-                    ->openUrlInNewTab(),
                 ViewAction::make(),
-                EditAction::make()->visible(fn (RentContract $record) => $record->status === ContractStatus::Active),
                 ActionGroup::make([
+                    \Filament\Actions\Action::make('print')
+                        ->label(__('طباعة'))
+                        ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                        ->url(fn ($record) => route('documents.print', ['type' => 'rent_contract', 'id' => $record->getKey()]))
+                        ->openUrlInNewTab(),
+                    EditAction::make()->visible(fn (RentContract $record) => $record->status === ContractStatus::Active),
                     Action::make('end')
                         ->label(__('إنهاء العقد'))
                         ->icon(Heroicon::OutlinedFlag)

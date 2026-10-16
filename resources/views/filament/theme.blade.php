@@ -145,8 +145,15 @@
     .fi-ta-table > thead > tr { border-bottom: 1px solid var(--rowad-line); }
     .fi-ta-row:hover { background: #f5fbfa !important; }
     .fi-ta-row:nth-child(even) { background: #fcfdfd; }
-    .fi-ta-cell { padding-top: 11px !important; padding-bottom: 11px !important; }
-    .fi-ta-text-item { font-size: .9rem; }
+    /* dense rows: more records on screen (Filament pads both the cell and the text inside it) */
+    .fi-ta-cell { padding-top: 0 !important; padding-bottom: 0 !important; }
+    .fi-ta-text:not(.fi-inline), .fi-ta-icon:not(.fi-inline), .fi-ta-color:not(.fi-inline), .fi-ta-image:not(.fi-inline),
+    .fi-ta-text-input:not(.fi-inline), .fi-ta-select:not(.fi-inline), .fi-ta-toggle:not(.fi-inline) { padding-block: 7px !important; padding-inline: 10px !important; }
+    .fi-ta-actions { padding-block: 5px; }
+    .fi-ta-text-item { font-size: .875rem; line-height: 1.45; }
+    .fi-ta-text-description, .fi-ta-col .fi-ta-text-description { font-size: .76rem !important; line-height: 1.35 !important; margin-top: 1px; }
+    .fi-ta-header-cell { padding-top: 9px !important; padding-bottom: 9px !important; }
+    .fi-ta-text-has-badges .fi-badge { padding-block: 1px !important; }
     .fi-ta-empty-state-heading { font-weight: 700; }
     .fi-ta-empty-state-icon-bg { background: var(--rowad-brand-soft) !important; color: var(--rowad-brand) !important; }
     .fi-ta-actions { gap: 4px !important; }

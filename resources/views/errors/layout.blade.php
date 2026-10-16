@@ -8,7 +8,7 @@
     <meta name="robots" content="noindex">
     <title>@yield('title') — {{ $rtl ? 'عقار نوفا' : 'Aqar Nova' }}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link href="https://fonts.bunny.net/css?family=cairo:400,600,800&display=swap" rel="stylesheet">
+    <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; font-family: 'Cairo', system-ui, sans-serif; color: #0f172a;

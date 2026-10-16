@@ -51,7 +51,7 @@ final class SignatureActions
                             ContractSignature::SIGNED => 'success', ContractSignature::DECLINED => 'danger', default => 'warning',
                         })
                         ->helperText(fn (ContractSignature $record) => $record->decline_reason),
-                ])->columns(1),
+                ])->columns(1)->placeholder(__('لم يُطلب التوقيع الإلكتروني بعد — استخدم زر «طلب التوقيع الإلكتروني» أعلى الصفحة.')),
             ]);
     }
 

@@ -2477,5 +2477,16 @@
     "إنذار رسمي بسداد الإيجار": "Formal warning to pay rent",
     "تنبيه أول": "First notice",
     "تنبيه ثانٍ ومتابعة": "Second notice and follow-up",
-    "إنذار رسمي": "Formal warning"
+    "إنذار رسمي": "Formal warning",
+    ":n من :t": ":n of :t",
+    "{0} ينتهي اليوم|{1} يتبقى يوم|[2,*] يتبقى :count يومًا": "{0} Ends today|{1} 1 day left|[2,*] :count days left",
+    "{1} غرفة|[2,10] :count غرف|[11,*] :count غرفة": "{1} 1 room|[2,*] :count rooms",
+    "أنشئ": "Created",
+    "الإيجار": "Rent",
+    "التوثيق والتوقيع": "Ejar & signature",
+    "الصور والموقع": "Photos & location",
+    "الملاك والإدارة": "Owners & management",
+    "لا توجد بنود مختارة": "No clauses selected",
+    "لم يُطلب التوقيع الإلكتروني بعد — استخدم زر «طلب التوقيع الإلكتروني» أعلى الصفحة.": "No e-signature requested yet — use “Request e-signature” at the top of the page.",
+    "نظرة عامة": "Overview"
 }

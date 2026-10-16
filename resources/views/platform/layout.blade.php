@@ -21,8 +21,7 @@
     <meta property="og:locale" content="{{ app()->getLocale() === 'ar' ? 'ar_SA' : 'en_US' }}">
     <meta name="twitter:card" content="summary_large_image">
     @include('partials.favicons')
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=cairo:400,500,600,700,800&display=swap" rel="stylesheet">
+    <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     <style>
         :root {
             --brand: #0f766e; --brand-dark: #115e59; --brand-ink: #134e4a; --brand-soft: #f0fdfa; --brand-line: #ccfbf1;

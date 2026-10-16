@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>{{ \App\Support\Website::name() }}</title>
-    <link href="https://fonts.bunny.net/css?family=cairo:400,600,700,800&display=swap" rel="stylesheet">
+    <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     <style>
         body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Cairo', system-ui, sans-serif; background: #f0fdfa; color: #134e4a; text-align: center; padding: 16px; }
         main { max-width: 560px; }

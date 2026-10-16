@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }}</title>
-    <link href="https://fonts.bunny.net/css?family=cairo:400,500,600,700,800&display=swap" rel="stylesheet">
+    <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     <style>
         /* Rowad document design system — the classes the default print templates use (resources/print-templates). */
         :root { --brand: #0f766e; --brand-soft: #f0fdfa; --brand-line: #ccfbf1; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --soft: #f8fafc; }

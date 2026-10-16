@@ -4,7 +4,7 @@
     @include('partials.favicons')
     <meta charset="utf-8">
     <title>{{ $title }}</title>
-    <link href="https://fonts.bunny.net/css?family=cairo:400,600,700,800&display=swap" rel="stylesheet">
+    <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     <style>
         @page { size: A4 landscape; margin: 10mm; }
         body { font-family: 'Cairo', system-ui, sans-serif; color: #111827; font-size: 12px; margin: 0; padding: 8mm; }

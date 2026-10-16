@@ -19,7 +19,7 @@
 {{-- portals on a phone: a bottom tab bar like a native app, and a one-time "install the app" hint --}}
 <nav class="rowad-tabbar" aria-label="{{ __('التنقل السريع') }}">
     @foreach ($items as $item)
-        <a href="{{ $item->getUrl() }}" @class(['rowad-tabbar__item', 'is-active' => $item->isActive()])>
+        <a href="{{ $item->getUrl() }}" wire:navigate @class(['rowad-tabbar__item', 'is-active' => $item->isActive()])>
             <x-filament::icon :icon="$item->isActive() ? ($item->getActiveIcon() ?? $item->getIcon()) : $item->getIcon()" class="rowad-tabbar__icon" />
             <span>{{ $item->getLabel() }}</span>
         </a>

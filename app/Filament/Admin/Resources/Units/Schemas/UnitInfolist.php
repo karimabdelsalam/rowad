@@ -14,6 +14,8 @@ use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -23,10 +25,15 @@ class UnitInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->columns(['default' => 1, 'lg' => 3])
+            ->columns(1)
             ->components([
-                Grid::make(1)->columnSpan(['lg' => 2])->schema([
-                    Section::make(__('بيانات الوحدة'))->icon(Heroicon::OutlinedHomeModern)->columns(['default' => 2, 'md' => 4])->schema([
+                self::header(),
+
+                Tabs::make('unit')->contained(false)->persistTabInQueryString()->tabs([
+                    Tab::make(__('نظرة عامة'))->icon(Heroicon::OutlinedHomeModern)->schema([
+                        Grid::make(['default' => 1, 'lg' => 3])->schema([
+                            Grid::make(1)->columnSpan(['lg' => 2])->schema([
+                                Section::make(__('بيانات الوحدة'))->icon(Heroicon::OutlinedHomeModern)->columns(['default' => 2, 'md' => 4])->schema([
                         TextEntry::make('title')->label(__('العنوان'))->weight('bold')->columnSpan(2),
                         TextEntry::make('building.title')->label(__('العقار'))->placeholder('-')->columnSpan(2),
                         TextEntry::make('offer_type')->label(__('نوع العرض'))->badge(),
@@ -43,8 +50,46 @@ class UnitInfolist
                         IconEntry::make('is_published')->label(__('على الموقع'))->boolean(),
                         TextEntry::make('details')->label(__('التفاصيل'))->placeholder('-')->columnSpanFull()->prose(),
                     ]),
-
-                    Section::make(__('الصور'))->icon(Heroicon::OutlinedPhoto)
+                            ]),
+                            Grid::make(1)->columnSpan(['lg' => 1])->schema([
+                                Section::make(__('العقد الحالي'))->icon(Heroicon::OutlinedDocumentText)->schema([
+                        TextEntry::make('current_contract')->hiddenLabel()
+                            ->state(fn (Unit $record) => self::currentContractLabel($record))
+                            ->url(fn (Unit $record) => self::currentContractUrl($record))
+                            ->color('primary')->weight('bold')->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                            ->placeholder(__('لا يوجد عقد ساري — الوحدة متاحة')),
+                        TextEntry::make('current_contract_party')->label(__('الطرف'))
+                            ->state(fn (Unit $record) => $record->currentContract?->clients?->pluck('full_name')->implode('، '))
+                            ->visible(fn (Unit $record) => $record->currentContract !== null),
+                        TextEntry::make('current_contract_period')->label(__('المدة'))
+                            ->state(fn (Unit $record) => $record->currentContract instanceof RentContract
+                                ? $record->currentContract->start_date?->format('Y-m-d').' ← '.$record->currentContract->end_date?->format('Y-m-d')
+                                : null)
+                            ->visible(fn (Unit $record) => $record->currentContract instanceof RentContract),
+                    ]),
+                                Section::make(__('الأسعار'))->icon(Heroicon::OutlinedBanknotes)->columns(2)->schema([
+                        TextEntry::make('rent_amount')->label(__('الإيجار السنوي'))->numeric(2)->suffix(' '.__('ر.س'))->weight('bold')->placeholder('-')->columnSpanFull(),
+                        TextEntry::make('monthly_rent')->label(__('الإيجار الشهري'))->numeric(2)->placeholder('-'),
+                        TextEntry::make('daily_rent')->label(__('الإيجار اليومي'))->numeric(2)->placeholder('-'),
+                        TextEntry::make('rent_payment_cycle')->label(__('دورة السداد'))->badge()->placeholder('-'),
+                        TextEntry::make('rent_period')->label(__('مدة الإيجار'))->badge()->placeholder('-'),
+                        TextEntry::make('rent_commission')->label(__('عمولة الإيجار'))->numeric(2)->placeholder('-'),
+                        TextEntry::make('sale_commission')->label(__('عمولة البيع'))->numeric(2)->placeholder('-'),
+                        IconEntry::make('vat_applicable')->label(__('خاضع للضريبة'))->boolean(),
+                    ]),
+                                Section::make(__('السعر المقترح'))->icon(Heroicon::OutlinedSparkles)
+                        ->description(__('من عقود وحدات مماثلة لدى المؤسسة'))
+                        ->visible(fn (Unit $record) => $record->offer_type !== \App\Enums\OfferType::Sale)
+                        ->schema([
+                            \Filament\Infolists\Components\ViewEntry::make('rent_advice')->hiddenLabel()
+                                ->view('filament.insights.rent-advice')
+                                ->viewData(fn (Unit $record) => ['advice' => app(\App\Services\Insights\RentAdvisor::class)->forUnit($record)]),
+                        ]),
+                            ]),
+                        ]),
+                    ]),
+                    Tab::make(__('الصور والموقع'))->icon(Heroicon::OutlinedMapPin)->schema([
+                                Section::make(__('الصور'))->icon(Heroicon::OutlinedPhoto)
                         ->visible(fn (Unit $record) => $record->getMedia('photos')->isNotEmpty())
                         ->schema([
                             ImageEntry::make('photos')->hiddenLabel()->imageHeight(130)->limit(8)->limitedRemainingText()
@@ -52,8 +97,7 @@ class UnitInfolist
                                     ->map(fn ($media) => route('site.media', ['media' => $media, 'size' => 'thumb']))->all())
                                 ->extraImgAttributes(['class' => 'rounded-xl object-cover', 'loading' => 'lazy']),
                         ]),
-
-                    Section::make(__('الموقع'))->icon(Heroicon::OutlinedMapPin)->columns(['default' => 2, 'md' => 4])->schema([
+                                Section::make(__('الموقع'))->icon(Heroicon::OutlinedMapPin)->columns(['default' => 2, 'md' => 4])->schema([
                         TextEntry::make('city.name')->label(__('المدينة'))->placeholder('-'),
                         TextEntry::make('district.name')->label(__('الحي'))->placeholder('-'),
                         TextEntry::make('street')->label(__('الشارع'))->placeholder('-'),
@@ -68,8 +112,9 @@ class UnitInfolist
                             ->view('filament.unit-map')
                             ->visible(fn (Unit $record) => \App\Support\Maps::embedUrl($record->latitude, $record->longitude) !== null),
                     ]),
-
-                    Section::make(__('الصكوك والقطع'))->icon(Heroicon::OutlinedDocumentCheck)->schema([
+                    ]),
+                    Tab::make(__('الصكوك والقطع'))->icon(Heroicon::OutlinedDocumentCheck)->schema([
+                                Section::make(__('الصكوك والقطع'))->icon(Heroicon::OutlinedDocumentCheck)->schema([
                         Grid::make(['default' => 2, 'md' => 4])->schema([
                             TextEntry::make('deedType.title')->label(__('نوع الصك'))->placeholder('-'),
                             TextEntry::make('deed_number')->label(__('رقم الصك'))->placeholder('-'),
@@ -93,66 +138,54 @@ class UnitInfolist
                                     ->state(fn (UnitPlot $record) => self::boundaries($record))->listWithLineBreaks(),
                             ]),
                     ]),
-                ]),
-
-                Grid::make(1)->columnSpan(['lg' => 1])->schema([
-                    Section::make(__('العقد الحالي'))->icon(Heroicon::OutlinedDocumentText)->schema([
-                        TextEntry::make('current_contract')->hiddenLabel()
-                            ->state(fn (Unit $record) => self::currentContractLabel($record))
-                            ->url(fn (Unit $record) => self::currentContractUrl($record))
-                            ->color('primary')->weight('bold')->icon(Heroicon::OutlinedArrowTopRightOnSquare)
-                            ->placeholder(__('لا يوجد عقد ساري — الوحدة متاحة')),
-                        TextEntry::make('current_contract_party')->label(__('الطرف'))
-                            ->state(fn (Unit $record) => $record->currentContract?->clients?->pluck('full_name')->implode('، '))
-                            ->visible(fn (Unit $record) => $record->currentContract !== null),
-                        TextEntry::make('current_contract_period')->label(__('المدة'))
-                            ->state(fn (Unit $record) => $record->currentContract instanceof RentContract
-                                ? $record->currentContract->start_date?->format('Y-m-d').' ← '.$record->currentContract->end_date?->format('Y-m-d')
-                                : null)
-                            ->visible(fn (Unit $record) => $record->currentContract instanceof RentContract),
                     ]),
-
-                    Section::make(__('السعر المقترح'))->icon(Heroicon::OutlinedSparkles)
-                        ->description(__('من عقود وحدات مماثلة لدى المؤسسة'))
-                        ->visible(fn (Unit $record) => $record->offer_type !== \App\Enums\OfferType::Sale)
-                        ->schema([
-                            \Filament\Infolists\Components\ViewEntry::make('rent_advice')->hiddenLabel()
-                                ->view('filament.insights.rent-advice')
-                                ->viewData(fn (Unit $record) => ['advice' => app(\App\Services\Insights\RentAdvisor::class)->forUnit($record)]),
-                        ]),
-
-                    Section::make(__('الأسعار'))->icon(Heroicon::OutlinedBanknotes)->columns(2)->schema([
-                        TextEntry::make('rent_amount')->label(__('الإيجار السنوي'))->numeric(2)->suffix(' '.__('ر.س'))->weight('bold')->placeholder('-')->columnSpanFull(),
-                        TextEntry::make('monthly_rent')->label(__('الإيجار الشهري'))->numeric(2)->placeholder('-'),
-                        TextEntry::make('daily_rent')->label(__('الإيجار اليومي'))->numeric(2)->placeholder('-'),
-                        TextEntry::make('rent_payment_cycle')->label(__('دورة السداد'))->badge()->placeholder('-'),
-                        TextEntry::make('rent_period')->label(__('مدة الإيجار'))->badge()->placeholder('-'),
-                        TextEntry::make('rent_commission')->label(__('عمولة الإيجار'))->numeric(2)->placeholder('-'),
-                        TextEntry::make('sale_commission')->label(__('عمولة البيع'))->numeric(2)->placeholder('-'),
-                        IconEntry::make('vat_applicable')->label(__('خاضع للضريبة'))->boolean(),
+                    Tab::make(__('الملاك والإدارة'))->icon(Heroicon::OutlinedUserGroup)->schema([
+                        Grid::make(['default' => 1, 'lg' => 2])->schema([
+                                Section::make(__('الملاك'))->icon(Heroicon::OutlinedUserGroup)->schema([
+                        TextEntry::make('owners.full_name')->hiddenLabel()->listWithLineBreaks()->bulleted()->placeholder('-'),
                     ]),
-
-                    Section::make(__('رسوم الإدارة'))->icon(Heroicon::OutlinedCalculator)->columns(2)
+                                Section::make(__('رسوم الإدارة'))->icon(Heroicon::OutlinedCalculator)->columns(2)
                         ->visible(fn (Unit $record) => (float) $record->management_fee > 0)->schema([
                         TextEntry::make('management_fee')->label(__('المبلغ'))->numeric(2)->placeholder('-'),
                         TextEntry::make('management_fee_cycle')->label(__('الدورة'))->badge()->placeholder('-'),
                         TextEntry::make('management_fee_start_date')->label(__('تاريخ البداية'))->date('Y-m-d')->placeholder('-'),
                         TextEntry::make('management_fee_next_date')->label(__('الاستحقاق القادم'))->date('Y-m-d')->placeholder('-'),
                     ]),
-
-                    Section::make(__('الملاك'))->icon(Heroicon::OutlinedUserGroup)->schema([
-                        TextEntry::make('owners.full_name')->hiddenLabel()->listWithLineBreaks()->bulleted()->placeholder('-'),
+                        ]),
                     ]),
-
-                    Section::make(__('السجل'))->icon(Heroicon::OutlinedClock)->columns(2)->collapsed()->schema([
+                    Tab::make(__('السجل'))->icon(Heroicon::OutlinedClock)->schema([
+                                Section::make(__('السجل'))->icon(Heroicon::OutlinedClock)->columns(2)->schema([
                         TextEntry::make('calendar')->label(__('التقويم'))->badge(),
                         TextEntry::make('created_at')->label(__('تاريخ الإضافة'))->dateTime('Y-m-d H:i'),
                         TextEntry::make('updated_at')->label(__('آخر تعديل'))->dateTime('Y-m-d H:i'),
                         TextEntry::make('deleted_at')->label(__('تاريخ الحذف'))->dateTime('Y-m-d H:i')
                             ->visible(fn (Unit $record): bool => $record->trashed()),
                     ]),
+                    ]),
                 ]),
             ]);
+    }
+
+    /** The unit at a glance: where it is, its state, price, tenant and owners. */
+    private static function header(): \Filament\Infolists\Components\ViewEntry
+    {
+        return \App\Filament\Infolists\Parts::header(Heroicon::OutlinedHomeModern, function (Unit $r) {
+            $contract = $r->currentContract;
+
+            return [
+                'kicker' => implode(' · ', array_filter([$r->building?->title, $r->category?->title])) ?: __('وحدة'),
+                'title' => $r->title,
+                'sub' => [trim(($r->city?->name ?? '').' '.($r->district?->name ?? '')), (float) $r->area > 0 ? rtrim(rtrim((string) $r->area, '0'), '.').' '.__('م²') : null,
+                    $r->rooms ? trans_choice('{1} غرفة|[2,10] :count غرف|[11,*] :count غرفة', $r->rooms) : null],
+                'facts' => array_values(array_filter([
+                    \App\Filament\Infolists\Parts::fact('الحالة', $r->status?->getLabel(), $contract ? 'success' : 'warning'),
+                    \App\Filament\Infolists\Parts::fact('العرض', $r->offer_type?->getLabel()),
+                    (float) $r->rent_amount > 0 ? \App\Filament\Infolists\Parts::fact('الإيجار السنوي', number_format((float) $r->rent_amount, 2)) : null,
+                    $contract ? \App\Filament\Infolists\Parts::fact($contract instanceof RentContract ? 'المستأجر' : 'المشتري', $contract->clients?->pluck('full_name')->first()) : null,
+                    \App\Filament\Infolists\Parts::fact('الملاك', $r->owners->pluck('full_name')->join('، ') ?: '-'),
+                ])),
+            ];
+        });
     }
 
     /** @return list<string> */

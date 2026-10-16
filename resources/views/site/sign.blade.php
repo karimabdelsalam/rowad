@@ -18,8 +18,7 @@
     <meta name="robots" content="noindex">
     <title>{{ __('توقيع العقد :number', ['number' => $contract->number]) }} — {{ $name }}</title>
     @include('partials.favicons')
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=cairo:400,600,700,800&display=swap" rel="stylesheet">
+    <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     <style>
         :root { --brand: {{ $brand }}; }
         * { box-sizing: border-box; }

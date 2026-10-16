@@ -590,3 +590,19 @@
   overdue reminders.
 - Staff can issue the warning manually from an instalment row; the ladder stage shows (and links to
   the letter) in the instalments list, with a filter.
+
+## Layout density and speed (2026-10-16) — owner feedback
+
+- Panels use the full screen width (`maxContentWidth(Full)`): wide tables no longer scroll beside empty
+  margins. Table rows are dense (Filament padded both the cell and the text; now ~7px per row edge),
+  roughly doubling the rows on screen. Lists merge related values (period, amount + cycle, next
+  payment + amount) instead of one column each; secondary row actions live in the "⋮" menu.
+- Speed: SPA navigation (page changes swap the content only, links prefetch on hover), the bell's
+  database notifications render with the page instead of a second request, the Cairo font is
+  self-hosted (no fonts.bunny.net on any page or print) and avatars are local initials (no
+  ui-avatars.com). Measured locally: sidebar navigation ~0.5s instead of ~1.2s, zero third-party
+  requests. DB work is ~10ms a page; production servers must run opcache and `php artisan optimize`
+  (already in the deployment guides) — the remaining local time is PHP without opcache.
+- Record pages (rent contract, unit): a summary card with the figures people look for first, then
+  tabs (overview / Ejar & signature / terms / history for contracts; overview / photos & location /
+  deeds / owners & management / history for units), with the related table (payments, reports) below.
