@@ -379,3 +379,14 @@
 - A "built for Saudi regulations" strip (ZATCA e-invoicing, 15% VAT, Umm al-Qura calendar, PDPL,
   Labour Law/GOSI) sits under the hero as factual compliance, not logos of third parties.
 - The sticky header is dark so it blends with the hero on every public page.
+
+## Welcome email, signup alert and getting-started checklist (2026-10-16)
+
+- After a successful signup the new admin gets `App\Mail\OfficeWelcome` (login link, plan, trial end,
+  first steps) and the platform contact email gets `App\Mail\NewOfficeAlert` (office, plan, admin,
+  phone, link to the console). Both are queued and wrapped in try/catch: mail trouble never undoes a
+  finished signup. The office's own SMTP is not used here; these are platform emails.
+- The admin dashboard shows `GettingStarted` (7 steps with live done-state computed from the office's
+  data: identity, owner, unit, contract, SMS, team, website) to users who can edit settings, until all
+  steps are done or an admin hides it (`onboarding_dismissed` setting). The website step starts done
+  because the public site is on by default.

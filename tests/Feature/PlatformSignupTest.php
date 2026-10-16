@@ -57,6 +57,8 @@ class PlatformSignupTest extends TestCase
 
     public function test_signup_creates_a_ready_office_on_a_trial(): void
     {
+        \Illuminate\Support\Facades\Mail::fake();
+        \App\Support\PlatformSettings::save(['contact_email' => 'team@aqarnova.test']);
         $this->get('http://localhost/signup')->assertOk();
 
         $this->post('http://localhost/signup', $this->form())
@@ -76,6 +78,22 @@ class PlatformSignupTest extends TestCase
         });
 
         $this->get('http://localhost/signup/done')->assertOk()->assertSee('nokhba.'.config('rowad.tenancy.base_domain'));
+
+        // the admin is welcomed with the login link, and the platform team is told
+        \Illuminate\Support\Facades\Mail::assertQueued(\App\Mail\OfficeWelcome::class, function ($mail) {
+            $html = $mail->render();
+
+            return $mail->hasTo('fahad@nokhba.test') && str_contains($html, 'nokhba.'.config('rowad.tenancy.base_domain').'/admin') && str_contains($html, 'خطواتك الأولى');
+        });
+        \Illuminate\Support\Facades\Mail::assertQueued(\App\Mail\NewOfficeAlert::class, fn ($mail) => $mail->hasTo('team@aqarnova.test')
+            && str_contains($mail->render(), 'مكتب النخبة العقاري') && str_contains($mail->render(), '0551234567'));
+    }
+
+    public function test_signup_still_succeeds_when_mail_is_broken(): void
+    {
+        config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => 'nowhere.invalid', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.timeout' => 1, 'queue.default' => 'sync']);
+        $this->post('http://localhost/signup', $this->form())->assertRedirect('http://localhost/signup/done')->assertSessionHasNoErrors();
+        $this->assertTrue(Tenant::where('name', 'مكتب النخبة العقاري')->exists());
     }
 
     public function test_signup_rejects_a_taken_or_reserved_subdomain_and_bad_input(): void

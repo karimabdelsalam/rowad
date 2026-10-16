@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Platform;
 
 use App\Exceptions\BusinessRuleException;
 use App\Models\Plan;
+use App\Mail\NewOfficeAlert;
+use App\Mail\OfficeWelcome;
+use App\Models\Tenant;
 use App\Services\Platform\OfficeProvisioner;
 use App\Support\PlatformSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use Throwable;
@@ -95,13 +99,40 @@ class SignupController
         }
 
         $port = in_array($request->getPort(), [80, 443], true) ? '' : ':'.$request->getPort();
-
-        return redirect()->to(route('central.signup.done', [], false))->with('office', [
+        $office = [
             'name' => $tenant->name,
             'url' => $request->getScheme().'://'.$tenant->domains()->value('domain').$port,
             'email' => $data['admin_email'],
             'trial_ends_at' => $tenant->trial_ends_at?->format('Y-m-d'),
-        ]);
+            'plan' => $tenant->plan ? (app()->getLocale() === 'en' ? $tenant->plan->name_en : $tenant->plan->name_ar) : null,
+        ];
+        self::announce($tenant, $office, $data);
+
+        return redirect()->to(route('central.signup.done', [], false))->with('office', $office);
+    }
+
+    /** Welcome the new admin and tell the platform team; mail trouble must never undo a finished signup. */
+    private static function announce(Tenant $tenant, array $office, array $data): void
+    {
+        try {
+            Mail::to($data['admin_email'], $data['admin_name'])->locale(app()->getLocale())
+                ->queue(new OfficeWelcome($office, $data['admin_name']));
+            if ($alerts = PlatformSettings::contact('email')) {
+                Mail::to($alerts)->queue(new NewOfficeAlert([
+                    'name' => $tenant->name,
+                    'subdomain' => $data['subdomain'],
+                    'url' => $office['url'],
+                    'plan' => $office['plan'],
+                    'admin_name' => $data['admin_name'],
+                    'admin_email' => $data['admin_email'],
+                    'phone' => $data['phone'],
+                    'trial_ends_at' => $office['trial_ends_at'],
+                    'console_url' => \App\Filament\Platform\Resources\Tenants\TenantResource::getUrl('view', ['record' => $tenant], panel: 'platform'),
+                ]));
+            }
+        } catch (Throwable $e) {
+            Log::warning('Signup mail not sent', ['office' => $tenant->name, 'error' => $e->getMessage()]);
+        }
     }
 
     public function done(Request $request): View|RedirectResponse
