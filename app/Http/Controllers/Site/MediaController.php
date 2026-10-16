@@ -66,6 +66,8 @@ class MediaController
             $model instanceof Client => $client !== null && $client->is($model),
             $model instanceof Unit => $media->collection_name === 'photos' && $this->ownsOrRents($model, $owner, $client),
             $model instanceof UnitReport => $owner !== null && $model->unit?->owners()->whereKey($owner->getKey())->exists(),
+            $model instanceof \App\Models\MaintenanceRequest => ($client !== null && $model->client_id === $client->getKey())
+                || ($owner !== null && $model->unit?->owners()->whereKey($owner->getKey())->exists()),
             default => false,
         };
     }

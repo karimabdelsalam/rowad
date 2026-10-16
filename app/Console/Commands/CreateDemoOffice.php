@@ -174,6 +174,34 @@ class CreateDemoOffice extends Command
         Task::create(['created_by' => $admin->id, 'assigned_to' => $admin->id, 'content' => 'معاينة فيلا 7 مع العميل المهتم', 'due_date' => now()->addDay()]);
         SupportTicket::create(['owner_id' => $owners[2]->id, 'unit_id' => $units[5]->id, 'type' => 'problem', 'subject' => 'تسريب مياه في المطبخ',
             'message' => 'أبلغني المستأجر بوجود تسريب تحت المغسلة.'] + SupportTicket::newTicketDefaults());
+
+        // maintenance at every stage: done and rated, waiting for the owner, booked, just reported, in progress
+        Settings::set('maintenance_approval_limit', 1000, 'general');
+        $maintenance = app(\App\Services\Maintenance\MaintenanceService::class);
+        $today = now();
+        $report = function (int $unit, int $client, array $data, int $daysAgo, ?array $rgb = null) use ($maintenance, $units, $clients, $today) {
+            Date::setTestNow($today->copy()->subDays($daysAgo)->setTime(10, 15));
+            $request = $maintenance->open(['unit_id' => $units[$unit]->id] + $data, $clients[$client]);
+            if ($rgb !== null) {
+                $request->addMediaFromString($this->photo($rgb, $data['title']))->usingFileName("maintenance-{$request->id}.jpg")->toMediaCollection('photos');
+            }
+
+            return $request;
+        };
+        $leak = $report(5, 0, ['category' => 'plumbing', 'title' => 'تسريب ماء تحت مغسلة المطبخ', 'description' => 'تسريب مستمر من الوصلة السفلية والخزانة تبللت.', 'preferred_time' => 'بعد العصر'], 12, $palette[3]);
+        $maintenance->schedule($leak, ['technician_name' => 'مؤسسة الإتقان للصيانة', 'technician_phone' => '0559001122', 'scheduled_at' => now()->addDay()->setTime(16, 0), 'estimated_cost' => 380, 'assigned_to' => $admin->id]);
+        Date::setTestNow(now()->addDay()->setTime(18, 0));
+        $maintenance->complete($leak, ['cost' => 380, 'charge_to' => 'owners', 'payment_method' => 'cash', 'resolution' => 'تغيير خلاط المغسلة والوصلات المرنة واختبار عدم وجود تسريب.']);
+        $leak->forceFill(['rating' => 5, 'feedback' => 'الفني حضر في الموعد وأنهى العمل بسرعة. شكرًا لكم.'])->save();
+        $ac = $report(5, 0, ['category' => 'ac', 'priority' => 'urgent', 'title' => 'مكيف غرفة النوم الرئيسية لا يبرد', 'description' => 'يعمل المكيف لكن الهواء حار، والوحدة الخارجية تصدر صوتًا عاليًا.'], 2, $palette[1]);
+        $maintenance->schedule($ac, ['technician_name' => 'شركة برودة للتكييف', 'technician_phone' => '0558003344', 'scheduled_at' => $today->copy()->addDays(2)->setTime(11, 0), 'estimated_cost' => 1650, 'assigned_to' => $admin->id]);
+        $power = $report(1, 2, ['category' => 'electrical', 'priority' => 'urgent', 'title' => 'انقطاع الكهرباء عن أفياش المطبخ', 'preferred_time' => 'أي وقت صباحًا'], 1);
+        $maintenance->schedule($power, ['technician_name' => 'فني الكهرباء — أبو أحمد', 'technician_phone' => '0557004455', 'scheduled_at' => $today->copy()->addDay()->setTime(9, 30), 'estimated_cost' => 200, 'assigned_to' => $admin->id]);
+        $report(4, 3, ['category' => 'painting', 'title' => 'تقشر الدهان في جدار الصالة', 'description' => 'رطوبة واضحة في الجدار المجاور للحمام.'], 0, $palette[6]);
+        $door = $report(7, 4, ['category' => 'carpentry', 'priority' => 'urgent', 'title' => 'باب المحل الزجاجي لا يُقفل'], 3);
+        $maintenance->schedule($door, ['technician_name' => 'ورشة الجزيرة للألمنيوم', 'scheduled_at' => $today->copy()->subDay()->setTime(17, 0), 'estimated_cost' => 450]);
+        $maintenance->start($door);
+        Date::setTestNow($today);
         \App\Models\Letter::create(['type' => 'review', 'calendar' => 'gregorian', 'letter_date' => now(), 'created_by' => $admin->id, 'data' => ['review' => [
             'provider' => 'سعد محمد العتيبي', 'provider_title' => 'owner', 'city_id' => $riyadh->id, 'size' => '625', 'planno' => '1120', 'plotno' => '58',
             'amount' => '1850000', 'about' => 'أرض سكنية على شارعين في موقع مميز',

@@ -1,7 +1,7 @@
 @php
     // what a tenant or owner opens most, in that order; the assistant already has its own topbar button
     $priority = match (filament()->getCurrentPanel()?->getId()) {
-        'client' => ['installments', 'rent-contracts', 'support-tickets', 'units'],
+        'client' => ['installments', 'maintenance-requests', 'rent-contracts', 'support-tickets', 'units'],
         'owner' => ['units', 'owner-transactions', 'installments', 'rent-contracts'],
         default => [],
     };

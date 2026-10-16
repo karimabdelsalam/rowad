@@ -93,6 +93,7 @@ class AppServiceProvider extends ServiceProvider
             'invoice' => Models\Invoice::class,
             'letter' => Models\Letter::class,
             'login_activity' => Models\LoginActivity::class,
+            'maintenance_request' => Models\MaintenanceRequest::class,
             'message_template' => Models\MessageTemplate::class,
             'newsletter_subscriber' => Models\NewsletterSubscriber::class,
             'note' => Models\Note::class,

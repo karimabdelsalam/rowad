@@ -60,6 +60,8 @@ class TemplateSeeder extends Seeder
             E::PasswordRecovery->value => ['استعادة كلمة المرور', '<p>عزيزي {name}، لاستعادة كلمة المرور اضغط على الرابط: <a href="{reset_url}">{reset_url}</a></p>', null],
             E::EmailChanged->value => ['تم تغيير البريد الإلكتروني', '<p>عزيزي {name}، تم تغيير بريدك الإلكتروني إلى {email}.</p>', null],
             E::NewRegistration->value => ['مرحبًا بك', '<p>عزيزي {name}، تم إنشاء حسابك باسم المستخدم {username}. رابط الدخول: {login_url}</p>', null],
+            E::MaintenanceUpdate->value => ['طلب الصيانة {code}: {status}', '<p>عزيزي {name}،</p><p>تحديث على طلب الصيانة الخاص بكم:</p>'.self::details(['رقم الطلب' => '{code}', 'الوحدة' => '{unit}', 'الطلب' => '{title}', 'الحالة' => '{status}']).'<p>{details}</p><p>تابعوا الطلب من بوابة العملاء.</p>', 'طلب الصيانة {code} ({unit}): {status}. {details}'],
+            E::MaintenanceApproval->value => ['موافقة على تكلفة صيانة {code}', '<p>عزيزي {name}،</p><p>نحتاج موافقتكم على تكلفة الصيانة التالية لوحدتكم:</p>'.self::details(['رقم الطلب' => '{code}', 'الوحدة' => '{unit}', 'العمل المطلوب' => '{title}', 'التكلفة التقديرية' => '{amount}']).'<p>للموافقة أو الرفض: <a href="{login_url}">بوابة الملاك</a></p>', 'صيانة {unit} ({title}) بتكلفة تقديرية {amount}. للموافقة أو الرفض: {login_url}'],
         ];
     }
 

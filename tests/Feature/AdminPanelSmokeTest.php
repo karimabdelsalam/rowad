@@ -58,9 +58,12 @@ class AdminPanelSmokeTest extends TestCase
             $createsInModal = is_subclass_of($indexPage, \Filament\Resources\Pages\ManageRecords::class);
             // Some records are generated rather than typed in (e.g. a payroll run): the list page then
             // carries a "generate" header action instead of a create page.
-            $generates = method_exists($indexPage, 'getHeaderActions')
-                && collect((new \ReflectionMethod($indexPage, 'getHeaderActions'))->invoke(app($indexPage)))
-                    ->contains(fn ($action) => $action->getName() === 'generate');
+            $headerActions = method_exists($indexPage, 'getHeaderActions')
+                ? collect((new \ReflectionMethod($indexPage, 'getHeaderActions'))->invoke(app($indexPage)))->map(fn ($action) => $action->getName())
+                : collect();
+            $generates = $headerActions->contains('generate');
+            // or a list page that opens the create form in a modal (records that go through a service, e.g. maintenance)
+            $createsInModal = $createsInModal || $headerActions->contains('create');
             $this->assertSame($creatable, $resource::hasPage('create') || $createsInModal || $generates, "{$resource} create page");
 
             foreach (['index', 'create'] as $page) {

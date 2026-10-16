@@ -520,3 +520,19 @@
   the unit keeps its compliance certificate and sends documents to the compliance-check endpoint, which
   validates them with the same rules. Simulation and production use the production CSID as normal.
 - Offices without the plan feature `zatca` or without a connected unit keep Phase 1 (QR on the print).
+
+## Maintenance requests (2026-10-16) — vision §ب "صيانة"
+
+- New module available on every plan (core to property management, not an upsell). Codes `MNT-YYYY-NNNNN`.
+- Flow: tenant reports from the portal/PWA with up to 6 photos (or staff open one) → the office books a
+  technician and visit time (tenant notified by SMS/WhatsApp/email) → in progress → completed.
+- Owner approval: setting "حد موافقة المالك على الصيانة". An estimate at or above it waits for the unit's
+  owners in their portal (they are notified). A refusal returns the request to "new" so the office can
+  find a cheaper quote or bill someone else. Empty limit = owners are never asked.
+- Billing reuses the existing payment-voucher machinery, so accounting stays in one place: completing
+  with a cost issues a payment voucher to the technician and charges it to the owners by expenses share
+  (`outgoings`), to the tenant's current contract (an expenses instalment) or to the office (no charge).
+- The tenant rates the finished job once (1–5); ratings of 2 or less alert the office.
+- Photos are private: served only to staff, the reporting tenant and the unit's owners.
+- Requests follow the unit's branch scope. New notification events `maintenance_update` (tenant) and
+  `maintenance_approval` (owner) with editable templates.

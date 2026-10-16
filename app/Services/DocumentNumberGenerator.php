@@ -12,6 +12,7 @@ class DocumentNumberGenerator
         'receipt_voucher' => 'RV',
         'payment_voucher' => 'PV',
         'invoice' => 'INV',
+        'maintenance' => 'MNT',
     ];
 
     /** Next number like "RV-2026-00042"; atomic under concurrent requests. */

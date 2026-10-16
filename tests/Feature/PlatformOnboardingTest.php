@@ -75,7 +75,7 @@ class PlatformOnboardingTest extends TestCase
             $admin = User::where('email', 'saad@ofuq.test')->sole();
             $this->assertTrue($admin->hasRole('admin'));
             $this->assertSame('مكتب الأفق العقاري', \App\Support\Settings::get('site_name'));
-            $this->assertSame(19, \App\Models\MessageTemplate::count());
+            $this->assertSame(count(\App\Enums\NotificationEvent::cases()), \App\Models\MessageTemplate::count());
         });
 
         auth()->logout();

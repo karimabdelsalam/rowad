@@ -29,6 +29,8 @@ enum NotificationEvent: string implements HasLabel
     case PasswordRecovery = 'password_recovery';     // recoverPWD
     case EmailChanged = 'email_changed';             // updateEmail
     case NewRegistration = 'new_registration';       // newRegister
+    case MaintenanceUpdate = 'maintenance_update';   // new: progress of a tenant's maintenance request
+    case MaintenanceApproval = 'maintenance_approval'; // new: owner asked to approve a repair cost
 
     public static function fromLegacy(string $action): self
     {
@@ -74,6 +76,8 @@ enum NotificationEvent: string implements HasLabel
             self::PasswordRecovery => ['name', 'reset_url'],
             self::EmailChanged => ['name', 'email'],
             self::NewRegistration => ['name', 'username', 'login_url'],
+            self::MaintenanceUpdate => ['name', 'code', 'unit', 'title', 'status', 'details'],
+            self::MaintenanceApproval => ['name', 'code', 'unit', 'title', 'amount', 'login_url'],
         };
     }
 
@@ -99,6 +103,8 @@ enum NotificationEvent: string implements HasLabel
             self::PasswordRecovery => 'استعادة كلمة المرور',
             self::EmailChanged => 'تغيير البريد الإلكتروني',
             self::NewRegistration => 'تسجيل حساب جديد',
+            self::MaintenanceUpdate => 'تحديث طلب صيانة (للمستأجر)',
+            self::MaintenanceApproval => 'طلب موافقة على تكلفة صيانة (للمالك)',
         });
     }
 }

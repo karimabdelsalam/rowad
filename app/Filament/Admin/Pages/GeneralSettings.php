@@ -46,7 +46,7 @@ class GeneralSettings extends Page
         'mail_driver' => 'mail', 'smtp_host' => 'mail', 'smtp_port' => 'mail', 'smtp_username' => 'mail', 'smtp_password' => 'mail',
         'sms_provider' => 'sms', 'sms_username' => 'sms', 'sms_password' => 'sms', 'sms_sender' => 'sms',
         'sms_login_staff' => 'sms', 'sms_login_clients' => 'sms',
-        'support_ticket_prefix' => 'general', 'google_maps_key' => 'general',
+        'support_ticket_prefix' => 'general', 'google_maps_key' => 'general', 'maintenance_approval_limit' => 'general',
         'payments_gateway' => 'payments', 'moyasar_publishable_key' => 'payments', 'moyasar_secret_key' => 'payments',
         'moyasar_webhook_secret' => 'payments', 'payments_bank_account_id' => 'payments', 'payments_methods' => 'payments',
         'whatsapp_enabled' => 'whatsapp', 'whatsapp_phone_number_id' => 'whatsapp', 'whatsapp_access_token' => 'whatsapp',
@@ -214,6 +214,8 @@ class GeneralSettings extends Page
                 Tab::make(__('أخرى'))->columns(2)->schema([
                     TextInput::make('support_ticket_prefix')->label(__('بادئة رقم تذكرة الدعم')),
                     TextInput::make('google_maps_key')->label(__('مفتاح خرائط Google')),
+                    TextInput::make('maintenance_approval_limit')->label(__('حد موافقة المالك على الصيانة'))->numeric()->minValue(0)
+                        ->helperText(__('أعمال الصيانة التي تبلغ تكلفتها التقديرية هذا المبلغ أو أكثر تنتظر موافقة المالك من بوابته. اتركه فارغًا لعدم طلب الموافقة.')),
                 ]),
             ]),
         ]);
