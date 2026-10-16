@@ -31,6 +31,7 @@ Route::middleware([
     Route::get('/units/{unit}', [LandingController::class, 'show'])->name('site.unit');
     Route::post('/contact', [LandingController::class, 'inquire'])->name('site.contact');
     Route::post('/units/{unit}/inquiry', [LandingController::class, 'inquire'])->name('site.unit.inquiry');
+    Route::post('/units/{unit}/viewing', [LandingController::class, 'bookViewing'])->middleware('throttle:10,60')->name('site.unit.viewing');
     Route::get('/media/{media}', MediaController::class)->name('site.media');
 
     // the portals as an installable phone app (PWA)

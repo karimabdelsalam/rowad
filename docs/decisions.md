@@ -606,3 +606,18 @@
 - Record pages (rent contract, unit): a summary card with the figures people look for first, then
   tabs (overview / Ejar & signature / terms / history for contracts; overview / photos & location /
   deeds / owners & management / history for units), with the related table (payments, reports) below.
+
+## Viewing appointments (2026-10-16) — vision §د "حجز معاينة"
+
+- On by default for every listed unit (offices switch it off in Settings ← المعاينات). Defaults:
+  Saturday–Thursday, 16:00–21:00, 30-minute slots, at least 2 hours' notice, 14 days ahead.
+- One live booking per unit per slot, checked under a lock; a mobile can hold at most 3 upcoming
+  website bookings (spam guard, plus the honeypot and a rate limit).
+- `starts_at` is stored as the office's wall-clock time (Asia/Riyadh unless the office set another
+  timezone): the slot grid, the screens and the SMS all show the same time without conversion.
+- Messages: confirmation (`viewing_booked`, with the unit's map link), a same-day reminder from the
+  daily jobs (`viewing_reminder`) and cancellation (`viewing_cancelled`, with the reason).
+- Staff mark the outcome (viewed / no-show), reschedule, cancel, or save the visitor as a client
+  (matched by mobile, so returning visitors aren't duplicated). Staff can also book on the phone,
+  outside the website hours.
+- The public form works without JavaScript (all days listed); with it, one day at a time.

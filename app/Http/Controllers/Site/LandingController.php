@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Site;
 
+use App\Exceptions\BusinessRuleException;
 use App\Models\City;
+use App\Services\Viewings\ViewingSchedule;
 use App\Models\InboxMessage;
 use App\Models\Lookups\PropertyCategory;
 use App\Models\Unit;
@@ -64,9 +66,30 @@ class LandingController
 
         return view('site.unit', [
             'unit' => $unit,
+            'slots' => ViewingSchedule::enabled() ? app(ViewingSchedule::class)->slots($unit) : [],
             'similar' => Unit::listed()->with(['city', 'district', 'category', 'media'])->whereKeyNot($unit->getKey())
                 ->where('property_category_id', $unit->property_category_id)->limit(3)->get(),
         ]);
+    }
+
+    /** A visitor books a viewing slot for a listed unit. */
+    public function bookViewing(Request $request, Unit $unit, ViewingSchedule $viewings): RedirectResponse
+    {
+        abort_unless(Website::enabled() && ViewingSchedule::enabled() && Unit::listed()->whereKey($unit->getKey())->exists(), 404);
+        $data = $request->validate([
+            'slot' => ['required', 'date_format:Y-m-d H:i'],
+            'name' => ['required', 'string', 'max:100'],
+            'mobile' => ['required', 'string', 'max:30', 'regex:/^[0-9+\s-]{7,20}$/'],
+            'website' => ['prohibited'], // honeypot
+        ], [], ['slot' => __('الموعد'), 'name' => __('الاسم'), 'mobile' => __('الجوال')]);
+
+        try {
+            $viewing = $viewings->book($unit, ['starts_at' => $data['slot'], 'name' => $data['name'], 'mobile' => $data['mobile']], 'website', $request->ip());
+        } catch (BusinessRuleException $e) {
+            return back()->withErrors(['slot' => $e->getMessage()])->withInput();
+        }
+
+        return back()->with('viewing_booked', $viewing->starts_at->format('Y-m-d H:i'));
     }
 
     public function inquire(Request $request, ?Unit $unit = null): RedirectResponse

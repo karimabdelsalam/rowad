@@ -197,6 +197,18 @@ class CreateDemoOffice extends Command
         SupportTicket::create(['owner_id' => $owners[2]->id, 'unit_id' => $units[5]->id, 'type' => 'problem', 'subject' => 'تسريب مياه في المطبخ',
             'message' => 'أبلغني المستأجر بوجود تسريب تحت المغسلة.'] + SupportTicket::newTicketDefaults());
 
+        // viewing appointments booked from the website: today, tomorrow and one already done
+        $viewings = app(\App\Services\Viewings\ViewingSchedule::class);
+        // real today (the demo seeds history on a fixed day of the month), so these show as today / upcoming
+        $base = \Carbon\CarbonImmutable::instance(new \DateTimeImmutable('now', new \DateTimeZone(\App\Services\Viewings\ViewingSchedule::timezone())))->startOfDay();
+        foreach ([[0, 0, '17:00', 'أحمد السالم', '0559876543'], [3, 0, '19:30', 'منيرة الشمري', '0553214567'],
+            [0, 1, '16:30', 'يوسف المالكي', '0547771234'], [3, 2, '18:00', 'عائلة الحربي', '0561239876']] as [$unit, $day, $time, $name, $mobile]) {
+            $viewings->book($units[$unit], ['starts_at' => $base->addDays($day)->format('Y-m-d').' '.$time, 'name' => $name, 'mobile' => $mobile], 'staff');
+        }
+        $past = $viewings->book($units[0], ['starts_at' => $base->subDays(2)->format('Y-m-d').' 18:00', 'name' => 'سلمان العنزي', 'mobile' => '0558882211'], 'staff');
+        $viewings->outcome($past, \App\Enums\ViewingStatus::Done);
+        \App\Models\Viewing::query()->update(['source' => 'website']);
+
         // collection ladder on: first notices for this month's late rent, and a formal warning already issued to one tenant
         Settings::set('collection_escalation_enabled', true, 'collection');
         $late = \App\Models\Installment::query()->where('unit_id', $units[4]->id)->where('is_collected', false)->whereDate('due_date', '<', now())->get();

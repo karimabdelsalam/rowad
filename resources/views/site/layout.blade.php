@@ -49,6 +49,27 @@
         .empty { text-align: center; color: var(--muted); padding: 48px 0; }
         .alert { padding: 12px 16px; border-radius: 10px; background: #ecfdf5; color: #065f46; margin-bottom: 16px; }
         .error { color: #b91c1c; font-size: .9rem; }
+        [x-cloak] { display: none !important; }
+        .hp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; opacity: 0; }
+        form.viewing { display: grid; gap: 12px; border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: #fff; }
+        .viewing__days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+        .viewing__day { flex: none; display: grid; gap: 0; text-align: center; min-width: 76px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; color: inherit; }
+        .viewing__day span { font-size: .75rem; color: var(--muted); }
+        .viewing__day b { font-size: .95rem; }
+        .viewing__day.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, #fff); }
+        .viewing__day.is-active span { color: var(--primary); }
+        .viewing__times { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+        .viewing__time input { position: absolute; opacity: 0; pointer-events: none; }
+        .viewing__time span { display: block; text-align: center; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--line); font-weight: 700; cursor: pointer; }
+        .viewing__time input:checked + span { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .viewing__time input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .viewing__who { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .viewing__who input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+        .viewing__note { margin: 0; font-size: .8rem; color: var(--muted); }
+        .viewing__heading { grid-column: 1 / -1; margin: 4px 0 0; font-weight: 700; font-size: .85rem; color: var(--muted); }
+        form.viewing:not(.is-js) .viewing__days, form.viewing.is-js .viewing__heading { display: none; }
+        .viewing__times[hidden] { display: none; }
+        @media (max-width: 480px) { .viewing__who { grid-template-columns: 1fr; } }
         .pagination { display: flex; gap: 6px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
         .pagination a, .pagination span { padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
         .pagination .active { background: var(--primary); color: #fff; border-color: var(--primary); }

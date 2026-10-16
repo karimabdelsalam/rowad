@@ -53,7 +53,13 @@
                     style="width:100%;height:260px;border:0;border-radius:12px;background:var(--line)"></iframe>
                 <a href="{{ \App\Support\Maps::directionsUrl($unit->latitude, $unit->longitude) }}" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700">{{ __('فتح في الخرائط') }} ↗</a>
             @endif
-            <h2 style="margin:8px 0 0;font-size:1.2rem">{{ __('اطلب معاينة أو استفسر') }}</h2>
+            @if ($slots)
+                <h2 style="margin:8px 0 0;font-size:1.2rem">{{ __('احجز موعد معاينة') }}</h2>
+                @include('site.partials.viewing-form')
+                <h2 style="margin:8px 0 0;font-size:1.2rem">{{ __('أو أرسل استفسارك') }}</h2>
+            @else
+                <h2 style="margin:8px 0 0;font-size:1.2rem">{{ __('اطلب معاينة أو استفسر') }}</h2>
+            @endif
             @include('site.partials.inquiry-form', ['action' => route('site.unit.inquiry', $unit), 'default' => __('أرغب في الاستفسار عن :unit', ['unit' => $unit->localized('title')])])
         </div></div>
     </div>

@@ -33,6 +33,7 @@ class DailyOfficeJobs
         return [
             'reminders' => $this->installmentReminders(),
             'collection_ladder' => array_sum(app(\App\Services\Collection\CollectionEscalation::class)->run()),
+            'viewing_reminders' => app(\App\Services\Viewings\ViewingSchedule::class)->sendReminders(),
             'employees' => $this->employeeIdExpiry(),
             'licenses' => $this->licenseExpiry(),
             'released_units' => $this->releaseEndedContracts(),

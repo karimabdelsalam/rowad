@@ -36,6 +36,9 @@ enum NotificationEvent: string implements HasLabel
     case RentOverdue = 'rent_overdue';               // new: collection ladder, first late notice
     case RentOverdueSecond = 'rent_overdue_2';       // new: collection ladder, second notice
     case RentWarning = 'rent_warning';               // new: collection ladder, formal warning issued
+    case ViewingBooked = 'viewing_booked';           // new: viewing appointment confirmed to the visitor
+    case ViewingReminder = 'viewing_reminder';       // new: same-day viewing reminder
+    case ViewingCancelled = 'viewing_cancelled';     // new: viewing cancelled by the office
 
     public static function fromLegacy(string $action): self
     {
@@ -86,6 +89,8 @@ enum NotificationEvent: string implements HasLabel
             self::SignatureRequest => ['name', 'contract_number', 'unit', 'sign_url'],
             self::SignatureOtp => ['name', 'code', 'contract_number'],
             self::RentOverdue, self::RentOverdueSecond, self::RentWarning => ['name', 'unit', 'amount', 'due_date', 'contract_number', 'days_late', 'pay_line'],
+            self::ViewingBooked, self::ViewingReminder => ['name', 'unit', 'date', 'time', 'office_phone', 'map_url'],
+            self::ViewingCancelled => ['name', 'unit', 'date', 'time', 'office_phone', 'reason'],
         };
     }
 
@@ -118,6 +123,9 @@ enum NotificationEvent: string implements HasLabel
             self::RentOverdue => 'تأخر سداد الإيجار — تنبيه أول',
             self::RentOverdueSecond => 'تأخر سداد الإيجار — تنبيه ثانٍ',
             self::RentWarning => 'إنذار رسمي بسداد الإيجار',
+            self::ViewingBooked => 'تأكيد موعد معاينة',
+            self::ViewingReminder => 'تذكير بموعد المعاينة اليوم',
+            self::ViewingCancelled => 'إلغاء موعد معاينة',
         });
     }
 }

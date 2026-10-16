@@ -120,6 +120,7 @@ class AppServiceProvider extends ServiceProvider
             'support_ticket_reply' => Models\SupportTicketReply::class,
             'task' => Models\Task::class,
             'unit' => Models\Unit::class,
+            'viewing' => Models\Viewing::class,
             'unit_meter' => Models\UnitMeter::class,
             'unit_deed' => Models\UnitDeed::class,
             'unit_plot' => Models\UnitPlot::class,

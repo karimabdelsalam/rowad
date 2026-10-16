@@ -56,6 +56,8 @@ class GeneralSettings extends Page
         'hr_wps_establishment_id' => 'hr',
         'collection_escalation_enabled' => 'collection', 'collection_stage1_days' => 'collection', 'collection_stage2_days' => 'collection',
         'collection_stage3_days' => 'collection',
+        'viewing_enabled' => 'viewings', 'viewing_days' => 'viewings', 'viewing_from' => 'viewings', 'viewing_to' => 'viewings',
+        'viewing_slot_minutes' => 'viewings', 'viewing_notice_hours' => 'viewings',
     ];
 
     /** Legacy class.sms.php providers. */
@@ -91,9 +93,13 @@ class GeneralSettings extends Page
 
     public function mount(): void
     {
-        $defaults = ['whatsapp_language' => 'ar'];
-        $this->form->fill(collect(self::KEYS)->keys()->mapWithKeys(fn ($key) => [$key => $key === 'payments_methods'
-            ? Settings::list($key, array_keys(\App\Services\Payments\Payments::METHODS)) : Settings::get($key, $defaults[$key] ?? null)])->all());
+        $defaults = ['whatsapp_language' => 'ar', 'viewing_enabled' => true];
+        $lists = [
+            'payments_methods' => array_keys(\App\Services\Payments\Payments::METHODS),
+            'viewing_days' => array_map('strval', \App\Services\Viewings\ViewingSchedule::DEFAULT_DAYS),
+        ];
+        $this->form->fill(collect(self::KEYS)->keys()->mapWithKeys(fn ($key) => [$key => array_key_exists($key, $lists)
+            ? Settings::list($key, $lists[$key]) : Settings::get($key, $defaults[$key] ?? null)])->all());
     }
 
     public function form(Schema $schema): Schema
@@ -221,6 +227,18 @@ class GeneralSettings extends Page
                     TextInput::make('collection_stage1_days')->label(__('التنبيه الأول بعد (يوم تأخير)'))->integer()->minValue(1)->placeholder('3'),
                     TextInput::make('collection_stage2_days')->label(__('التنبيه الثاني والمتابعة بعد'))->integer()->minValue(1)->placeholder('10'),
                     TextInput::make('collection_stage3_days')->label(__('الإنذار الرسمي بعد'))->integer()->minValue(1)->placeholder('20'),
+                ]),
+                Tab::make(__('المعاينات'))->columns(['default' => 1, 'md' => 2])->schema([
+                    \Filament\Forms\Components\Toggle::make('viewing_enabled')->label(__('حجز مواعيد المعاينة من موقع المكتب'))->default(true)->columnSpanFull()
+                        ->helperText(__('يختار الزائر يومًا وساعة متاحة لكل وحدة معروضة، ويصله تأكيد وتذكير صباح يوم الموعد.')),
+                    \Filament\Forms\Components\CheckboxList::make('viewing_days')->label(__('أيام المعاينة'))->columns(4)->columnSpanFull()
+                        ->options([6 => __('السبت'), 0 => __('الأحد'), 1 => __('الاثنين'), 2 => __('الثلاثاء'), 3 => __('الأربعاء'), 4 => __('الخميس'), 5 => __('الجمعة')])
+                        ->default(array_map('strval', \App\Services\Viewings\ViewingSchedule::DEFAULT_DAYS)),
+                    \Filament\Forms\Components\TimePicker::make('viewing_from')->label(__('من الساعة'))->seconds(false)->placeholder('16:00'),
+                    \Filament\Forms\Components\TimePicker::make('viewing_to')->label(__('إلى الساعة'))->seconds(false)->placeholder('21:00'),
+                    \Filament\Forms\Components\Select::make('viewing_slot_minutes')->label(__('مدة الموعد'))->native(false)
+                        ->options([15 => __(':n دقيقة', ['n' => 15]), 30 => __(':n دقيقة', ['n' => 30]), 45 => __(':n دقيقة', ['n' => 45]), 60 => __('ساعة')])->placeholder('30'),
+                    TextInput::make('viewing_notice_hours')->label(__('أقل مدة قبل الموعد (ساعات)'))->integer()->minValue(0)->placeholder('2'),
                 ]),
                 Tab::make(__('أخرى'))->columns(2)->schema([
                     TextInput::make('support_ticket_prefix')->label(__('بادئة رقم تذكرة الدعم')),
