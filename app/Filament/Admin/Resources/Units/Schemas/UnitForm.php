@@ -149,6 +149,8 @@ class UnitForm
                     Toggle::make('vat_applicable'),
                     TextInput::make('rent_commission')->numeric()->minValue(0),
                     TextInput::make('sale_commission')->numeric()->minValue(0),
+                    TextInput::make('market_value')->label(__('القيمة السوقية التقديرية'))->numeric()->minValue(0)->suffix(__('ر.س'))
+                        ->helperText(__('اختياري — يحسب منه عائد الوحدة السنوي في بوابة المالك.')),
                 ]),
 
                 Tab::make(__('رسوم الإدارة'))->columns(3)->schema([

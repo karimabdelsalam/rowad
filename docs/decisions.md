@@ -471,3 +471,13 @@
   median rent; the 25–75% range; at least two contracts or no suggestion; confidence by sample size.
   Contracts are annualised from `yearly_rent` or their own instalments. Shown on the unit page with the
   current rent's position in the range, and as the `suggest_rent` assistant tool.
+
+## Owner portfolio page (2026-10-16) — roadmap phase 5, part 1
+
+- Owner portal "أداء أملاكي": per property and in total for a chosen year (to date) — the owner's share
+  of collections (ledger `payment`), deductions (`tax`, `commission`, `owner_tax`, `mancost`,
+  `outgoings`), net, occupancy (days covered by non-cancelled rent contracts, ended early = ended),
+  vacant days, the owner's share of tenant arrears, and the market-rent gap from RentAdvisor.
+- Yield needs a value: new optional `units.market_value` (staff fill it in the unit form); yield =
+  annualised net ÷ (value × owner share). Without a value the page says so instead of guessing.
+- Read-only from data the office already keeps; nothing new for staff to enter beyond the value.

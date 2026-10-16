@@ -46,6 +46,7 @@ class Unit extends Model implements HasMedia
             'longitude' => 'decimal:7',
             'borders' => 'array',
             'rent_amount' => 'decimal:2',
+            'market_value' => 'decimal:2',
             'daily_rent' => 'decimal:2',
             'monthly_rent' => 'decimal:2',
             'rent_period' => RentPeriodUnit::class,
