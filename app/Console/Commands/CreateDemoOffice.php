@@ -279,6 +279,8 @@ class CreateDemoOffice extends Command
                 'east_type' => 'build', 'east_plotno' => '59', 'east_length' => '25', 'west_type' => 'path', 'west_width' => '8', 'west_length' => '25']]]]);
         InboxMessage::create(['source' => 'unit_inquiry', 'unit_id' => $units[0]->id, 'name' => 'أحمد السالم', 'mobile' => '0559876543',
             'message' => 'السلام عليكم، هل الشقة متاحة للمعاينة يوم الخميس؟']);
+        // every other section: staff and payroll, invoices, online payments, payouts, terms, licences, branches, more photos…
+        (new Demo\DemoExtras($units, $owners, $clients, $towers, $bank, $admin, $palette))->seed();
         Date::setTestNow();
     }
 

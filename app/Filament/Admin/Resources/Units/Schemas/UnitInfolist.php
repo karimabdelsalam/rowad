@@ -68,7 +68,10 @@ class UnitInfolist
                             ->visible(fn (Unit $record) => $record->currentContract instanceof RentContract),
                     ]),
                                 Section::make(__('الأسعار'))->icon(Heroicon::OutlinedBanknotes)->columns(2)->schema([
-                        TextEntry::make('rent_amount')->label(__('الإيجار السنوي'))->numeric(2)->suffix(' '.__('ر.س'))->weight('bold')->placeholder('-')->columnSpanFull(),
+                        TextEntry::make('sale_price')->label(__('سعر البيع المطلوب'))->numeric(2)->suffix(' '.__('ر.س'))->weight('bold')->columnSpanFull()
+                            ->visible(fn (\App\Models\Unit $r) => $r->offer_type === \App\Enums\OfferType::Sale),
+                        TextEntry::make('rent_amount')->label(__('الإيجار السنوي'))->numeric(2)->suffix(' '.__('ر.س'))->weight('bold')->placeholder('-')->columnSpanFull()
+                            ->hidden(fn (\App\Models\Unit $r) => $r->offer_type === \App\Enums\OfferType::Sale && ! (float) $r->rent_amount),
                         TextEntry::make('monthly_rent')->label(__('الإيجار الشهري'))->numeric(2)->placeholder('-'),
                         TextEntry::make('daily_rent')->label(__('الإيجار اليومي'))->numeric(2)->placeholder('-'),
                         TextEntry::make('rent_payment_cycle')->label(__('دورة السداد'))->badge()->placeholder('-'),
@@ -180,7 +183,8 @@ class UnitInfolist
                 'facts' => array_values(array_filter([
                     \App\Filament\Infolists\Parts::fact('الحالة', $r->status?->getLabel(), $contract ? 'success' : 'warning'),
                     \App\Filament\Infolists\Parts::fact('العرض', $r->offer_type?->getLabel()),
-                    (float) $r->rent_amount > 0 ? \App\Filament\Infolists\Parts::fact('الإيجار السنوي', number_format((float) $r->rent_amount, 2)) : null,
+                    $r->offer_type === \App\Enums\OfferType::Sale && (float) $r->sale_price > 0 ? \App\Filament\Infolists\Parts::fact('سعر البيع', number_format((float) $r->sale_price, 2))
+                        : ((float) $r->rent_amount > 0 ? \App\Filament\Infolists\Parts::fact('الإيجار السنوي', number_format((float) $r->rent_amount, 2)) : null),
                     $contract ? \App\Filament\Infolists\Parts::fact($contract instanceof RentContract ? 'المستأجر' : 'المشتري', $contract->clients?->pluck('full_name')->first()) : null,
                     \App\Filament\Infolists\Parts::fact('الملاك', $r->owners->pluck('full_name')->join('، ') ?: '-'),
                 ])),

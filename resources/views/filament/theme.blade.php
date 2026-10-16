@@ -479,9 +479,9 @@
     .rowad-status { display: grid; gap: 8px; margin: 0; }
     .rowad-status div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rowad-line); font-size: .9rem; }
     .rowad-status dt { color: var(--rowad-muted); } .rowad-status dd { margin: 0; font-weight: 700; direction: ltr; unicode-bidi: plaintext; }
-    .rowad-credit { text-align: center; font-size: .8rem; color: var(--rowad-muted); padding: 18px 16px 22px; }
-    .rowad-credit--compact { padding: 14px 0 0; }
-    .rowad-credit a { color: var(--rowad-brand); font-weight: 700; }
+    .rowad-credit { text-align: center; font-size: 11px; color: var(--rowad-muted); padding: 12px 16px 14px; }
+    .rowad-credit--compact { padding: 10px 0 0; }
+    .rowad-credit a { color: var(--rowad-brand); font-weight: 600; }
     .rowad-credit a:hover { text-decoration: underline; }
     .rowad-plan-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 16px 0 4px; padding: 12px 16px; border-radius: 14px; font-weight: 600; font-size: .92rem; border: 1px solid; }
     .rowad-plan-notice--warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
