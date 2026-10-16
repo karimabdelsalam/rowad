@@ -33,6 +33,12 @@ Route::middleware([
     Route::post('/units/{unit}/inquiry', [LandingController::class, 'inquire'])->name('site.unit.inquiry');
     Route::get('/media/{media}', MediaController::class)->name('site.media');
 
+    // the portals as an installable phone app (PWA)
+    Route::get('/manifest/{panel}.webmanifest', [\App\Http\Controllers\Site\AppController::class, 'manifest'])->whereIn('panel', \App\Http\Controllers\Site\AppController::PANELS)->name('app.manifest');
+    Route::get('/app/icon.svg', [\App\Http\Controllers\Site\AppController::class, 'icon'])->name('app.icon');
+    Route::get('/sw.js', [\App\Http\Controllers\Site\AppController::class, 'serviceWorker'])->name('app.sw');
+    Route::get('/app/offline', [\App\Http\Controllers\Site\AppController::class, 'offline'])->name('app.offline');
+
     // e-collection: the public pay page of an installment (token from a reminder or the client portal)
     Route::get('/pay/{token}', [\App\Http\Controllers\Site\PayController::class, 'show'])->middleware('throttle:60,1')->name('pay.show');
     Route::get('/pay/{token}/callback', [\App\Http\Controllers\Site\PayController::class, 'callback'])->middleware('throttle:30,1')->name('pay.callback');

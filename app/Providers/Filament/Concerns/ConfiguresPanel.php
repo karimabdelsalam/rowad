@@ -73,6 +73,11 @@ trait ConfiguresPanel
             $panel->renderHook(PanelsRenderHook::SIDEBAR_FOOTER, fn () => view('filament.sidebar-footer'));
             $panel->renderHook(PanelsRenderHook::SIMPLE_LAYOUT_START, fn () => view('filament.login-aside'));
             $panel->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => view('filament.quick-create'));
+            // installable app (PWA) for every office panel; the portals also get a phone tab bar
+            $panel->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.pwa-head'));
+            if (in_array($id, ['owner', 'client'], true)) {
+                $panel->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('filament.portal-mobile') : '');
+            }
             $panel->multiFactorAuthentication([\App\Auth\SmsAuthentication::make()]);
             $panel->widgets([\App\Filament\Widgets\LoginActivities::class]);
             $panel->passwordReset(\App\Filament\Auth\RequestPasswordReset::class)->profile();

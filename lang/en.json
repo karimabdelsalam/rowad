@@ -2080,5 +2080,14 @@
     "مرحبًا :name، رابط سداد قسط :unit بمبلغ :amount ر.س: :url": "Hello :name, here is the link to pay the :unit instalment of SAR :amount: :url",
     "معرّف رقم واتساب غير صالح.": "Invalid WhatsApp phone number ID.",
     "اربط واتساب للأعمال من الإعدادات أولًا.": "Connect WhatsApp Business in the settings first.",
-    "إرسال عبر واتساب": "Send via WhatsApp"
+    "إرسال عبر واتساب": "Send via WhatsApp",
+    "التنقل السريع": "Quick navigation",
+    "المزيد": "More",
+    "ثبّت التطبيق على جوالك": "Install the app on your phone",
+    "افتح البوابة بلمسة من الشاشة الرئيسية، بلا متجر تطبيقات.": "Open the portal with one tap from your home screen — no app store needed.",
+    "اضغط زر المشاركة ثم \"إضافة إلى الشاشة الرئيسية\".": "Tap Share, then \"Add to Home Screen\".",
+    "تثبيت": "Install",
+    "لا يوجد اتصال بالإنترنت": "No internet connection",
+    "تحقّق من اتصالك ثم أعد المحاولة. بياناتك محفوظة لدى المكتب ولن يضيع شيء.": "Check your connection and try again. Your data is safe with the office.",
+    "إعادة المحاولة": "Try again"
 }

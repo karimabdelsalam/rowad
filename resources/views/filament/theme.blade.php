@@ -197,6 +197,29 @@
     .rowad-welcome__action:hover { background: rgb(255 255 255 / .24); }
     .rowad-welcome__icon { width: 18px; height: 18px; }
 
+    /* ---------- portals on a phone: bottom tab bar + install hint ---------- */
+    .rowad-tabbar, .rowad-install { display: none; }
+    @media (max-width: 1023px) {
+        body:has(.rowad-tabbar) .fi-main-ctn { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+        .rowad-tabbar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: fixed; inset-inline: 0; bottom: 0; z-index: 35;
+            background: rgb(255 255 255 / .96); backdrop-filter: blur(12px); border-top: 1px solid var(--rowad-line);
+            padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); box-shadow: 0 -6px 20px rgb(15 23 42 / .06); }
+        .rowad-tabbar__item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 12px; color: var(--rowad-muted);
+            font: inherit; font-size: .68rem; font-weight: 700; background: none; border: 0; cursor: pointer; min-width: 0; }
+        .rowad-tabbar__item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .rowad-tabbar__icon { width: 22px; height: 22px; }
+        .rowad-tabbar__item.is-active { color: var(--rowad-brand); background: var(--rowad-brand-soft); }
+        .rowad-install { display: flex; align-items: center; gap: 10px; position: fixed; inset-inline: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 36;
+            background: #fff; border: 1px solid var(--rowad-line); border-radius: 16px; padding: 10px 12px; box-shadow: 0 16px 40px rgb(15 23 42 / .18); }
+        .rowad-install[x-cloak] { display: none !important; }
+        .rowad-install img { border-radius: 10px; flex: none; }
+        .rowad-install__text { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.35; }
+        .rowad-install__text b { font-size: .88rem; color: var(--rowad-ink); }
+        .rowad-install__text small { font-size: .74rem; color: var(--rowad-muted); }
+        .rowad-install__go { font: inherit; font-size: .8rem; font-weight: 800; color: #fff; background: var(--rowad-brand); border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+        .rowad-install__close { font: inherit; font-size: 1.3rem; line-height: 1; color: var(--rowad-muted); background: none; border: 0; cursor: pointer; padding: 2px 6px; }
+    }
+
     /* ---------- getting-started checklist ---------- */
     .rowad-start { background: #fff; border: 1px solid var(--rowad-line); border-radius: 20px; box-shadow: var(--rowad-shadow); padding: 20px 24px; }
     .rowad-start__head { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; margin-bottom: 14px; }

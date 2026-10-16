@@ -49,9 +49,9 @@ class InstallmentResource extends PortalResource
                     ->color(fn (Installment $record) => ! $record->is_collected && $record->due_date?->isPast() ? 'danger' : null),
                 TextColumn::make('unit.title')->label(__('الوحدة'))->weight('medium')
                     ->description(fn (Installment $record) => $record->contract?->number),
-                TextColumn::make('type')->label(__('النوع'))->badge(),
-                TextColumn::make('amount')->label(__('المبلغ'))->numeric(2)->weight('bold'),
-                TextColumn::make('paid_amount')->label(__('المدفوع'))->state(fn (\App\Models\Installment $record) => $record->paidTotal())->numeric(2)->color('success'),
+                TextColumn::make('type')->label(__('النوع'))->badge()->visibleFrom('lg'),
+                TextColumn::make('amount')->label(__('المبلغ'))->numeric(2)->weight('bold')->visibleFrom('sm'),
+                TextColumn::make('paid_amount')->visibleFrom('md')->label(__('المدفوع'))->state(fn (\App\Models\Installment $record) => $record->paidTotal())->numeric(2)->color('success'),
                 TextColumn::make('remaining')->label(__('المتبقي'))->state(fn (Installment $record) => $record->remainingAmount())->numeric(2)->color(fn ($state) => $state > 0 ? 'danger' : 'gray'),
                 TextColumn::make('state')->label(__('الحالة'))->badge()
                     ->state(fn (\App\Models\Installment $record) => $record->is_collected ? 'collected' : ($record->due_date?->isPast() ? 'late' : ((float) $record->paid_amount > 0 ? 'partial' : 'due')))
@@ -60,6 +60,8 @@ class InstallmentResource extends PortalResource
                     ->icon(fn ($state) => ['collected' => Heroicon::OutlinedCheckCircle, 'late' => Heroicon::OutlinedExclamationCircle, 'partial' => Heroicon::OutlinedClock, 'due' => Heroicon::OutlinedCalendar][$state]),
             ])
             ->filters([TernaryFilter::make('is_collected')->label(__('مسدد'))->default(false)])
+            // the pay button comes first so it is in view on a phone without scrolling sideways
+            ->recordActionsPosition(\Filament\Tables\Enums\RecordActionsPosition::BeforeColumns)
             ->recordActions([
                 \Filament\Actions\Action::make('pay')
                     ->label(__('ادفع الآن'))

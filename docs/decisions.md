@@ -438,3 +438,19 @@
 - Campaigns can use WhatsApp once connected (same mobile audience as SMS).
 - Zero-setup option for every office: the pay-link window has "إرسال عبر واتساب", a wa.me link that
   opens the staff member's own WhatsApp with the tenant's number and the pay link pre-filled.
+
+## Portals as an installable app (PWA) (2026-10-16) — roadmap phase 3
+
+- No app-store build: each office's admin panel and both portals are installable from the browser.
+  `/manifest/{panel}.webmanifest` carries the office name, panel role, brand colour and scope
+  (`/client`, `/owner`, `/admin`); the icon (`/app/icon.svg`) is the office monogram on its colour,
+  drawn as SVG so Arabic letters render correctly, with the Aqar Nova PNGs as fallback.
+- `/sw.js` (scope `/`) is network-first for pages so financial data is never stale; it only falls
+  back to `/app/offline` with no network, caches static assets, and never touches non-GET requests
+  (Livewire, forms, payments).
+- On phones the portals get a native-style bottom tab bar (dashboard first, then what each user opens
+  most: tenant — payments, contracts, support; owner — units, statement, collections) and a one-time
+  install hint (Android install prompt; iOS "Share → Add to Home Screen" instructions).
+- The tenant's payments table puts "ادفع الآن" first and hides secondary columns on small screens so
+  paying needs no sideways scrolling.
+- Web Push is the next step on top of the service worker (the API already stores device tokens).
