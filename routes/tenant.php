@@ -40,6 +40,11 @@ Route::middleware([
     Route::get('/app/offline', [\App\Http\Controllers\Site\AppController::class, 'offline'])->name('app.offline');
 
     // e-collection: the public pay page of an installment (token from a reminder or the client portal)
+    Route::get('/sign/{token}', [\App\Http\Controllers\Site\SignController::class, 'show'])->middleware('throttle:sign')->name('sign.show');
+    Route::post('/sign/{token}/code', [\App\Http\Controllers\Site\SignController::class, 'code'])->middleware('throttle:sign-code')->name('sign.code');
+    Route::post('/sign/{token}', [\App\Http\Controllers\Site\SignController::class, 'sign'])->middleware('throttle:sign')->name('sign.store');
+    Route::post('/sign/{token}/decline', [\App\Http\Controllers\Site\SignController::class, 'decline'])->middleware('throttle:sign')->name('sign.decline');
+
     Route::get('/pay/{token}', [\App\Http\Controllers\Site\PayController::class, 'show'])->middleware('throttle:60,1')->name('pay.show');
     Route::get('/pay/{token}/callback', [\App\Http\Controllers\Site\PayController::class, 'callback'])->middleware('throttle:30,1')->name('pay.callback');
     Route::post('/webhooks/moyasar', [\App\Http\Controllers\Site\PayController::class, 'webhook'])

@@ -49,10 +49,17 @@ class RentContract extends Model implements HasMedia
             'status' => ContractStatus::class,
             'ejar_status' => \App\Enums\EjarStatus::class,
             'ejar_documented_at' => 'date',
+            'signed_at' => 'datetime',
             'ended_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'archived_at' => 'datetime',
         ];
+    }
+
+    /** Electronic signatures of the parties (see ContractSigning). */
+    public function signatures(): MorphMany
+    {
+        return $this->morphMany(ContractSignature::class, 'signable');
     }
 
     /** Legacy nextpay: the earliest uncollected installment, kept on the contract for lists and reminders. */

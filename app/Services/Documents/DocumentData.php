@@ -119,8 +119,20 @@ class DocumentData
             'terms' => $this->terms($c),
             'qrcode_owner' => $qr,
             'qrcode_renter' => '',
+            'owner_signature' => $this->signatures($c, 'lessor'),
+            'renter_signature' => $this->signatures($c, 'lessee'),
             'installments_table' => $this->installmentsTable($c),
         ], $this->legacy->rentContract($c, $qr));
+    }
+
+    /** Electronic signatures of one side of the contract, drawn by the parties (see ContractSigning). */
+    private function signatures(RentContract $c, string $role): string
+    {
+        return $c->signatures()->where('role', $role)->where('status', \App\Models\ContractSignature::SIGNED)->orderBy('id')->get()
+            ->map(fn (\App\Models\ContractSignature $s) => '<div class="esign"><img src="'.e((string) $s->signature).'" alt="">'
+                .'<small>'.e($s->name).' — '.e(__('وُقّع إلكترونيًا :at', ['at' => $s->signed_at->format('Y-m-d H:i')])).'<br>'
+                .e(__('بصمة العقد: :hash', ['hash' => substr((string) $s->document_hash, 0, 16)])).'</small></div>')
+            ->join('');
     }
 
     public function saleContract(SaleContract $c): string

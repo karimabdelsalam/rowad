@@ -31,6 +31,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // contract signing links: limits per link, so parties signing from one office network don't block each other
+        \Illuminate\Support\Facades\RateLimiter::for('sign-code', fn (\Illuminate\Http\Request $request) => \Illuminate\Cache\RateLimiting\Limit::perMinutes(10, 5)
+            ->by('sign-code|'.$request->route('token')));
+        \Illuminate\Support\Facades\RateLimiter::for('sign', fn (\Illuminate\Http\Request $request) => \Illuminate\Cache\RateLimiting\Limit::perMinutes(10, 30)
+            ->by('sign|'.$request->route('token').'|'.$request->ip()));
         if (filled($proxies = config('rowad.trusted_proxies'))) {
             \Illuminate\Http\Middleware\TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
         }
@@ -72,6 +77,7 @@ class AppServiceProvider extends ServiceProvider
             'city' => Models\City::class,
             'client' => Models\Client::class,
             'company_partner' => Models\CompanyPartner::class,
+            'contract_signature' => Models\ContractSignature::class,
             'contract_term' => Models\ContractTerm::class,
             'office_file' => Models\OfficeFile::class,
             'custom_field' => Models\CustomField::class,

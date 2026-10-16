@@ -9,4 +9,15 @@
     <p>{{ __('الأطراف') }}: {{ $contract->clients->pluck('full_name')->join('، ') }}</p>
     @isset($contract->start_date)<p>{{ __('المدة') }}: {{ $contract->start_date->toDateString() }} — {{ $contract->end_date->toDateString() }}</p>@endisset
     <p>{{ __('الحالة') }}: {{ $contract->status->getLabel() }}</p>
+    @if ($contract instanceof \App\Models\RentContract && ($signatures = $contract->signatures()->orderBy('id')->get())->isNotEmpty())
+        <p>{{ __('التوقيع الإلكتروني') }}:</p>
+        <ul>
+            @foreach ($signatures as $s)
+                <li>{{ $s->roleLabel() }}: {{ $s->name }} — {{ $s->statusLabel() }}@if ($s->signed_at) ({{ $s->signed_at->format('Y-m-d H:i') }})@endif</li>
+            @endforeach
+        </ul>
+        @if ($contract->signed_at)
+            <p class="ok">✓ {{ __('العقد موقّع إلكترونيًا من جميع الأطراف') }}</p>
+        @endif
+    @endif
 </main></body></html>

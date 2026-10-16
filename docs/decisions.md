@@ -554,3 +554,23 @@
     documented.
 - When the owner obtains Ejar API access, submission plugs in behind the same sheet (it already holds
   the payload) and the status fields; no screen changes are needed.
+
+## Electronic signature of rent contracts (2026-10-16) — vision §د
+
+- Staff press "طلب التوقيع الإلكتروني" on a rent contract; every owner and tenant gets a private link
+  (48 random characters, only its SHA-256 is stored, valid 14 days) by SMS/WhatsApp/email.
+- The public page shows the full contract (the office's own print design) and the parties' status.
+  The signer proves who they are with a 6-digit code sent by SMS (never WhatsApp) to the mobile the
+  office has on file — 10 minutes, 5 attempts, 1-minute resend gap — then draws their signature and
+  ticks an acknowledgement. Rate limits are per link, so parties on one office network don't collide.
+- Evidence kept per signature: the drawing (PNG), time, IP, user agent and a SHA-256 fingerprint of the
+  terms (parties, unit, dates, amounts, schedule, clauses). Requesting again skips parties who signed
+  the same terms; if the terms changed, everyone signs again.
+- When the last party signs, the contract's `signed_at` is set and staff are notified. Signatures print
+  in the signature boxes of the default contract design (new placeholders `{owner_signature}` and
+  `{renter_signature}`, added automatically to offices still on the default design), and the QR
+  verification page lists who signed and when.
+- Tenants and owners can also start signing from their portal ("وقّع العقد"), which issues a fresh link.
+- A party can decline with a reason; the office is notified.
+- This is an e-signature with identity verification by mobile code, not a Nafath-backed signature;
+  Nafath would need a government integration agreement.

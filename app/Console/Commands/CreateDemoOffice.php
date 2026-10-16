@@ -197,6 +197,15 @@ class CreateDemoOffice extends Command
         SupportTicket::create(['owner_id' => $owners[2]->id, 'unit_id' => $units[5]->id, 'type' => 'problem', 'subject' => 'تسريب مياه في المطبخ',
             'message' => 'أبلغني المستأجر بوجود تسريب تحت المغسلة.'] + SupportTicket::newTicketDefaults());
 
+        // e-signature: the owner of the portal tenant's contract has signed, the tenant still has to
+        $signing = app(\App\Services\Signing\ContractSigning::class);
+        $signed = \App\Models\RentContract::where('unit_id', $units[5]->id)->first();
+        $signing->request($signed);
+        \App\Models\ContractSignature::where('role', 'lessor')->whereMorphedTo('signable', $signed)->first()->forceFill([
+            'status' => 'signed', 'signature' => $this->signatureDrawing(), 'signed_at' => now()->subDay()->setTime(19, 42),
+            'ip' => '188.48.12.7', 'user_agent' => 'Mozilla/5.0 (iPhone)', 'document_hash' => \App\Services\Signing\ContractSigning::fingerprint($signed),
+        ])->save();
+
         // maintenance at every stage: done and rated, waiting for the owner, booked, just reported, in progress
         Settings::set('maintenance_approval_limit', 1000, 'general');
         $maintenance = app(\App\Services\Maintenance\MaintenanceService::class);
@@ -232,6 +241,29 @@ class CreateDemoOffice extends Command
         InboxMessage::create(['source' => 'unit_inquiry', 'unit_id' => $units[0]->id, 'name' => 'أحمد السالم', 'mobile' => '0559876543',
             'message' => 'السلام عليكم، هل الشقة متاحة للمعاينة يوم الخميس؟']);
         Date::setTestNow();
+    }
+
+    /** A hand-drawn looking signature (PNG data URI) for the demo's signed party. */
+    private function signatureDrawing(): string
+    {
+        $image = imagecreatetruecolor(360, 120);
+        imagesavealpha($image, true);
+        imagefill($image, 0, 0, imagecolorallocatealpha($image, 255, 255, 255, 127));
+        $ink = imagecolorallocate($image, 15, 23, 42);
+        imagesetthickness($image, 3);
+        $previous = null;
+        for ($x = 20; $x <= 330; $x += 4) {
+            $point = [$x, (int) (62 + 26 * sin($x / 17) * cos($x / 53) - ($x > 250 ? ($x - 250) / 3 : 0))];
+            if ($previous) {
+                imageline($image, $previous[0], $previous[1], $point[0], $point[1], $ink);
+            }
+            $previous = $point;
+        }
+        imageline($image, 40, 96, 300, 90, $ink);
+        ob_start();
+        imagepng($image);
+
+        return 'data:image/png;base64,'.base64_encode((string) ob_get_clean());
     }
 
     /** A simple generated façade picture so the demo needs no external images. */

@@ -76,6 +76,8 @@ class RentContractInfolist
                             TextEntry::make('next_payment_amount')->label(__('المبلغ'))->numeric(2)->weight('bold'),
                         ]),
 
+                    \App\Filament\Admin\Resources\RentContracts\SignatureActions::section(),
+
                     Section::make(__('منصة إيجار'))->icon(Heroicon::OutlinedBuildingLibrary)->columns(2)->schema([
                         TextEntry::make('ejar_status')->label(__('التوثيق'))->badge()->columnSpanFull(),
                         TextEntry::make('ejar_number')->label(__('رقم العقد في إيجار'))->copyable()->weight('bold')

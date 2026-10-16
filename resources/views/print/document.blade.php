@@ -88,6 +88,9 @@
         .signatures.three { grid-template-columns: repeat(3, 1fr); }
         .sign { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 92px; }
         .sign b { display: block; font-size: 11.5px; margin-bottom: 26px; }
+        .esign { margin: -18px 0 4px; }
+        .esign img { display: block; height: 46px; max-width: 100%; object-fit: contain; }
+        .esign small { display: block; font-size: 9px; color: var(--muted); line-height: 1.4; }
         .sign span { display: block; border-top: 1px dashed #cbd5e1; padding-top: 4px; font-size: 10px; color: var(--muted); }
         .qr { text-align: center; font-size: 9.5px; color: var(--muted); }
         .qr img { width: 92px; height: 92px; display: block; margin: 0 auto 2px; }
@@ -106,7 +109,9 @@
     </style>
 </head>
 <body>
-    <div class="toolbar"><button onclick="window.print()">{{ __('طباعة / حفظ PDF') }}</button></div>
+    @unless ($embedded ?? false)
+        <div class="toolbar"><button onclick="window.print()">{{ __('طباعة / حفظ PDF') }}</button></div>
+    @endunless
     <div class="sheet">{!! $html !!}</div>
 </body>
 </html>

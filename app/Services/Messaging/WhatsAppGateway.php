@@ -16,7 +16,7 @@ class WhatsAppGateway
     public const API = 'https://graph.facebook.com/v21.0';
 
     /** Events that never go through WhatsApp: one-time codes need Meta's separate authentication templates. */
-    public const SMS_ONLY_EVENTS = ['login_otp', 'password_reset_otp'];
+    public const SMS_ONLY_EVENTS = ['login_otp', 'password_reset_otp', 'signature_otp'];
 
     public static function enabled(): bool
     {

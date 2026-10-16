@@ -81,6 +81,7 @@ class RentContractResource extends PortalResource
                 TextColumn::make('status')->label(__('الحالة'))->badge(),
             ])
             ->recordActions([
+                \App\Filament\Concerns\PortalSignAction::make(\App\Filament\Concerns\PortalSignAction::client()),
                 \Filament\Actions\Action::make('print')
                     ->label(__('طباعة'))
                     ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
