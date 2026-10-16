@@ -324,6 +324,21 @@
     .rowad-einv__badge { display: inline-block; font-size: .74rem; font-weight: 700; border-radius: 999px; padding: 2px 10px; background: #f1f5f9; color: #475569; }
     .rowad-einv__badge.is-ok { background: #ecfdf5; color: #047857; } .rowad-einv__badge.is-warn { background: #fffbeb; color: #b45309; } .rowad-einv__badge.is-bad { background: #fef2f2; color: #b91c1c; }
 
+    /* ---------- Platform console: login panel, AI status ---------- */
+    .rowad-login-aside--platform { background: radial-gradient(640px 340px at 85% 0%, rgb(20 184 166 / .28), transparent 60%),
+        radial-gradient(520px 300px at 0% 100%, rgb(235 104 52 / .16), transparent 60%), linear-gradient(160deg, #071c1f 0%, #0b2a2e 55%, #0b4a45 100%) !important; }
+    .rowad-plat-mark { display: inline-grid; place-items: center; width: 68px; height: 68px; border-radius: 20px; background: #fff; margin-bottom: 18px;
+        box-shadow: 0 12px 30px rgb(0 0 0 / .25); }
+    .rowad-plat-mark img { width: 42px; height: 42px; }
+    .rowad-login-aside--platform h1 { font-size: 2rem !important; letter-spacing: -.01em; }
+    .rowad-login-aside--platform h1 span { color: #5eead4; }
+    .rowad-plat-note { display: flex; align-items: flex-start; gap: 10px; margin: 0; max-width: 30rem; font-size: .86rem; line-height: 1.7; color: rgb(255 255 255 / .72);
+        background: rgb(255 255 255 / .06); border: 1px solid rgb(255 255 255 / .1); border-radius: 14px; padding: 12px 14px; }
+    .rowad-plat-note svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: #5eead4; }
+    .rowad-ai-status { margin: 0; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: .88rem; }
+    .rowad-ai-status.is-ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .rowad-ai-status.is-warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
     /* ---------- Public demo banner ---------- */
     .rowad-demo-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; padding: 7px 16px; font-size: .82rem;
         background: linear-gradient(90deg, var(--rowad-brand-dark), var(--rowad-brand)); color: #ecfdf5; text-align: center; }

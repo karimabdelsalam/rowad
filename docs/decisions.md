@@ -698,3 +698,21 @@
 - Every demo panel shows a banner saying so, with a link to sign up a real office.
 - Still possible by design: visitors see each other's changes while they overlap. Isolating each
   visitor in their own copy would need one database per visitor, and isn't worth it at this stage.
+
+## AI key from the platform console; platform sign-in page (2026-10-16)
+
+- Platform settings ← الذكاء الاصطناعي: the platform owner enters the Anthropic key and the model
+  there, without touching the server.
+  - The key is stored encrypted (APP_KEY) in the central settings table. It never goes back to the
+    browser: the field stays empty and says a key is saved.
+  - A toggle removes the key.
+  - "Save and test" sends a 5-token request, so a wrong key or model shows up immediately rather than
+    in an office.
+  - `.env` (ANTHROPIC_API_KEY / AI_MODEL) stays the fallback, so existing installations keep working.
+  - If APP_KEY changes, the stored key can't be decrypted. The system then falls back to `.env` until
+    the key is entered again.
+- The model field suggests claude-sonnet-5-5 (balanced, recommended), claude-opus-5-5 (highest quality)
+  and claude-haiku-5-5 (fastest and cheapest). Any other model ID can be typed.
+- The platform console's sign-in page had no side panel (that panel is drawn for office panels only),
+  which left an empty half-screen. It now has its own Aqar Nova panel, a heading for the operations
+  team, and a note sending office users to their office's link.

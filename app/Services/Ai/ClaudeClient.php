@@ -2,15 +2,16 @@
 
 namespace App\Services\Ai;
 
+use App\Support\PlatformSettings;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
-/** Thin wrapper over the Anthropic Messages API (one request, no streaming). */
+/** Thin wrapper over the Anthropic Messages API (one request, no streaming). Key and model: platform console, else .env. */
 class ClaudeClient
 {
     public static function configured(): bool
     {
-        return filled(config('rowad.ai.api_key')) && filled(config('rowad.ai.model'));
+        return filled(PlatformSettings::aiApiKey()) && filled(PlatformSettings::aiModel());
     }
 
     /**
@@ -27,7 +28,7 @@ class ClaudeClient
         }
 
         $payload = array_filter([
-            'model' => config('rowad.ai.model'),
+            'model' => PlatformSettings::aiModel(),
             'max_tokens' => $maxTokens ?? config('rowad.ai.max_tokens'),
             'system' => $system,
             'messages' => $messages,
@@ -36,7 +37,7 @@ class ClaudeClient
 
         try {
             return Http::baseUrl((string) config('rowad.ai.base_url'))
-                ->withHeaders(['x-api-key' => config('rowad.ai.api_key'), 'anthropic-version' => '2023-06-01'])
+                ->withHeaders(['x-api-key' => PlatformSettings::aiApiKey(), 'anthropic-version' => '2023-06-01'])
                 ->timeout((int) config('rowad.ai.timeout'))
                 ->retry(2, 1500, fn ($e) => $e instanceof RequestException && in_array($e->response->status(), [429, 500, 502, 503, 529], true), throw: true)
                 ->post('/v1/messages', $payload)

@@ -27,7 +27,12 @@ final class PlatformSettings
         'announcement_enabled' => false,
         'announcement_level' => 'info',
         'announcement_text' => '',
+        'ai_api_key' => null,          // encrypted; null: ANTHROPIC_API_KEY from .env
+        'ai_model' => null,            // null: AI_MODEL from .env
     ];
+
+    /** Kept out of the generic form and saved only through their own setters. */
+    public const SECRETS = ['ai_api_key'];
 
     /** @var array<string, mixed>|null */
     private static ?array $cache = null;
@@ -49,13 +54,58 @@ final class PlatformSettings
     public static function save(array $values): void
     {
         foreach ($values as $key => $value) {
-            if (! array_key_exists($key, self::DEFAULTS)) {
+            if (! array_key_exists($key, self::DEFAULTS) || in_array($key, self::SECRETS, true)) {
                 continue;
             }
             $setting = self::query()->firstOrNew(['key' => $key], ['group' => 'platform']);
             $setting->value = $value === '' ? null : $value;
             $setting->save();
         }
+        self::$cache = null;
+    }
+
+    /** @return array<string, mixed> stored values safe to put in a form (secrets left out) */
+    public static function editable(): array
+    {
+        return array_diff_key(self::all(), array_flip(self::SECRETS));
+    }
+
+    /** The AI service key: the one saved in the console (encrypted at rest), else ANTHROPIC_API_KEY. */
+    public static function aiApiKey(): ?string
+    {
+        $stored = self::all()['ai_api_key'] ?? null;
+        if (filled($stored)) {
+            try {
+                return \Illuminate\Support\Facades\Crypt::decryptString((string) $stored);
+            } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+                // APP_KEY changed since it was saved: fall back to .env until it is entered again
+            }
+        }
+
+        return config('rowad.ai.api_key') ?: null;
+    }
+
+    public static function aiModel(): ?string
+    {
+        return ((string) self::get('ai_model')) ?: (config('rowad.ai.model') ?: null);
+    }
+
+    /** Where the key comes from: 'console', 'env' or null (not configured). */
+    public static function aiKeySource(): ?string
+    {
+        if (filled(self::all()['ai_api_key'] ?? null) && self::aiApiKey() !== config('rowad.ai.api_key')) {
+            return 'console';
+        }
+
+        return filled(config('rowad.ai.api_key')) ? 'env' : null;
+    }
+
+    /** Save (encrypted) or remove the console key. */
+    public static function setAiApiKey(?string $key): void
+    {
+        $setting = self::query()->firstOrNew(['key' => 'ai_api_key'], ['group' => 'platform']);
+        $setting->value = filled($key) ? \Illuminate\Support\Facades\Crypt::encryptString(trim($key)) : null;
+        $setting->save();
         self::$cache = null;
     }
 

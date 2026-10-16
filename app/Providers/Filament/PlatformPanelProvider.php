@@ -19,6 +19,9 @@ class PlatformPanelProvider extends PanelProvider
             ->brandName(fn () => __('عقار نوفا — إدارة المنصة'))
             ->brandLogo(fn () => view('filament.platform-brand'))
             ->brandLogoHeight('2.25rem')
-            ->pages([Dashboard::class]);
+            ->pages([Dashboard::class])
+            ->login(\App\Filament\Platform\Auth\Login::class)
+            // the sign-in page gets the platform's own panel beside the form (offices get theirs in ConfiguresPanel)
+            ->renderHook(\Filament\View\PanelsRenderHook::SIMPLE_LAYOUT_START, fn () => view('filament.platform-login-aside'));
     }
 }

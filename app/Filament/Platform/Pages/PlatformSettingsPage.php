@@ -57,7 +57,8 @@ class PlatformSettingsPage extends Page
 
     public function mount(): void
     {
-        $this->form->fill(array_merge(PlatformSettings::DEFAULTS, PlatformSettings::all()));
+        // the AI key never goes back to the browser: the field stays empty and shows whether one is saved
+        $this->form->fill(array_merge(array_diff_key(PlatformSettings::DEFAULTS, array_flip(PlatformSettings::SECRETS)), PlatformSettings::editable()));
     }
 
     public function form(Schema $schema): Schema
@@ -100,6 +101,28 @@ class PlatformSettingsPage extends Page
                         ->visible(fn (Get $get) => (bool) $get('announcement_enabled'))
                         ->placeholder(__('صيانة مجدولة الليلة من 2 إلى 3 صباحًا — قد تتوقف الخدمة لدقائق.')),
                 ]),
+                Tab::make(__('الذكاء الاصطناعي'))->icon(Heroicon::OutlinedSparkles)->columns(2)->schema([
+                    Text::make(fn () => $this->aiStatus())->columnSpanFull(),
+                    TextInput::make('ai_api_key')->label(__('مفتاح Anthropic API'))->password()->revealable()->autocomplete('new-password')
+                        ->extraInputAttributes(['dir' => 'ltr'])->maxLength(300)
+                        ->placeholder(fn () => match (PlatformSettings::aiKeySource()) {
+                            'console' => __('مفتاح محفوظ — اتركه فارغًا للإبقاء عليه'),
+                            'env' => __('يُستخدم المفتاح المضبوط على السيرفر — أدخل مفتاحًا ليحل محله'),
+                            default => 'sk-ant-…',
+                        })
+                        ->helperText(__('من console.anthropic.com ← API Keys. يُحفظ مشفّرًا ولا يُعرض مرة أخرى.')),
+                    TextInput::make('ai_model')->label(__('النموذج'))->extraInputAttributes(['dir' => 'ltr'])->maxLength(100)
+                        ->datalist(array_keys(self::AI_MODELS))->placeholder(config('rowad.ai.model') ?: 'claude-sonnet-5-5')
+                        ->helperText(fn () => new \Illuminate\Support\HtmlString(collect(self::AI_MODELS)
+                            ->map(fn ($label, $id) => '<bdi dir="ltr"><code>'.e($id).'</code></bdi> '.e(__($label)))->implode('<br>'))),
+                    Toggle::make('ai_api_key_clear')->label(__('حذف المفتاح المحفوظ'))->columnSpanFull()
+                        ->visible(fn () => PlatformSettings::aiKeySource() === 'console')
+                        ->helperText(__('يعود النظام إلى المفتاح المضبوط على السيرفر (ANTHROPIC_API_KEY) إن وُجد، وإلا يتوقف المساعد.')),
+                    Actions::make([
+                        Action::make('testAi')->label(__('حفظ واختبار الاتصال'))->icon(Heroicon::OutlinedSignal)->color('gray')
+                            ->action(fn () => $this->testAi()),
+                    ])->columnSpanFull(),
+                ]),
                 Tab::make(__('الحالة'))->icon(Heroicon::OutlinedServerStack)->schema([
                     Text::make(fn () => $this->statusText())->columnSpanFull(),
                 ]),
@@ -116,10 +139,53 @@ class PlatformSettingsPage extends Page
         ]);
     }
 
-    public function save(): void
+    public function save(bool $notify = true): void
     {
-        PlatformSettings::save($this->form->getState());
-        Notification::make()->title(__('تم الحفظ'))->success()->send();
+        $state = $this->form->getState();
+        if ($state['ai_api_key_clear'] ?? false) {
+            PlatformSettings::setAiApiKey(null);
+        } elseif (filled($state['ai_api_key'] ?? null)) {
+            PlatformSettings::setAiApiKey($state['ai_api_key']);
+        }
+        PlatformSettings::save($state); // secrets are skipped here
+        $this->data['ai_api_key'] = null;
+        $this->data['ai_api_key_clear'] = false;
+        if ($notify) {
+            Notification::make()->title(__('تم الحفظ'))->success()->send();
+        }
+    }
+
+    /** Save, then send the smallest possible request so a wrong key or model shows up now, not in an office. */
+    public function testAi(): void
+    {
+        $this->save(notify: false);
+        try {
+            $response = app(ClaudeClient::class)->message('Reply with the single word: ok', [['role' => 'user', 'content' => 'ping']], [], 5);
+            Notification::make()->success()->title(__('الاتصال ناجح'))
+                ->body(__('النموذج :model يعمل.', ['model' => $response['model'] ?? PlatformSettings::aiModel()]))->send();
+        } catch (\App\Services\Ai\AiUnavailable $e) {
+            Notification::make()->danger()->title(__('فشل الاتصال'))
+                ->body($e->getMessage().' '.__('تأكد من المفتاح واسم النموذج.'))->persistent()->send();
+        }
+    }
+
+    /** Models offered in the field (any other model ID can be typed). */
+    public const AI_MODELS = [
+        'claude-sonnet-5-5' => 'متوازن — مقترح',
+        'claude-opus-5-5' => 'الأعلى جودة',
+        'claude-haiku-5-5' => 'الأسرع والأقل تكلفة',
+    ];
+
+    private function aiStatus(): \Illuminate\Support\HtmlString
+    {
+        $source = PlatformSettings::aiKeySource();
+        [$tone, $text] = match (true) {
+            ! ClaudeClient::configured() => ['warn', __('المساعد الذكي غير مفعّل: أضف المفتاح والنموذج.')],
+            $source === 'console' => ['ok', __('مفعّل بالمفتاح المحفوظ هنا — النموذج :model', ['model' => "\u{2066}".PlatformSettings::aiModel()."\u{2069}"])],
+            default => ['ok', __('مفعّل بالمفتاح المضبوط على السيرفر (ANTHROPIC_API_KEY) — النموذج :model', ['model' => "\u{2066}".PlatformSettings::aiModel()."\u{2069}"])],
+        };
+
+        return new \Illuminate\Support\HtmlString('<p class="rowad-ai-status is-'.$tone.'">'.e($text).'</p>');
     }
 
     /** What the server is configured with — read only; the full check is on the system health page. */
@@ -129,7 +195,7 @@ class PlatformSettingsPage extends Page
             [__('النطاق الأساسي'), config('rowad.tenancy.base_domain')],
             [__('نطاقات المنصة'), implode('، ', config('tenancy.central_domains'))],
             [__('البريد'), config('mail.default').' — '.(config('mail.from.address') ?: '-')],
-            [__('الذكاء الاصطناعي'), ClaudeClient::configured() ? __('مفعّل').' ('.config('rowad.ai.model').')' : __('غير مفعّل')],
+            [__('الذكاء الاصطناعي'), ClaudeClient::configured() ? __('مفعّل').' ('.PlatformSettings::aiModel().')' : __('غير مفعّل')],
             [__('الترخيص'), LicenseClient::selfHosted() ? __('نسخة مثبتة لدى العميل') : __('منصة عقار نوفا (تُصدر التراخيص)')],
             [__('قواعد المؤسسات'), config('tenancy.database.managers.mysql') === \App\Tenancy\CpanelDatabaseManager::class ? 'cPanel' : 'MySQL'],
             [__('الطابور'), config('queue.default').(config('rowad.queue_via_scheduler') ? ' ('.__('عبر المجدول').')' : '')],

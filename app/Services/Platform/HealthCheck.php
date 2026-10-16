@@ -246,8 +246,8 @@ class HealthCheck
     private function checkAi(): void
     {
         \App\Services\Ai\ClaudeClient::configured()
-            ? $this->ok('الذكاء الاصطناعي', 'المفتاح والنموذج مضبوطان ('.config('rowad.ai.model').')')
-            : $this->warn_('الذكاء الاصطناعي', 'ANTHROPIC_API_KEY و AI_MODEL غير مضبوطين — المساعد سيظهر "غير مفعّل"');
+            ? $this->ok('الذكاء الاصطناعي', 'المفتاح والنموذج مضبوطان ('.\App\Support\PlatformSettings::aiModel().')')
+            : $this->warn_('الذكاء الاصطناعي', 'لا يوجد مفتاح أو نموذج — أضفهما من إعدادات المنصة ← الذكاء الاصطناعي (أو ANTHROPIC_API_KEY و AI_MODEL في .env)');
     }
 
     private function checkPlatform(): void
