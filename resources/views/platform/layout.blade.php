@@ -39,7 +39,11 @@
         .icon { width: 22px; height: 22px; flex: none; }
 
         /* header */
-        header.top { position: sticky; top: 0; z-index: 20; background: rgb(255 255 255 / .9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+        header.top { position: sticky; top: 0; z-index: 20; background: rgb(4 32 29 / .88); backdrop-filter: blur(12px); border-bottom: 1px solid rgb(255 255 255 / .08); color: #fff; }
+        header.top .brand { color: #fff; } header.top .brand .nova { color: #5eead4; } header.top .brand-logo { filter: brightness(1.25); }
+        header.top nav.links { color: rgb(255 255 255 / .82); } header.top nav.links a:hover { color: #5eead4; }
+        header.top .lang { color: rgb(255 255 255 / .75); } header.top .lang:hover { background: rgb(255 255 255 / .08); color: #fff; }
+        header.top .btn-primary { background: #fff; color: var(--brand-ink); box-shadow: none; } header.top .btn-primary:hover { background: #ccfbf1; }
         header.top .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 70px; }
         .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.35rem; color: var(--ink); letter-spacing: -.01em; }
         .brand .nova { color: #0f8a72; }

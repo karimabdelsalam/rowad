@@ -49,24 +49,67 @@
     .demo-btn { margin-top: 10px; }
     .demo-cred { display: block; text-align: center; color: rgb(255 255 255 / .85); margin-top: 10px; font-size: .82rem; position: relative; }
     .demo-btn { position: relative; }
-    .hero { position: relative; overflow: hidden; padding: 72px 0 0; background:
-        radial-gradient(900px 420px at 85% -10%, rgb(20 184 166 / .16), transparent 60%),
-        radial-gradient(700px 380px at 0% 10%, rgb(235 104 52 / .08), transparent 60%), #fff; }
-    .hero-grid { display: grid; grid-template-columns: 1fr; gap: 40px; text-align: center; }
-    .hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: -.01em; margin: 18px auto 16px; max-width: 900px; }
-    .hero h1 .hl { white-space: nowrap; background: linear-gradient(90deg, var(--brand), #14b8a6); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .hero .lead { font-size: clamp(1.05rem, 2vw, 1.25rem); color: var(--muted); max-width: 720px; margin: 0 auto 28px; }
-    .hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .hero .note { margin-top: 14px; color: var(--muted); font-size: .92rem; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
+    /* ---------- hero ---------- */
+    .hero { position: relative; overflow: hidden; padding: 84px 0 96px; color: #fff;
+        background: linear-gradient(165deg, #04201d 0%, #0a3330 45%, #0f5f58 100%); }
+    .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(900px 500px at 88% 0%, rgb(45 212 191 / .22), transparent 60%),
+                    radial-gradient(700px 420px at 0% 100%, rgb(235 104 52 / .16), transparent 60%),
+                    radial-gradient(rgb(255 255 255 / .09) 1px, transparent 1px);
+        background-size: auto, auto, 28px 28px; mask-image: linear-gradient(180deg, #000 55%, transparent 100%); }
+    .hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+    .hero .eyebrow { color: #99f6e4; background: rgb(255 255 255 / .08); border-color: rgb(255 255 255 / .16); backdrop-filter: blur(6px); }
+    .hero .eyebrow i { width: 8px; height: 8px; border-radius: 50%; background: #2dd4bf; box-shadow: 0 0 0 4px rgb(45 212 191 / .25); }
+    .hero h1 { color: #fff; font-size: clamp(2.1rem, 4.6vw, 3.6rem); font-weight: 800; letter-spacing: -.01em; line-height: 1.25; margin: 20px 0 18px; }
+    .hero h1 .hl { white-space: nowrap; background: linear-gradient(90deg, #5eead4, #2dd4bf 60%, #fbbf24); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero .lead { font-size: clamp(1.05rem, 1.7vw, 1.22rem); color: rgb(255 255 255 / .8); max-width: 600px; margin: 0 0 30px; line-height: 1.8; }
+    .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-hero { background: #fff; color: var(--brand-ink); box-shadow: 0 12px 30px rgb(0 0 0 / .25); }
+    .btn-hero:hover { background: #f0fdfa; }
+    .btn-outline { background: rgb(255 255 255 / .06); color: #fff; border-color: rgb(255 255 255 / .28); backdrop-filter: blur(6px); }
+    .btn-outline:hover { background: rgb(255 255 255 / .12); }
+    .btn .play { width: 26px; height: 26px; border-radius: 50%; background: #2dd4bf; color: #04201d; display: grid; place-items: center; }
+    .btn .play svg { width: 12px; height: 12px; margin-inline-start: 2px; }
+    .hero .note { margin-top: 20px; color: rgb(255 255 255 / .72); font-size: .9rem; display: flex; gap: 6px 20px; flex-wrap: wrap; }
     .hero .note span { display: inline-flex; align-items: center; gap: 6px; }
-    .hero .note .icon { width: 18px; height: 18px; color: var(--brand); }
-    .browser { margin: 48px auto 0; max-width: 1080px; border-radius: 18px 18px 0 0; background: #fff; border: 1px solid var(--line); border-bottom: 0;
-        box-shadow: 0 30px 80px rgb(15 23 42 / .18); overflow: hidden; }
-    .browser .chrome { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--soft); border-bottom: 1px solid var(--line); direction: ltr; }
-    .browser .chrome i { width: 11px; height: 11px; border-radius: 50%; background: #e2e8f0; display: block; }
-    .browser .chrome i:nth-child(1) { background: #fca5a5; } .browser .chrome i:nth-child(2) { background: #fcd34d; } .browser .chrome i:nth-child(3) { background: #86efac; }
-    .browser .chrome .url { margin-inline-start: 12px; flex: 1; max-width: 360px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 3px 12px; font-size: .8rem; color: var(--muted); }
-    .browser img { width: 100%; height: auto; }
+    .hero .note .icon { width: 17px; height: 17px; color: #5eead4; }
+    .hero .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; padding-top: 24px; border-top: 1px solid rgb(255 255 255 / .12); }
+    .hero .chips span { font-size: .78rem; font-weight: 700; color: #ccfbf1; background: rgb(255 255 255 / .07); border: 1px solid rgb(255 255 255 / .12); border-radius: 999px; padding: 5px 12px; }
+
+    .hero__visual { position: relative; min-height: 520px; }
+    .shot { position: absolute; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 40px 90px rgb(0 0 0 / .45), 0 0 0 1px rgb(255 255 255 / .12); }
+    .shot--desktop { inset-inline-start: 0; top: 24px; width: 100%; transform: perspective(1800px) rotateY(10deg) rotateX(3deg); transform-origin: center; }
+    [dir="ltr"] .shot--desktop { transform: perspective(1800px) rotateY(-10deg) rotateX(3deg); }
+    .shot--desktop .chrome { display: flex; align-items: center; gap: 7px; padding: 10px 14px; background: #f1f5f9; border-bottom: 1px solid var(--line); direction: ltr; }
+    .shot--desktop .chrome i { width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; display: block; }
+    .shot--desktop .chrome i:nth-child(1) { background: #fca5a5; } .shot--desktop .chrome i:nth-child(2) { background: #fcd34d; } .shot--desktop .chrome i:nth-child(3) { background: #86efac; }
+    .shot--desktop .chrome .url { margin-inline-start: 10px; flex: 1; max-width: 300px; background: #fff; border: 1px solid var(--line); border-radius: 7px; padding: 2px 10px; font-size: .74rem; color: var(--muted); }
+    .shot img { width: 100%; height: auto; display: block; }
+    .shot--phone { inset-inline-end: -18px; bottom: -10px; width: 176px; border-radius: 26px; padding: 8px; background: #0f172a; box-shadow: 0 30px 60px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .18); z-index: 3; }
+    .shot--phone img { border-radius: 19px; }
+    .shot--phone::before { content: ""; position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 56px; height: 6px; border-radius: 6px; background: #1e293b; z-index: 2; }
+    .float { position: absolute; z-index: 4; background: #fff; color: var(--ink); border-radius: 14px; padding: 10px 14px; box-shadow: 0 18px 40px rgb(0 0 0 / .35); font-size: .82rem; display: flex; align-items: center; gap: 10px;
+        animation: floaty 6s ease-in-out infinite; }
+    .float b { display: block; font-size: 1.05rem; font-weight: 800; line-height: 1.2; }
+    .float small { color: var(--muted); font-weight: 600; }
+    .float .up { color: #047857; font-weight: 800; font-size: .8rem; }
+    .float .ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+    .float .ico svg { width: 20px; height: 20px; }
+    .float--kpi { inset-inline-start: -28px; top: -6px; }
+    .float--kpi .ico { background: #ecfdf5; color: #047857; }
+    .float--msg { inset-inline-start: -12px; bottom: 64px; max-width: 290px; animation-delay: -2s; }
+    .float--msg .ico { background: #eff6ff; color: #1d4ed8; }
+    .float--ai { inset-inline-end: 150px; bottom: -22px; animation-delay: -4s; background: linear-gradient(135deg, #0f766e, #134e4a); color: #fff; }
+    .float--ai .ico { background: rgb(255 255 255 / .16); color: #fff; }
+    .float--ai small { color: rgb(255 255 255 / .7); }
+    @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @media (prefers-reduced-motion: reduce) { .float { animation: none; } }
+
+    .compat { padding: 26px 0; background: #fff; border-bottom: 1px solid var(--line); }
+    .compat .row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px 28px; color: var(--muted); font-size: .9rem; }
+    .compat .row > span:first-child { font-weight: 700; color: var(--ink); }
+    .compat .item { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: #475569; }
+    .compat .item .icon { width: 20px; height: 20px; color: var(--brand); }
 
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     .stat { text-align: center; padding: 8px; }
@@ -144,6 +187,14 @@
     .final h2 { color: #fff; font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 800; margin-bottom: 10px; }
     .final p { opacity: .88; margin: 0 0 24px; font-size: 1.08rem; }
 
+    @media (max-width: 1100px) {
+        .hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+        .hero .lead { margin-inline: auto; } .hero .cta, .hero .note, .hero .chips { justify-content: center; }
+        .hero__visual { min-height: 0; max-width: 760px; margin: 0 auto; padding-bottom: 40px; }
+        .shot--desktop { position: relative; top: 0; transform: none; }
+        .shot--phone, .float--msg { display: none; }
+        .float--kpi { inset-inline-start: 8px; top: -18px; } .float--ai { inset-inline-end: 8px; bottom: 10px; }
+    }
     @media (max-width: 960px) {
         .features, .portals, .steps, .plans { grid-template-columns: 1fr 1fr; }
         .split { grid-template-columns: 1fr; }
@@ -151,35 +202,65 @@
     }
     @media (max-width: 640px) {
         .features, .portals, .steps, .plans { grid-template-columns: 1fr; }
-        .browser { margin-top: 32px; }
+        .hero { padding: 56px 0 64px; }
+        .float { display: none; }
     }
 @endsection
 
 @section('content')
     <section class="hero">
         <div class="container hero-grid">
-            <div>
-                <span class="eyebrow">{{ __('نظام إدارة أملاك سحابي للمنشآت العقارية في المملكة') }}</span>
+            <div class="hero__copy">
+                <span class="eyebrow"><i></i>{{ __('منصة سعودية سحابية لإدارة الأملاك — عربي أولًا') }}</span>
                 <h1>{{ __('أدر عقاراتك وعقودك وتحصيلك') }} <span class="hl">{{ __('من مكان واحد') }}</span></h1>
                 <p class="lead">{{ __('عقار نوفا يجمع الوحدات والعقود والدفعات وحسابات الملاك والفوترة الإلكترونية في نظام واحد سهل، مع بوابة للملاك وأخرى للمستأجرين وموقع خاص لمؤسستك.') }}</p>
                 <div class="cta">
-                    <a class="btn btn-primary btn-lg" href="{{ route('central.signup', [], false) }}">{{ __('ابدأ تجربتك المجانية') }}</a>
+                    <a class="btn btn-hero btn-lg" href="{{ route('central.signup', [], false) }}">{{ __('ابدأ تجربتك المجانية') }}</a>
                     @if ($demoUrl)
-                        <a class="btn btn-ghost btn-lg" href="#demo">{{ __('جرّب النسخة التجريبية') }}</a>
+                        <a class="btn btn-outline btn-lg" href="#demo"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>{{ __('جرّب النسخة التجريبية') }}</a>
                     @else
-                        <a class="btn btn-ghost btn-lg" href="#pricing">{{ __('شاهد الأسعار') }}</a>
+                        <a class="btn btn-outline btn-lg" href="#pricing">{{ __('شاهد الأسعار') }}</a>
                     @endif
                 </div>
                 <div class="note">
-                    <span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __('14 يومًا مجانًا') }}</span>
-                    <span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __('بدون بطاقة ائتمان') }}</span>
-                    <span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __('ننقل بياناتك من نظام رواد السابق') }}</span>
+                    <span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __('14 يومًا مجانًا') }}</span>
+                    <span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __('بدون بطاقة ائتمان') }}</span>
+                    <span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['check'] }}"/></svg>{{ __('ننقل بياناتك من نظام رواد السابق') }}</span>
+                </div>
+                <div class="chips" aria-label="{{ __('أبرز المزايا') }}">
+                    @foreach (['فوترة إلكترونية ZATCA', 'التقويم الهجري والميلادي', 'مساعد ذكاء اصطناعي', 'بوابة الملاك', 'بوابة المستأجرين', 'رسائل SMS وواتساب', 'موارد بشرية ورواتب', 'موقع لمؤسستك'] as $chip)
+                        <span>{{ __($chip) }}</span>
+                    @endforeach
                 </div>
             </div>
-            <div class="browser">
-                <div class="chrome"><i></i><i></i><i></i><span class="url">your-company.{{ config('rowad.tenancy.base_domain') }}/admin</span></div>
-                <img src="{{ asset('images/platform/dashboard.jpg') }}" width="1440" height="900" alt="{{ __('لوحة تحكم المؤسسة في عقار نوفا') }}">
+            <div class="hero__visual" aria-hidden="true">
+                <div class="shot shot--desktop">
+                    <div class="chrome"><i></i><i></i><i></i><span class="url">your-company.{{ config('rowad.tenancy.base_domain') }}/admin</span></div>
+                    <img src="{{ asset('images/platform/dashboard.jpg') }}" width="1440" height="900" alt="{{ __('لوحة تحكم المؤسسة في عقار نوفا') }}" fetchpriority="high">
+                </div>
+                <div class="shot shot--phone"><img src="{{ asset('images/platform/client-mobile.jpg') }}" width="390" height="780" alt="" loading="lazy"></div>
+                <div class="float float--kpi">
+                    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"/></svg></span>
+                    <span><small>{{ __('محصل هذا الشهر') }}</small><b>178,333 {{ __('ر.س') }}</b><span class="up">▲ 12% {{ __('عن الشهر الماضي') }}</span></span>
+                </div>
+                <div class="float float--msg">
+                    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg></span>
+                    <span><b style="font-size:.88rem">{{ __('أُرسل تذكير للمستأجر') }}</b><small>{{ __('خالد الحربي — قسط 1 نوفمبر قبل 3 أيام') }}</small></span>
+                </div>
+                <div class="float float--ai">
+                    <span class="ico">✦</span>
+                    <span><b style="font-size:.88rem">{{ __('المساعد الذكي') }}</b><small>{{ __('4 أقساط متأخرة بإجمالي 15,000 ر.س — أرسل تذكيرًا جماعيًا؟') }}</small></span>
+                </div>
             </div>
+        </div>
+    </section>
+
+    <section class="compat">
+        <div class="container row">
+            <span>{{ __('مبني للأنظمة السعودية:') }}</span>
+            @foreach ([['receipt', 'الفوترة الإلكترونية — هيئة الزكاة والضريبة والجمارك'], ['scale', 'ضريبة القيمة المضافة 15%'], ['sync', 'تقويم أم القرى الهجري'], ['shield', 'نظام حماية البيانات الشخصية'], ['users', 'نظام العمل والتأمينات الاجتماعية']] as [$ic, $label])
+                <span class="item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$ic] }}"/></svg>{{ __($label) }}</span>
+            @endforeach
         </div>
     </section>
 

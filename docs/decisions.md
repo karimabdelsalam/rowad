@@ -368,3 +368,14 @@
 - The sidebar is narrower (16.5rem) with tighter items, a footer card (subscription state for admins,
   office contact for portal users, and the signed-in user) and a "جديد" quick-create menu in the topbar.
 - The platform console keeps the Aqar Nova brand; only tenant panels are re-skinned.
+
+## Landing page hero (2026-10-16)
+
+- The platform home opens with a dark, branded hero: copy and CTAs on the start side, a product
+  composition on the other (the demo dashboard in a tilted browser frame, the tenant portal on a phone,
+  and three floating cards: collected-this-month KPI, an automatic reminder, the AI assistant).
+  The screenshots are real captures of the demo office (`public/images/platform/dashboard.jpg`,
+  `client-mobile.jpg`); re-capture them when the panels change.
+- A "built for Saudi regulations" strip (ZATCA e-invoicing, 15% VAT, Umm al-Qura calendar, PDPL,
+  Labour Law/GOSI) sits under the hero as factual compliance, not logos of third parties.
+- The sticky header is dark so it blends with the hero on every public page.
