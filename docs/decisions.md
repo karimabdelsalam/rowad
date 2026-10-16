@@ -633,3 +633,27 @@
   never saved, so staff review first. The model is told to leave unclear fields empty.
 - Each reading counts as one assistant question against the plan's monthly AI quota and needs the
   plan feature `ai`, like the other AI tools.
+
+## Importing from Excel (2026-10-16) — vision §ج "استيراد من Excel"
+
+- Settings ← استيراد البيانات, for staff who can change settings. Four steps in order: owners →
+  clients → units → running rent contracts, each with a downloadable Arabic template (English
+  headers when the panel is in English; both are accepted). Files: .xlsx or UTF-8 CSV, first sheet,
+  up to 5,000 rows.
+- Every file is previewed first: each row is checked and its problems listed with the Excel row
+  number. Importing saves the ready rows, each in its own transaction, and reports the rest.
+- No duplicates on re-upload: people are matched by ID number, then mobile; units by name within the
+  building. Matches are left as they are unless "update existing" is on. Contracts are never
+  overwritten: one already running on the same unit from the same start date is skipped.
+- Units create their building, city and district the first time they appear. The owner is found by
+  ID number, else by full name, else created from the name in the row.
+- Contracts go through the normal contract service, so the payment schedule, unit status and
+  numbering match a hand-entered contract. Rules:
+  - The term is read from the dates: whole years, or whole months when paid monthly.
+  - Hijri dates make a Hijri contract; a Hijri end date one day short is accepted, because
+    calendars differ on month lengths.
+  - Contracts that have already ended are refused.
+  - An Ejar number marks the contract as documented.
+- Imported contracts message nobody (a new `notify` flag on `createRent`).
+- The "past payments collected" option closes instalments due before today without receipts or owner
+  ledger entries, since that money was settled in the old system.

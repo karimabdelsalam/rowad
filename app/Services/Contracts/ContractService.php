@@ -31,8 +31,9 @@ class ContractService
      * @param  array<string, mixed>  $attributes
      * @param  array<int, float>  $parties  client_id => share_percent
      * @param  list<int>  $termIds
+     * @param  bool  $notify  tell the tenants and owners (off for contracts brought over from another system)
      */
-    public function createRent(array $attributes, array $parties, array $termIds = []): RentContract
+    public function createRent(array $attributes, array $parties, array $termIds = [], bool $notify = true): RentContract
     {
         $this->assertParties($parties);
         $this->assertUnitAvailable((int) $attributes['unit_id'], $attributes['start_date'], $attributes['end_date']);
@@ -51,7 +52,9 @@ class ContractService
             return $contract->refresh();
         });
 
-        app(\App\Services\Messaging\DomainNotifications::class)->rentContractCreated($contract);
+        if ($notify) {
+            app(\App\Services\Messaging\DomainNotifications::class)->rentContractCreated($contract);
+        }
 
         return $contract;
     }
