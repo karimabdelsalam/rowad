@@ -46,7 +46,7 @@ class MessageTemplateInfolist
                 ]),
                 Section::make(__('المتغيرات المتاحة'))->icon(Heroicon::OutlinedVariable)->schema([
                     TextEntry::make('placeholders')->hiddenLabel()->badge()->color('gray')->fontFamily('mono')
-                        ->state(fn (MessageTemplate $r) => collect(['{name}', '{amount}', '{date}', '{unit}', '{contract}', '{office}'])
+                        ->state(fn (MessageTemplate $r) => collect(['{name}', '{amount}', '{date}', '{unit}', '{contract}', '{office}', '{pay_line}', '{pay_link}'])
                             ->merge(preg_match_all('/\{[a-z_]+\}/', (string) $r->email_body.' '.$r->sms_body, $m) ? $m[0] : [])->unique()->values()->all()),
                 ]),
                 Parts::record(false),

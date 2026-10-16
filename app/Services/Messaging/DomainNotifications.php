@@ -104,11 +104,16 @@ class DomainNotifications
 
     private function installmentVars(Installment $installment): array
     {
+        $payUrl = $installment->is_collected ? null : app(\App\Services\Payments\Payments::class)->urlFor($installment);
+
         return [
             'unit' => $installment->unit->title,
             'amount' => $this->money($installment->remainingAmount()),
             'due_date' => $this->date($installment->due_date, $installment->calendar?->value),
             'contract_number' => $installment->contract?->number,
+            'pay_link' => $payUrl ?? '',
+            // a whole sentence so templates read well whether or not e-collection is on
+            'pay_line' => $payUrl ? __('للسداد الإلكتروني الآن (مدى / بطاقة / Apple Pay): :url', ['url' => $payUrl]) : '',
         ];
     }
 

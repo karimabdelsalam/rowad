@@ -69,6 +69,11 @@ class Installment extends Model
         return $this->hasMany(InstallmentPayment::class);
     }
 
+    public function onlinePayments(): HasMany
+    {
+        return $this->hasMany(OnlinePayment::class);
+    }
+
     public function ownerTransactions(): HasMany
     {
         return $this->hasMany(OwnerTransaction::class);

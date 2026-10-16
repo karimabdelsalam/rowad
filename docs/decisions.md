@@ -404,3 +404,21 @@
 - `rowad:subscriptions` (daily) emails a reminder three days before the purge and then deletes the
   office (tenancy's DeleteDatabase); nothing is kept after that.
 - Reasons are stored in the tenant's `cancellation` data for the platform to learn from.
+
+## E-collection: pay links with Moyasar (2026-10-16) — roadmap phase 1
+
+- Gateway: Moyasar (Saudi; mada, Visa/Mastercard, Apple Pay, STC Pay) through its hosted form; keys are
+  per office in settings ("الدفع الإلكتروني" tab, secret and webhook token encrypted at rest). The plan
+  feature `online_payments` gates it (professional and enterprise plans by default).
+- One `OnlinePayment` per open instalment amount: a random 40-char token makes the public page
+  `/pay/{token}` on the office domain. If the instalment changes (partial collection) the link is
+  superseded and a fresh one is made; links are built from the office domain so cron reminders get them too.
+- Truth comes only from the gateway: the redirect (`/pay/{token}/callback?id=…`) and the webhook
+  (`/webhooks/moyasar`, `secret_token` must match) both call `Payments::confirm()`, which fetches the
+  payment from Moyasar's API, checks amount and currency, then collects the instalment through
+  `VoucherService::createReceipt` (method card, party = the contract's client, optional bank account).
+  Idempotent under row locks; a gateway id can settle only one link.
+- Where tenants meet the link: reminder templates (`{pay_line}` sentence, empty when e-collection is off;
+  existing offices' templates were migrated), the client portal's "ادفع الآن", the mobile API
+  (`pay_url`), and the admin instalment list ("رابط الدفع" to copy). Admin log: "المدفوعات الإلكترونية".
+- Not in this phase: partial online payments, refunds from the panel, settlement reports from Moyasar.

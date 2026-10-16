@@ -8,7 +8,7 @@ use App\Models\Setting;
 final class Settings
 {
     /** Stored encrypted at rest. */
-    public const SECRET_KEYS = ['smtp_password', 'sms_password'];
+    public const SECRET_KEYS = ['smtp_password', 'sms_password', 'moyasar_secret_key', 'moyasar_webhook_secret'];
 
     /** @var array<string, array<string, mixed>> */
     private static array $cache = [];
@@ -34,10 +34,25 @@ final class Settings
         if (in_array($key, self::SECRET_KEYS, true) && filled($value)) {
             $value = \Illuminate\Support\Facades\Crypt::encryptString((string) $value);
         }
+        if (is_array($value)) { // lists (e.g. the payment methods an office turned on) are stored as JSON
+            $value = json_encode(array_values($value), JSON_UNESCAPED_UNICODE);
+        }
         $setting = Setting::firstOrNew(['key' => $key], ['group' => $group]);
         $setting->value = $value;
         $setting->save();
         self::flush();
+    }
+
+    /** @return list<mixed> a list stored by set(), or the default when unset */
+    public static function list(string $key, array $default = []): array
+    {
+        $value = self::get($key);
+        if (is_array($value)) {
+            return array_values($value);
+        }
+        $decoded = is_string($value) && $value !== '' ? json_decode($value, true) : null;
+
+        return is_array($decoded) ? array_values($decoded) : $default;
     }
 
     public static function enabled(string $key): bool

@@ -59,7 +59,16 @@ class InstallmentResource extends PortalResource
                     ->color(fn ($state) => ['collected' => 'success', 'late' => 'danger', 'partial' => 'warning', 'due' => 'info'][$state])
                     ->icon(fn ($state) => ['collected' => Heroicon::OutlinedCheckCircle, 'late' => Heroicon::OutlinedExclamationCircle, 'partial' => Heroicon::OutlinedClock, 'due' => Heroicon::OutlinedCalendar][$state]),
             ])
-            ->filters([TernaryFilter::make('is_collected')->label(__('مسدد'))->default(false)]);
+            ->filters([TernaryFilter::make('is_collected')->label(__('مسدد'))->default(false)])
+            ->recordActions([
+                \Filament\Actions\Action::make('pay')
+                    ->label(__('ادفع الآن'))
+                    ->icon(Heroicon::OutlinedCreditCard)
+                    ->color('primary')
+                    ->button()
+                    ->visible(fn (Installment $record) => ! $record->is_collected && \App\Services\Payments\Payments::enabled())
+                    ->url(fn (Installment $record) => app(\App\Services\Payments\Payments::class)->urlFor($record), shouldOpenInNewTab: true),
+            ]);
     }
 
     public static function getPages(): array

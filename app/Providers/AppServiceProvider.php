@@ -17,6 +17,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(\App\Services\Payments\PaymentGateway::class, \App\Services\Payments\MoyasarGateway::class);
         // Arabic plurals stay Arabic (see App\Support\Translation\Translator).
         $this->app->extend('translator', function (\Illuminate\Translation\Translator $base, $app) {
             $translator = new \App\Support\Translation\Translator($app['translation.loader'], $base->getLocale());
@@ -94,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
             'message_template' => Models\MessageTemplate::class,
             'newsletter_subscriber' => Models\NewsletterSubscriber::class,
             'note' => Models\Note::class,
+            'online_payment' => Models\OnlinePayment::class,
             'otp_code' => Models\OtpCode::class,
             'outgoing_message' => Models\OutgoingMessage::class,
             'owner' => Models\Owner::class,

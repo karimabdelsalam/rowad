@@ -32,6 +32,12 @@ Route::middleware([
     Route::post('/contact', [LandingController::class, 'inquire'])->name('site.contact');
     Route::post('/units/{unit}/inquiry', [LandingController::class, 'inquire'])->name('site.unit.inquiry');
     Route::get('/media/{media}', MediaController::class)->name('site.media');
+
+    // e-collection: the public pay page of an installment (token from a reminder or the client portal)
+    Route::get('/pay/{token}', [\App\Http\Controllers\Site\PayController::class, 'show'])->middleware('throttle:60,1')->name('pay.show');
+    Route::get('/pay/{token}/callback', [\App\Http\Controllers\Site\PayController::class, 'callback'])->middleware('throttle:30,1')->name('pay.callback');
+    Route::post('/webhooks/moyasar', [\App\Http\Controllers\Site\PayController::class, 'webhook'])
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class])->middleware('throttle:120,1')->name('pay.webhook');
     Route::get('/branding/logo', function () {
         $path = \App\Support\Settings::get('logo');
         abort_unless(filled($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);

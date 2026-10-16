@@ -46,6 +46,8 @@ class GeneralSettings extends Page
         'sms_provider' => 'sms', 'sms_username' => 'sms', 'sms_password' => 'sms', 'sms_sender' => 'sms',
         'sms_login_staff' => 'sms', 'sms_login_clients' => 'sms',
         'support_ticket_prefix' => 'general', 'google_maps_key' => 'general',
+        'payments_gateway' => 'payments', 'moyasar_publishable_key' => 'payments', 'moyasar_secret_key' => 'payments',
+        'moyasar_webhook_secret' => 'payments', 'payments_bank_account_id' => 'payments', 'payments_methods' => 'payments',
         'hr_gosi_saudi_employee' => 'hr', 'hr_gosi_saudi_employer' => 'hr', 'hr_gosi_expat_employer' => 'hr', 'hr_gosi_wage_cap' => 'hr',
         'hr_annual_leave_days' => 'hr', 'hr_annual_leave_days_senior' => 'hr', 'hr_overtime_rate' => 'hr', 'hr_payroll_day' => 'hr',
         'hr_wps_establishment_id' => 'hr',
@@ -84,7 +86,8 @@ class GeneralSettings extends Page
 
     public function mount(): void
     {
-        $this->form->fill(collect(self::KEYS)->keys()->mapWithKeys(fn ($key) => [$key => Settings::get($key)])->all());
+        $this->form->fill(collect(self::KEYS)->keys()->mapWithKeys(fn ($key) => [$key => $key === 'payments_methods'
+            ? Settings::list($key, array_keys(\App\Services\Payments\Payments::METHODS)) : Settings::get($key)])->all());
     }
 
     public function form(Schema $schema): Schema
@@ -162,6 +165,19 @@ class GeneralSettings extends Page
                                 $notification->send();
                             }),
                     ])->columnSpanFull(),
+                ]),
+                Tab::make(__('الدفع الإلكتروني'))->columns(2)->schema([
+                    Select::make('payments_gateway')->label(__('بوابة الدفع'))->options(['' => __('بدون — تحصيل يدوي'), 'moyasar' => 'Moyasar (مدى، فيزا/ماستركارد، Apple Pay، STC Pay)'])->live()
+                        ->helperText(fn () => \App\Support\PlanLimits::allows('online_payments') ? __('يُرسل رابط دفع مع كل تذكير ويظهر زر "ادفع الآن" في بوابة المستأجرين؛ عند الدفع يُحصَّل القسط ويصدر سند القبض تلقائيًا.') : __('التحصيل الإلكتروني غير مشمول في باقتك الحالية.'))
+                        ->columnSpanFull(),
+                    TextInput::make('moyasar_publishable_key')->label(__('المفتاح العام (Publishable)'))->placeholder('pk_live_…')->visible(fn (Get $get) => $get('payments_gateway') === 'moyasar'),
+                    TextInput::make('moyasar_secret_key')->label(__('المفتاح السري (Secret)'))->password()->revealable()->placeholder('sk_live_…')->visible(fn (Get $get) => $get('payments_gateway') === 'moyasar'),
+                    TextInput::make('moyasar_webhook_secret')->label(__('رمز Webhook السري'))->password()->revealable()->visible(fn (Get $get) => $get('payments_gateway') === 'moyasar')
+                        ->helperText(fn () => __('في لوحة Moyasar: Webhooks → أضف الرابط :url بهذا الرمز، ليصل تأكيد الدفع حتى لو أغلق العميل المتصفح.', ['url' => url('/webhooks/moyasar')])),
+                    Select::make('payments_bank_account_id')->label(__('الحساب البنكي للإيداع'))->options(fn () => \App\Models\BankAccount::query()->with('bank')->orderBy('id')->get()->mapWithKeys(fn ($a) => [$a->id => trim(($a->bank?->name ?? '').' — '.($a->iban ?: $a->account_number), ' —')])->all())->placeholder(__('بدون'))
+                        ->visible(fn (Get $get) => $get('payments_gateway') === 'moyasar')->helperText(__('يُسجَّل كل سداد إلكتروني كإيداع في هذا الحساب.')),
+                    \Filament\Forms\Components\CheckboxList::make('payments_methods')->label(__('طرق الدفع المتاحة'))->options(collect(\App\Services\Payments\Payments::METHODS)->map(fn ($l) => __($l))->all())
+                        ->default(array_keys(\App\Services\Payments\Payments::METHODS))->columns(3)->visible(fn (Get $get) => $get('payments_gateway') === 'moyasar')->columnSpanFull(),
                 ]),
                 Tab::make(__('الموارد البشرية'))->columns(['default' => 1, 'md' => 3])->schema([
                     TextInput::make('hr_gosi_saudi_employee')->label(__('التأمينات — حصة الموظف السعودي %'))->numeric()->placeholder('9.75'),

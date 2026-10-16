@@ -27,6 +27,7 @@ class PlanLimits
         'zatca' => 'الفوترة الإلكترونية (زاتكا)',
         'custom_domain' => 'نطاق خاص باسم مؤسستك',
         'ai' => 'المساعد الذكي والتحليلات',
+        'online_payments' => 'التحصيل الإلكتروني (روابط دفع)',
     ];
 
     /** quota key => [plan column, label] */

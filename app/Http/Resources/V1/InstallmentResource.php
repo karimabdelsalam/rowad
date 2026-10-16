@@ -22,6 +22,8 @@ class InstallmentResource extends ApiResource
             'is_collected' => $this->is_collected,
             'is_overdue' => ! $this->is_collected && $this->due_date?->lt(today()),
             'collected_at' => $this->collected_at?->toIso8601String(),
+            // e-collection: where the tenant can pay this instalment by card / mada / Apple Pay (null when off or settled)
+            'pay_url' => $this->is_collected ? null : app(\App\Services\Payments\Payments::class)->urlFor($this->resource),
         ];
     }
 }

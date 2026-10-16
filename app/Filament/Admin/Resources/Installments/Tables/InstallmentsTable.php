@@ -86,6 +86,15 @@ class InstallmentsTable
                     ->action(fn (Installment $record) => self::run(fn () => app(InstallmentCollector::class)->collect($record), __('تم تحصيل القسط'))),
                 \Filament\Actions\ActionGroup::make([
                 ViewAction::make(),
+                Action::make('payLink')
+                    ->label(__('رابط الدفع'))
+                    ->icon(Heroicon::OutlinedLink)
+                    ->color('gray')
+                    ->visible(fn (Installment $record) => ! $record->is_collected && \App\Services\Payments\Payments::enabled())
+                    ->modalHeading(__('رابط الدفع الإلكتروني'))
+                    ->modalDescription(__('أرسله للمستأجر بأي وسيلة؛ عند الدفع يُحصَّل القسط ويصدر سند القبض تلقائيًا.'))
+                    ->modalContent(fn (Installment $record) => view('filament.admin.pay-link', ['url' => app(\App\Services\Payments\Payments::class)->urlFor($record), 'amount' => $record->remainingAmount()]))
+                    ->modalSubmitAction(false)->modalCancelActionLabel(__('إغلاق')),
                 Action::make('collectPartial')
                     ->label(__('دفعة جزئية'))
                     ->icon(Heroicon::OutlinedBanknotes)
