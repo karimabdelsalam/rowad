@@ -35,6 +35,8 @@ trait ConfiguresPanel
                 'gray' => Color::Slate,
             ])
             ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('16.5rem')
+            ->collapsedSidebarWidth('4.25rem')
             ->userMenuItems([
                 Action::make('switchLocale')
                     ->label(fn () => app()->getLocale() === 'ar' ? 'English' : 'العربية')
@@ -64,6 +66,13 @@ trait ConfiguresPanel
             ]);
 
         if ($tenant) {
+            // The office's own identity: logo (or a monogram), name and the panel's role, in the sidebar,
+            // the topbar on small screens and the login page; its brand colour re-skins the panel.
+            $panel->brandLogo(fn () => view('filament.office-brand'))->brandLogoHeight('2.75rem');
+            $panel->renderHook(PanelsRenderHook::SIDEBAR_LOGO_AFTER, fn () => view('filament.sidebar-mark'));
+            $panel->renderHook(PanelsRenderHook::SIDEBAR_FOOTER, fn () => view('filament.sidebar-footer'));
+            $panel->renderHook(PanelsRenderHook::SIMPLE_LAYOUT_START, fn () => view('filament.login-aside'));
+            $panel->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => view('filament.quick-create'));
             $panel->multiFactorAuthentication([\App\Auth\SmsAuthentication::make()]);
             $panel->widgets([\App\Filament\Widgets\LoginActivities::class]);
             $panel->passwordReset(\App\Filament\Auth\RequestPasswordReset::class)->profile();

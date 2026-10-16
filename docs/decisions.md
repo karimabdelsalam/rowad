@@ -355,3 +355,16 @@
   م 87 كاملة للعاملة المستقيلة خلال 6 أشهر من الزواج أو 3 من الولادة؛ م 80 لا مكافأة. الحساب يُجمَّد في التسوية (`calculation`) لأن الأجر والقانون قد يتغيران، ويُصرف بسند واحد ويُسجَّل الموظف «منتهي الخدمة».
 - صلاحيات جديدة (`leave_requests`, `employee_advances`, `payroll` بالاعتماد والصرف والتصدير, `end_of_service`) تُزامَن للمؤسسات القائمة عبر migration يشغّل `RolesAndPermissionsSeeder`.
 - مستندات طباعة: قسيمة راتب، المسيّر الكامل، تسوية نهاية خدمة بإقرار استلام.
+
+## Office branding inside the panels (2026-10-16)
+
+- Each office's identity (`logo`, new `brand_color` setting) now reaches the admin panel and both portals:
+  the logo (or a monogram built from the office name) sits in the sidebar header on desktop and in the
+  topbar on phones; the login page is a split layout with a brand aside. `App\Support\Branding` is the
+  single source (`logoUrl()`, `initials()`, `color()`, `css()`).
+- The brand colour re-skins Filament at runtime by overriding the `--primary-*` CSS variables (Filament's
+  own palette generator, `Color::hex()`) from the HEAD_END render hook, so no per-office asset build is
+  needed. Sidebar shades are derived from the same palette. An invalid value is ignored, never emitted.
+- The sidebar is narrower (16.5rem) with tighter items, a footer card (subscription state for admins,
+  office contact for portal users, and the signed-in user) and a "جديد" quick-create menu in the topbar.
+- The platform console keeps the Aqar Nova brand; only tenant panels are re-skinned.

@@ -21,6 +21,7 @@ use App\Services\Portal\PortalAccounts;
 use App\Support\Settings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * The public demo office (demo.<base-domain>), also used for previews and screenshots:
@@ -84,6 +85,8 @@ class CreateDemoOffice extends Command
         ] as $key => $value) {
             Settings::set($key, $value);
         }
+        Storage::disk('public')->put('branding/demo-logo.svg', $this->logo());
+        Settings::set('logo', 'branding/demo-logo.svg');
 
         $riyadh = City::firstOrCreate(['name' => 'الرياض'], ['country_code' => 'SA']);
         $owners = collect([
@@ -182,6 +185,21 @@ class CreateDemoOffice extends Command
     }
 
     /** A simple generated façade picture so the demo needs no external images. */
+    /** A simple vector logo for the demo office (roofline mark + name), stored on the public disk. */
+    private function logo(): string
+    {
+        return <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" width="320" height="96">
+  <rect x="4" y="4" width="88" height="88" rx="22" fill="#0f766e"/>
+  <path d="M22 54 48 30l26 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 50v22h36V50" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="42" y="58" width="12" height="14" rx="2" fill="#fff"/>
+  <text x="108" y="46" font-family="Cairo, Tahoma, Arial, sans-serif" font-size="30" font-weight="800" fill="#0f172a">مؤسسة الرواد</text>
+  <text x="108" y="78" font-family="Cairo, Tahoma, Arial, sans-serif" font-size="20" font-weight="600" fill="#0f766e">للخدمات العقارية</text>
+</svg>
+SVG;
+    }
+
     private function photo(array $rgb, string $label): string
     {
         $w = 1200;
