@@ -2691,5 +2691,9 @@
     "لا يمكن حذف حسابات النسخة التجريبية": "The demo accounts cannot be deleted",
     "، يُعاد تلقائيًا بعد كل زيارة": ", rebuilt automatically after each visit",
     "، وكل ليلة": " and every night",
-    "تعود البيانات لحالتها تلقائيًا بعد زيارتك": "Data resets automatically after your visit"
+    "تعود البيانات لحالتها تلقائيًا بعد زيارتك": "Data resets automatically after your visit",
+    "تحصيل القسط": "Collect installment",
+    "تم تحصيل قسط :unit": "Installment collected: :unit",
+    "انتقل إلى الأقساط المحصّلة.": "Moved to collected installments.",
+    "استحقاق :date": "due :date"
 }

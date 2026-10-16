@@ -88,8 +88,12 @@ class InstallmentsTable
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('success')
                     ->requiresConfirmation()
+                    ->modalHeading(__('تحصيل القسط'))
+                    ->modalDescription(fn (Installment $record) => self::describe($record))
                     ->visible(fn (Installment $record) => ! $record->is_collected && self::allowed('collect'))
-                    ->action(fn (Installment $record) => self::run(fn () => app(InstallmentCollector::class)->collect($record), __('تم تحصيل القسط'))),
+                    // the collected row leaves the "not collected" list and the next one takes its place, so say which one it was
+                    ->action(fn (Installment $record) => self::run(fn () => app(InstallmentCollector::class)->collect($record),
+                        __('تم تحصيل قسط :unit', ['unit' => $record->unit?->title]), self::describe($record).' — '.__('انتقل إلى الأقساط المحصّلة.'))),
                 \Filament\Actions\ActionGroup::make([
                 ViewAction::make(),
                 Action::make('payLink')
@@ -206,11 +210,24 @@ class InstallmentsTable
         return $user !== null && ($user->is_super_admin || $user->can("installments.{$ability}"));
     }
 
-    private static function run(callable $callback, string $success): void
+    /** "Majed Al-Ghamdi · 2,833.33 · due 2026-10-01 · RC-2026-00004" — which installment, at a glance. */
+    private static function describe(Installment $record): string
+    {
+        $ltr = fn (?string $v) => $v === null ? null : "\u{2066}{$v}\u{2069}"; // dates and numbers keep their order inside Arabic text
+
+        return collect([
+            $record->contract?->clients?->pluck('full_name')->implode('، '),
+            number_format($record->remainingAmount(), 2).' '.\App\Support\Settings::currencyLabel(),
+            __('استحقاق :date', ['date' => $ltr($record->due_date?->format('Y-m-d'))]),
+            $ltr($record->contract?->number),
+        ])->filter()->implode(' · ');
+    }
+
+    private static function run(callable $callback, string $success, ?string $body = null): void
     {
         try {
             $callback();
-            Notification::make()->title($success)->success()->send();
+            Notification::make()->title($success)->body($body)->success()->send();
         } catch (BusinessRuleException $e) {
             Notification::make()->title($e->getMessage())->danger()->send();
         }
