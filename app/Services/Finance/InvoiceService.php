@@ -70,7 +70,7 @@ class InvoiceService
         $issued = now();
         $vatNumber = Settings::get('vat_number');
 
-        return Invoice::create($attributes + [
+        $invoice = Invoice::create($attributes + [
             'number' => $this->numbers->next('invoice'),
             'type' => filled($attributes['customer_vat_number'] ?? null) ? 'standard' : 'simplified',
             'issue_date' => $issued->toDateString(),
@@ -83,6 +83,34 @@ class InvoiceService
                 ? ZatcaQrCode::payload((string) Settings::get('site_name', tenant('name')), (string) $vatNumber, $issued, $total, $vatTotal)
                 : null,
             'created_by' => auth()->id(),
+            'issued_at' => $issued,
         ]);
+
+        // integration phase: sign now on the office's chain, report/clear once the transaction commits
+        if (\App\Services\Zatca\Phase2\ZatcaInvoicing::enabled()) {
+            app(\App\Services\Zatca\Phase2\ZatcaInvoicing::class)->sign($invoice);
+            \App\Jobs\SubmitZatcaInvoice::dispatch($invoice->id)->afterCommit();
+        }
+
+        return $invoice;
+    }
+
+    /** Credit note (or debit note) against an issued invoice, same lines unless given, with the reason ZATCA requires. */
+    public function adjustment(Invoice $original, string $kind, string $reason, ?array $items = null): Invoice
+    {
+        if ($original->kind !== 'invoice') {
+            throw new BusinessRuleException(__('يصدر الإشعار على فاتورة فقط'));
+        }
+        $items = $items ?? array_map(fn (array $i) => array_intersect_key($i, array_flip(['description', 'quantity', 'unit_price', 'vat_percent'])), (array) $original->items);
+
+        return DB::transaction(fn () => $this->create($items, [
+            'kind' => $kind,
+            'type' => $original->type,
+            'billing_reference' => $original->number,
+            'reason' => $reason,
+            'client_id' => $original->client_id,
+            'customer_name' => $original->customer_name,
+            'customer_vat_number' => $original->customer_vat_number,
+        ]));
     }
 }

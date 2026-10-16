@@ -33,7 +33,7 @@ return [
         'online_payments' => ['view_any', 'view'],
         'branches' => $crud,
         'payment_vouchers' => [...$crud, 'print'],
-        'invoices' => ['view_any', 'view', 'create', 'print'],
+        'invoices' => ['view_any', 'view', 'create', 'print', 'credit_note'],
         'bank_accounts' => [...$crud, 'set_default'],
         'reports' => ['income', 'expenses', 'profits', 'banking', 'taxes', 'corporate_taxes', 'units', 'unit', 'renter', 'rent'],
         'tasks' => $crud,

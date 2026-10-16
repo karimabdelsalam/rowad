@@ -3,8 +3,10 @@
 namespace App\Filament\Admin\Resources\Invoices\Schemas;
 
 use App\Filament\Admin\Resources\Clients\ClientResource;
+use App\Filament\Admin\Resources\Invoices\InvoiceResource;
 use App\Filament\Infolists\Parts;
 use App\Models\Invoice;
+use App\Services\Zatca\Phase2\ZatcaInvoicing;
 use App\Support\Settings;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -16,11 +18,22 @@ use Filament\Support\Icons\Heroicon;
 /** Tax invoice: customer, lines, totals and the ZATCA details. */
 class InvoiceInfolist
 {
+    public const STATUS_COLORS = ['pending' => 'info', 'reported' => 'success', 'cleared' => 'success', 'rejected' => 'danger', 'failed' => 'warning'];
+
+    public const STATUS_ICONS = [
+        'pending' => Heroicon::OutlinedClock, 'reported' => Heroicon::OutlinedCheckBadge, 'cleared' => Heroicon::OutlinedShieldCheck,
+        'rejected' => Heroicon::OutlinedXCircle, 'failed' => Heroicon::OutlinedArrowPath,
+    ];
+
     public static function configure(Schema $schema): Schema
     {
         return $schema->columns(['default' => 1, 'lg' => 3])->components([
             Parts::header(Heroicon::OutlinedReceiptPercent, fn (Invoice $r) => [
-                'kicker' => $r->type === 'standard' ? __('فاتورة ضريبية') : __('فاتورة ضريبية مبسطة'),
+                'kicker' => match ($r->kind) {
+                    'credit' => __('إشعار دائن'),
+                    'debit' => __('إشعار مدين'),
+                    default => $r->type === 'standard' ? __('فاتورة ضريبية') : __('فاتورة ضريبية مبسطة'),
+                },
                 'title' => $r->number,
                 'sub' => [__('بتاريخ :date', ['date' => $r->issue_date?->format('Y-m-d')]), $r->customer_name ?? $r->client?->full_name],
                 'facts' => [
@@ -54,10 +67,27 @@ class InvoiceInfolist
                     TextEntry::make('customer_name')->label(__('الاسم على الفاتورة'))->placeholder('-'),
                     TextEntry::make('customer_vat_number')->label(__('الرقم الضريبي للعميل'))->placeholder('-')->copyable(),
                 ]),
-                Section::make(__('زاتكا'))->icon(Heroicon::OutlinedQrCode)->schema([
-                    TextEntry::make('zatca_status')->label(__('الحالة'))->badge()->color('gray')->placeholder(__('المرحلة الأولى (رمز QR)')),
-                    TextEntry::make('zatca_uuid')->label('UUID')->placeholder('-')->copyable()->fontFamily('mono')->size('xs'),
-                    TextEntry::make('zatca_qr')->label(__('رمز QR'))->placeholder('-')->limit(40)->copyable()->fontFamily('mono')->size('xs'),
+                Section::make(__('زاتكا'))->icon(Heroicon::OutlinedQrCode)->columns(2)->schema([
+                    TextEntry::make('zatca_status')->label(__('الحالة'))->badge()->columnSpanFull()
+                        ->formatStateUsing(fn ($state) => __(ZatcaInvoicing::STATUSES[$state] ?? $state))
+                        ->color(fn ($state) => self::STATUS_COLORS[$state] ?? 'gray')
+                        ->icon(fn ($state) => self::STATUS_ICONS[$state] ?? null)
+                        ->placeholder(__('المرحلة الأولى (رمز QR)')),
+                    TextEntry::make('zatca_icv')->label(__('عداد الفاتورة (ICV)'))->placeholder('-')->visible(fn (Invoice $r) => $r->zatca_icv !== null),
+                    TextEntry::make('zatca_submitted_at')->label(__('آخر إرسال'))->dateTime('Y-m-d H:i')->placeholder('-')
+                        ->visible(fn (Invoice $r) => $r->zatca_icv !== null),
+                    TextEntry::make('zatca_uuid')->label('UUID')->placeholder('-')->copyable()->fontFamily('mono')->size('xs')->columnSpanFull(),
+                    TextEntry::make('zatca_hash')->label(__('بصمة الفاتورة'))->placeholder('-')->copyable()->fontFamily('mono')->size('xs')->columnSpanFull()
+                        ->visible(fn (Invoice $r) => $r->zatca_icv !== null),
+                    TextEntry::make('zatca_qr')->label(__('رمز QR'))->placeholder('-')->limit(40)->copyable()->fontFamily('mono')->size('xs')->columnSpanFull(),
+                    TextEntry::make('zatca_messages')->label(__('رسائل زاتكا'))->listWithLineBreaks()->bulleted()->columnSpanFull()
+                        ->color(fn (Invoice $r) => $r->zatca_status === 'rejected' ? 'danger' : 'warning')
+                        ->visible(fn (Invoice $r) => filled($r->zatca_messages)),
+                ]),
+                Section::make(__('مرجع الإشعار'))->icon(Heroicon::OutlinedArrowUturnLeft)->visible(fn (Invoice $r) => $r->kind !== 'invoice')->schema([
+                    TextEntry::make('billing_reference')->label(__('الفاتورة الأصلية'))->weight('bold')
+                        ->url(fn (Invoice $r) => ($id = Invoice::where('number', $r->billing_reference)->value('id')) ? InvoiceResource::getUrl('view', ['record' => $id]) : null),
+                    TextEntry::make('reason')->label(__('السبب'))->placeholder('-'),
                 ]),
                 Section::make(__('المستند'))->icon(Heroicon::OutlinedDocumentText)->columns(2)->schema([
                     TextEntry::make('number')->label(__('الرقم'))->weight('bold'),

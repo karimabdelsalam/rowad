@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('rowad:daily')->dailyAt('03:00')->withoutOverlapping()->onOneServer();
 Schedule::command('rowad:subscriptions')->dailyAt('02:45')->withoutOverlapping()->onOneServer();
 Schedule::command('rowad:usage')->hourly()->withoutOverlapping()->onOneServer();
+Schedule::command('rowad:zatca')->everyFifteenMinutes()->withoutOverlapping()->onOneServer(); // ZATCA reporting/clearance retries
 Schedule::command('queue:prune-failed --hours=720')->daily();
 // Heartbeat for `rowad:doctor`: proves the per-minute cron is running.
 Schedule::call(fn () => touch(storage_path(\App\Console\Commands\Doctor::HEARTBEAT)))->everyMinute()->name('heartbeat');

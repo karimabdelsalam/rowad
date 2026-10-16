@@ -287,6 +287,36 @@
     .rowad-perf__chip.is-warn { color: #b45309; background: #fffbeb; }
     .rowad-perf__note, .rowad-perf__empty { margin: 0; font-size: .78rem; color: var(--rowad-muted); }
 
+    /* ---------- e-invoicing (ZATCA phase 2) ---------- */
+    .rowad-einv { display: grid; gap: 18px; }
+    .rowad-einv__hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; padding: 22px 24px; border-radius: 20px; color: #fff;
+        background: linear-gradient(135deg, var(--rowad-brand), var(--rowad-brand-dark)); box-shadow: var(--rowad-shadow); }
+    .rowad-einv__hero.is-off { background: linear-gradient(135deg, #475569, #1e293b); }
+    .rowad-einv__state { display: flex; align-items: center; gap: 14px; }
+    .rowad-einv__dot { width: 14px; height: 14px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 5px rgb(52 211 153 / .25); flex: none; }
+    .rowad-einv__hero.is-off .rowad-einv__dot { background: #fbbf24; box-shadow: 0 0 0 5px rgb(251 191 36 / .25); }
+    .rowad-einv__kicker { margin: 0; font-size: .8rem; opacity: .8; }
+    .rowad-einv__hero h2 { margin: 2px 0; font-size: 1.3rem; font-weight: 800; color: #fff; }
+    .rowad-einv__meta { margin: 0; font-size: .82rem; opacity: .85; }
+    .rowad-einv__counts { display: flex; flex-wrap: wrap; gap: 10px; }
+    .rowad-einv__counts div { background: rgb(255 255 255 / .12); border: 1px solid rgb(255 255 255 / .18); border-radius: 14px; padding: 8px 14px; min-width: 96px; }
+    .rowad-einv__counts b { display: block; font-size: 1.25rem; font-weight: 800; }
+    .rowad-einv__counts span { font-size: .72rem; opacity: .85; }
+    .rowad-einv__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .rowad-einv__card { background: #fff; border: 1px solid var(--rowad-line); border-radius: 18px; padding: 18px 20px; box-shadow: var(--rowad-shadow); }
+    .rowad-einv__card h3 { margin: 0 0 10px; font-size: 1rem; font-weight: 800; color: var(--rowad-ink); }
+    .rowad-einv__card p { margin: 0 0 8px; font-size: .88rem; color: #334155; }
+    .rowad-einv__ok { color: #047857 !important; font-weight: 700; }
+    .rowad-einv__list, .rowad-einv__steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 6px; font-size: .88rem; color: #334155; }
+    .rowad-einv__list li { color: #b45309; font-weight: 600; }
+    .rowad-einv__link { display: inline-block; margin-top: 10px; font-weight: 700; color: var(--rowad-brand); font-size: .88rem; }
+    .rowad-einv__table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+    .rowad-einv__table th { text-align: start; font-size: .74rem; color: var(--rowad-muted); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--rowad-line); }
+    .rowad-einv__table td { padding: 9px 10px; border-bottom: 1px solid var(--rowad-line); font-variant-numeric: tabular-nums; }
+    .rowad-einv__table a { color: var(--rowad-brand); font-weight: 700; }
+    .rowad-einv__badge { display: inline-block; font-size: .74rem; font-weight: 700; border-radius: 999px; padding: 2px 10px; background: #f1f5f9; color: #475569; }
+    .rowad-einv__badge.is-ok { background: #ecfdf5; color: #047857; } .rowad-einv__badge.is-warn { background: #fffbeb; color: #b45309; } .rowad-einv__badge.is-bad { background: #fef2f2; color: #b91c1c; }
+
     /* ---------- getting-started checklist ---------- */
     .rowad-start { background: #fff; border: 1px solid var(--rowad-line); border-radius: 20px; box-shadow: var(--rowad-shadow); padding: 20px 24px; }
     .rowad-start__head { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; margin-bottom: 14px; }

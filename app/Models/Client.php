@@ -35,6 +35,7 @@ class Client extends Model implements HasMedia
             'kind' => ClientKind::class,
             'calendar' => Calendar::class,
             'billing_info' => 'array',
+            'national_address' => 'array',
         ];
     }
 

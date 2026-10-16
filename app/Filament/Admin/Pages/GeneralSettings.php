@@ -36,7 +36,8 @@ class GeneralSettings extends Page
     public const KEYS = [
         'site_name' => 'identity', 'site_name_en' => 'identity', 'logo' => 'identity', 'brand_color' => 'identity', 'address1' => 'identity', 'address2' => 'identity',
         'phone' => 'identity', 'mobile' => 'identity', 'fax' => 'identity', 'email' => 'identity', 'vat_number' => 'identity',
-        'commercial_register' => 'identity',
+        'commercial_register' => 'identity', 'zatca_street' => 'identity', 'zatca_building_number' => 'identity',
+        'zatca_district' => 'identity', 'zatca_postal_code' => 'identity',
         'currency' => 'localization', 'phone_code' => 'localization', 'timezone' => 'localization', 'system_calendar' => 'localization',
         'salary_calendar' => 'localization', 'locale' => 'localization',
         'vat_percent' => 'taxes', 'residential_tax_enabled' => 'taxes', 'residential_tax_percent' => 'taxes',
@@ -118,6 +119,12 @@ class GeneralSettings extends Page
                     TextInput::make('email')->label(__('البريد الإلكتروني'))->email(),
                     TextInput::make('vat_number')->label(__('الرقم الضريبي'))->regex('/^3\d{13}3$/')->helperText(__('15 رقمًا يبدأ وينتهي بالرقم 3 (للفوترة الإلكترونية)')),
                     TextInput::make('commercial_register')->label(__('رقم السجل التجاري')),
+                    \Filament\Schemas\Components\Fieldset::make(__('العنوان الوطني (للفوترة الإلكترونية)'))->columns(['default' => 1, 'md' => 4])->columnSpanFull()->schema([
+                        TextInput::make('zatca_street')->label(__('اسم الشارع'))->maxLength(127),
+                        TextInput::make('zatca_building_number')->label(__('رقم المبنى'))->regex('/^\d{4}$/')->maxLength(4)->helperText(__('4 أرقام')),
+                        TextInput::make('zatca_district')->label(__('الحي'))->maxLength(127),
+                        TextInput::make('zatca_postal_code')->label(__('الرمز البريدي'))->regex('/^\d{5}$/')->maxLength(5)->helperText(__('5 أرقام')),
+                    ]),
                 ]),
                 Tab::make(__('اللغة والتقويم'))->columns(2)->schema([
                     Select::make('locale')->label(__('لغة النظام الافتراضية'))->options(['ar' => 'العربية', 'en' => 'English'])->required(),

@@ -494,3 +494,29 @@
   posted by the payment webhook (no user) still lands in the unit's branch.
 - Owners and clients stay shared across branches (one person can deal with several branches).
 - Only staff without a branch manage branches; deleting a branch leaves its rows unassigned.
+
+## ZATCA e-invoicing Phase 2 — integration (2026-10-16) — roadmap phase 2
+
+- Built in-house (no third-party SDK or middleware): secp256k1 key + CSR with ZATCA's EGS extensions,
+  UBL 2.1 XML, invoice hash (C14N without UBLExtensions/Signature/QR), XAdES enveloped signature,
+  TLV QR with tags 1–9. Verified end to end against ZATCA's real sandbox: compliance CSID, all six
+  compliance documents (standard/simplified × invoice/credit/debit) PASS, production CSID, clearance.
+- One e-invoicing unit (EGS) per office (`zatca_devices`); the private key and secrets are stored
+  encrypted with the app key. Reconnecting creates a new unit and revokes the old one.
+- Onboarding is one screen (الإعدادات ← الفوترة الإلكترونية): the office pastes the OTP from the
+  Fatoora portal and the system does the rest. It refuses to start until the seller profile is
+  complete (name, VAT, CR, national address: street, 4-digit building, district, city, 5-digit postal).
+- Every invoice is signed when it is issued, inside a row lock on the unit, so the counter (ICV) and
+  previous-hash chain never fork. Sending happens after commit in a queued job; the scheduler
+  (`rowad:zatca`, every 15 minutes) retries `pending`/`failed` documents in ICV order, up to 20 tries.
+- Simplified (B2C, no buyer VAT number) → reporting; standard (B2B) → clearance, and ZATCA's stamped XML
+  and QR replace ours for printing. HTTP 400 = rejected (kept, never resent: fix with a credit note and
+  a new invoice); 409 = already accepted; anything else = failed and retried.
+- Issued invoices are never edited or deleted (the bulk delete was removed). Corrections are credit /
+  debit notes (`invoices.credit_note` permission) with the original's number and a mandatory reason.
+- Residential rent is VAT-exempt (category E, VATEX-SA-30); commercial rent is 15%.
+- Developer-portal environment: ZATCA answers every production-CSID request there with the same fixed
+  sample certificate (another key), so documents signed with it can never verify. In that environment
+  the unit keeps its compliance certificate and sends documents to the compliance-check endpoint, which
+  validates them with the same rules. Simulation and production use the production CSID as normal.
+- Offices without the plan feature `zatca` or without a connected unit keep Phase 1 (QR on the print).

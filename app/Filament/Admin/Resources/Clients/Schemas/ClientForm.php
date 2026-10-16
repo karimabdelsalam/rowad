@@ -35,6 +35,13 @@ class ClientForm
                         TextInput::make('company_mobile')->tel()->maxLength(30),
                         TextInput::make('vat_number')->maxLength(30),
                         Textarea::make('billing_info')->rows(2)->columnSpanFull(),
+                        \Filament\Schemas\Components\Fieldset::make(__('العنوان الوطني (مطلوب للفاتورة الضريبية)'))->columns(['default' => 1, 'md' => 5])->columnSpanFull()->schema([
+                            TextInput::make('national_address.street')->label(__('اسم الشارع'))->maxLength(127),
+                            TextInput::make('national_address.building')->label(__('رقم المبنى'))->regex('/^\d{4}$/')->maxLength(4),
+                            TextInput::make('national_address.district')->label(__('الحي'))->maxLength(127),
+                            TextInput::make('national_address.city')->label(__('المدينة'))->maxLength(127),
+                            TextInput::make('national_address.postal')->label(__('الرمز البريدي'))->regex('/^\d{5}$/')->maxLength(5),
+                        ]),
                     ]),
                 PersonFormSections::name()->heading(fn (Get $get) => $isCompany($get) ? __('اسم المفوض') : __('الاسم')),
                 PersonFormSections::identity(),

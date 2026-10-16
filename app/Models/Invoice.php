@@ -16,12 +16,15 @@ class Invoice extends Model
 {
     use LogsActivity;
 
-    protected $attributes = ['calendar' => 'gregorian'];
+    protected $attributes = ['calendar' => 'gregorian', 'kind' => 'invoice', 'zatca_attempts' => 0];
 
     protected function casts(): array
     {
         return [
             'issue_date' => 'date',
+            'issued_at' => 'datetime',
+            'zatca_messages' => 'array',
+            'zatca_submitted_at' => 'datetime',
             'calendar' => Calendar::class,
             'items' => 'array',
             'subtotal' => 'decimal:2',
@@ -39,6 +42,11 @@ class Invoice extends Model
     public function installments(): HasMany
     {
         return $this->hasMany(Installment::class);
+    }
+
+    public function zatcaDevice(): BelongsTo
+    {
+        return $this->belongsTo(ZatcaDevice::class);
     }
 
     public function creator(): BelongsTo

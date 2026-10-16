@@ -173,8 +173,11 @@ class DocumentData
         $table = '<table class="grid"><thead><tr><th>'.__('البيان').'</th><th>'.__('الكمية').'</th><th>'.__('السعر').'</th><th>'.__('الضريبة').'</th><th>'.__('الإجمالي').'</th></tr></thead><tbody>'.$rows.'</tbody></table>';
 
         $qr = $invoice->zatca_qr ? $this->qr($invoice->zatca_qr) : '';
+        $note = $invoice->kind !== 'invoice' && filled($invoice->billing_reference)
+            ? __('مرجع الفاتورة: :number — السبب: :reason', ['number' => $invoice->billing_reference, 'reason' => (string) $invoice->reason]).' '
+            : '';
 
-        return $this->document($invoice->vat_total > 0 ? 'tax_invoice' : 'invoice', [
+        $html = $this->document($invoice->vat_total > 0 ? 'tax_invoice' : 'invoice', [
             'number' => $invoice->number,
             'date' => $invoice->issue_date->toDateString(),
             'customer' => e((string) $invoice->customer_name),
@@ -185,7 +188,14 @@ class DocumentData
             'total' => $this->money($invoice->total),
             'total_words' => e(AmountInWords::format((float) $invoice->total)),
             'qrcode' => $qr,
+            'notes' => e($note.$invoice->notes),
         ], $this->legacy->invoice($invoice, $qr));
+
+        // credit/debit notes reuse the invoice design under their own title
+        $title = ['credit' => __('إشعار دائن'), 'debit' => __('إشعار مدين')][$invoice->kind] ?? null;
+
+        return $title === null ? $html : str_replace(['<h1>فاتورة ضريبية</h1>', '<h1>فاتورة</h1>', 'TAX INVOICE<', '>INVOICE<'],
+            ["<h1>{$title}</h1>", "<h1>{$title}</h1>", strtoupper($invoice->kind).' NOTE<', '>'.strtoupper($invoice->kind).' NOTE<'], $html);
     }
 
     public function ownerStatement(Owner $owner, ?string $from = null, ?string $to = null): string
