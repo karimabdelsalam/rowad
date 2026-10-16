@@ -33,7 +33,6 @@ class User extends Authenticatable implements FilamentUser, HasEmailAuthenticati
     /** Mirrors the column defaults so new instances are complete before a refresh. */
     protected $attributes = [
         'type' => 'staff',
-        'branch_id' => null,
         'locale' => 'ar',
         'is_active' => true,
         'is_super_admin' => false,
