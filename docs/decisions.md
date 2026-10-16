@@ -422,3 +422,19 @@
   existing offices' templates were migrated), the client portal's "ادفع الآن", the mobile API
   (`pay_url`), and the admin instalment list ("رابط الدفع" to copy). Admin log: "المدفوعات الإلكترونية".
 - Not in this phase: partial online payments, refunds from the panel, settlement reports from Moyasar.
+
+## WhatsApp Business channel (2026-10-16) — roadmap phase 1, part 2
+
+- Meta Cloud API, configured per office (settings tab "واتساب": phone number id, permanent token
+  encrypted at rest, approved template name and language). Business-initiated messages must use an
+  approved template, so the office creates one Utility template whose body is a single variable
+  ({{1}}); the text rendered from the office's own notification templates (SMS body) is passed in it.
+  Newlines are flattened because Meta rejects them inside variables.
+- When connected, every notice that would go by SMS is queued as `whatsapp` instead; the delivery job
+  falls back to SMS on any WhatsApp failure (not on WhatsApp, template not approved, expired token)
+  and keeps the reason on the message. Login/password codes stay SMS (Meta requires separate
+  authentication templates). WhatsApp does not count against the plan's SMS quota (Meta bills the
+  office directly).
+- Campaigns can use WhatsApp once connected (same mobile audience as SMS).
+- Zero-setup option for every office: the pay-link window has "إرسال عبر واتساب", a wa.me link that
+  opens the staff member's own WhatsApp with the tenant's number and the pay link pre-filled.

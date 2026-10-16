@@ -13,7 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-/** Delivers one logged email/SMS (legacy email_queue processed by cron/perminute). Runs in the office's context. */
+/** Delivers one logged email/SMS/WhatsApp message (legacy email_queue processed by cron/perminute). Runs in the office's context. */
 class SendOutgoingMessage implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
@@ -26,7 +26,7 @@ class SendOutgoingMessage implements ShouldQueue
     {
     }
 
-    public function handle(SmsGateway $sms): void
+    public function handle(SmsGateway $sms, \App\Services\Messaging\WhatsAppGateway $whatsapp): void
     {
         $message = OutgoingMessage::find($this->messageId);
         if ($message === null || $message->status === 'sent') {
@@ -41,6 +41,24 @@ class SendOutgoingMessage implements ShouldQueue
             return;
         }
 
+        if ($message->channel === MessageChannel::WhatsApp) {
+            $result = $whatsapp->send($message->recipient, $message->body);
+            if ($result->ok) {
+                $message->update(['status' => 'sent', 'sent_at' => now(), 'provider' => 'whatsapp', 'error' => null]);
+                $message->campaign?->increment('sent_count');
+
+                return;
+            }
+            // not on WhatsApp, template not approved, token expired… the reminder still goes out by SMS
+            if (blank(Settings::get('sms_provider'))) {
+                $message->update(['status' => 'failed', 'provider' => 'whatsapp', 'error' => 'WhatsApp: '.$result->error]);
+                $message->campaign?->increment('failed_count');
+
+                return;
+            }
+            $message->update(['channel' => MessageChannel::Sms, 'error' => 'WhatsApp: '.$result->error.' → SMS']);
+        }
+
         if ($message->channel === MessageChannel::Sms) {
             if (PlanLimits::reached('sms')) {
                 $message->update(['status' => 'failed', 'error' => __('تم بلوغ حد رسائل SMS الشهري في باقة المؤسسة.')]);
@@ -50,7 +68,7 @@ class SendOutgoingMessage implements ShouldQueue
             }
             $result = $sms->send($message->recipient, $message->body);
             $message->update($result->ok
-                ? ['status' => 'sent', 'sent_at' => now(), 'provider' => Settings::get('sms_provider'), 'error' => null]
+                ? ['status' => 'sent', 'sent_at' => now(), 'provider' => Settings::get('sms_provider'), 'error' => str_starts_with((string) $message->error, 'WhatsApp:') ? $message->error : null]
                 : ['status' => 'failed', 'error' => $result->error, 'provider' => Settings::get('sms_provider')]);
             $message->campaign?->increment($result->ok ? 'sent_count' : 'failed_count');
 

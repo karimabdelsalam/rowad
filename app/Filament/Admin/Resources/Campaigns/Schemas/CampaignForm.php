@@ -27,10 +27,13 @@ class CampaignForm
 
     public static function configure(Schema $schema): Schema
     {
-        $isSms = fn (Get $get) => ($get('channel') instanceof MessageChannel ? $get('channel')->value : $get('channel')) === 'sms';
+        // SMS and WhatsApp both carry short plain text to a mobile number
+        $isSms = fn (Get $get) => in_array($get('channel') instanceof MessageChannel ? $get('channel')->value : $get('channel'), ['sms', 'whatsapp'], true);
 
         return $schema->columns(2)->components([
-            Select::make('channel')->options(MessageChannel::class)->default('mail')->required()->live(),
+            Select::make('channel')->options(fn () => collect(MessageChannel::cases())
+                ->reject(fn (MessageChannel $c) => $c === MessageChannel::WhatsApp && ! \App\Services\Messaging\WhatsAppGateway::enabled())
+                ->mapWithKeys(fn (MessageChannel $c) => [$c->value => $c->getLabel()])->all())->default('mail')->required()->live(),
             Select::make('audience')->options(self::audiences())->required(),
             TextInput::make('subject')->required(fn (Get $get) => ! $isSms($get))->hidden($isSms)->columnSpanFull(),
             RichEditor::make('body')->required()->hidden($isSms)->columnSpanFull()

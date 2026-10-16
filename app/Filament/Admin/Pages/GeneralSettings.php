@@ -48,6 +48,8 @@ class GeneralSettings extends Page
         'support_ticket_prefix' => 'general', 'google_maps_key' => 'general',
         'payments_gateway' => 'payments', 'moyasar_publishable_key' => 'payments', 'moyasar_secret_key' => 'payments',
         'moyasar_webhook_secret' => 'payments', 'payments_bank_account_id' => 'payments', 'payments_methods' => 'payments',
+        'whatsapp_enabled' => 'whatsapp', 'whatsapp_phone_number_id' => 'whatsapp', 'whatsapp_access_token' => 'whatsapp',
+        'whatsapp_template' => 'whatsapp', 'whatsapp_language' => 'whatsapp',
         'hr_gosi_saudi_employee' => 'hr', 'hr_gosi_saudi_employer' => 'hr', 'hr_gosi_expat_employer' => 'hr', 'hr_gosi_wage_cap' => 'hr',
         'hr_annual_leave_days' => 'hr', 'hr_annual_leave_days_senior' => 'hr', 'hr_overtime_rate' => 'hr', 'hr_payroll_day' => 'hr',
         'hr_wps_establishment_id' => 'hr',
@@ -86,8 +88,9 @@ class GeneralSettings extends Page
 
     public function mount(): void
     {
+        $defaults = ['whatsapp_language' => 'ar'];
         $this->form->fill(collect(self::KEYS)->keys()->mapWithKeys(fn ($key) => [$key => $key === 'payments_methods'
-            ? Settings::list($key, array_keys(\App\Services\Payments\Payments::METHODS)) : Settings::get($key)])->all());
+            ? Settings::list($key, array_keys(\App\Services\Payments\Payments::METHODS)) : Settings::get($key, $defaults[$key] ?? null)])->all());
     }
 
     public function form(Schema $schema): Schema
@@ -165,6 +168,17 @@ class GeneralSettings extends Page
                                 $notification->send();
                             }),
                     ])->columnSpanFull(),
+                ]),
+                Tab::make(__('واتساب'))->columns(2)->schema([
+                    Toggle::make('whatsapp_enabled')->label(__('إرسال التنبيهات عبر واتساب للأعمال'))->live()->columnSpanFull()
+                        ->helperText(__('تذهب تذكيرات الأقساط والعقود والسندات عبر واتساب أولًا، وإن تعذّر الإرسال تُرسل رسالة نصية تلقائيًا. رموز الدخول تبقى رسائل نصية.')),
+                    TextInput::make('whatsapp_phone_number_id')->label(__('معرّف رقم الهاتف (Phone number ID)'))->visible(fn (Get $get) => (bool) $get('whatsapp_enabled'))->regex('/^\d{5,25}$/'),
+                    TextInput::make('whatsapp_access_token')->label(__('رمز الوصول الدائم (Access token)'))->password()->revealable()->visible(fn (Get $get) => (bool) $get('whatsapp_enabled')),
+                    TextInput::make('whatsapp_template')->label(__('اسم القالب المعتمد'))->placeholder('aqarnova_notice')->visible(fn (Get $get) => (bool) $get('whatsapp_enabled'))
+                        ->regex('/^[a-z0-9_]{1,512}$/')
+                        ->helperText(__('أنشئ في WhatsApp Manager قالبًا من فئة Utility نصه متغير واحد، مثل: "{{1}}"، واكتب اسمه هنا. يُرسل نص الرسالة من قوالب الإشعارات في هذا المتغير.')),
+                    Select::make('whatsapp_language')->label(__('لغة القالب'))->options(['ar' => 'العربية (ar)', 'en' => 'English (en)', 'en_US' => 'English US (en_US)'])->default('ar')
+                        ->visible(fn (Get $get) => (bool) $get('whatsapp_enabled')),
                 ]),
                 Tab::make(__('الدفع الإلكتروني'))->columns(2)->schema([
                     Select::make('payments_gateway')->label(__('بوابة الدفع'))->options(['' => __('بدون — تحصيل يدوي'), 'moyasar' => 'Moyasar (مدى، فيزا/ماستركارد، Apple Pay، STC Pay)'])->live()

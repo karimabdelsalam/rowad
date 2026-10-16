@@ -42,7 +42,10 @@ class CampaignService
             throw new BusinessRuleException(__('تم إرسال هذه الحملة من قبل'));
         }
 
-        $field = $campaign->channel === MessageChannel::Sms ? 'mobile' : 'email';
+        if ($campaign->channel === MessageChannel::WhatsApp && ! WhatsAppGateway::enabled()) {
+            throw new BusinessRuleException(__('اربط واتساب للأعمال من الإعدادات أولًا.'));
+        }
+        $field = $campaign->channel === MessageChannel::Mail ? 'email' : 'mobile';
         $targets = $this->recipients($campaign->audience)->pluck($field)->filter()->map(fn ($v) => trim($v))->unique()->values();
         if ($targets->isEmpty()) {
             throw new BusinessRuleException(__('لا يوجد مستلمون لديهم :field', ['field' => $field === 'mobile' ? __('الجوال') : __('البريد الإلكتروني')]));

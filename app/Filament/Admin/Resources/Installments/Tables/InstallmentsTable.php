@@ -93,7 +93,15 @@ class InstallmentsTable
                     ->visible(fn (Installment $record) => ! $record->is_collected && \App\Services\Payments\Payments::enabled())
                     ->modalHeading(__('رابط الدفع الإلكتروني'))
                     ->modalDescription(__('أرسله للمستأجر بأي وسيلة؛ عند الدفع يُحصَّل القسط ويصدر سند القبض تلقائيًا.'))
-                    ->modalContent(fn (Installment $record) => view('filament.admin.pay-link', ['url' => app(\App\Services\Payments\Payments::class)->urlFor($record), 'amount' => $record->remainingAmount()]))
+                    ->modalContent(function (Installment $record) {
+                        $url = app(\App\Services\Payments\Payments::class)->urlFor($record);
+                        $client = $record->contract?->clients()->first();
+                        $text = __('مرحبًا :name، رابط سداد قسط :unit بمبلغ :amount ر.س: :url', ['name' => $client?->displayName(), 'unit' => $record->unit?->title,
+                            'amount' => number_format($record->remainingAmount(), 2), 'url' => $url]);
+
+                        return view('filament.admin.pay-link', ['url' => $url, 'amount' => $record->remainingAmount(),
+                            'whatsapp' => filled($client?->mobile) ? \App\Services\Messaging\WhatsAppGateway::shareUrl($client->mobile, $text) : null]);
+                    })
                     ->modalSubmitAction(false)->modalCancelActionLabel(__('إغلاق')),
                 Action::make('collectPartial')
                     ->label(__('دفعة جزئية'))

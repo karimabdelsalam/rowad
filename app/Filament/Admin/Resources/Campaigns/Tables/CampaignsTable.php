@@ -42,7 +42,7 @@ class CampaignsTable
                     ->requiresConfirmation()
                     ->modalDescription(fn (\App\Models\Campaign $record) => __('سيتم الإرسال إلى :n مستلم', [
                         'n' => app(\App\Services\Messaging\CampaignService::class)->recipients($record->audience)
-                            ->pluck($record->channel->value === 'sms' ? 'mobile' : 'email')->filter()->unique()->count(),
+                            ->pluck($record->channel->value === 'mail' ? 'email' : 'mobile')->filter()->unique()->count(),
                     ]))
                     ->visible(fn (\App\Models\Campaign $record) => $record->status === 'draft'
                         && (auth()->user()?->is_super_admin || auth()->user()?->can('campaigns.send')))

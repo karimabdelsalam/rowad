@@ -8,7 +8,7 @@ use App\Models\Setting;
 final class Settings
 {
     /** Stored encrypted at rest. */
-    public const SECRET_KEYS = ['smtp_password', 'sms_password', 'moyasar_secret_key', 'moyasar_webhook_secret'];
+    public const SECRET_KEYS = ['smtp_password', 'sms_password', 'moyasar_secret_key', 'moyasar_webhook_secret', 'whatsapp_access_token'];
 
     /** @var array<string, array<string, mixed>> */
     private static array $cache = [];

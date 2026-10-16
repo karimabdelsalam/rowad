@@ -2069,5 +2069,16 @@
     "مستبدل": "Superseded",
     "التحصيل الإلكتروني (روابط دفع)": "E-collection (pay links)",
     "سداد إلكتروني": "Online payment",
-    "المدفوعات الإلكترونية": "Online payments"
+    "المدفوعات الإلكترونية": "Online payments",
+    "إرسال التنبيهات عبر واتساب للأعمال": "Send notifications through WhatsApp Business",
+    "تذهب تذكيرات الأقساط والعقود والسندات عبر واتساب أولًا، وإن تعذّر الإرسال تُرسل رسالة نصية تلقائيًا. رموز الدخول تبقى رسائل نصية.": "Instalment, contract and voucher notices go by WhatsApp first; if that fails an SMS is sent automatically. Login codes stay SMS.",
+    "معرّف رقم الهاتف (Phone number ID)": "Phone number ID",
+    "رمز الوصول الدائم (Access token)": "Permanent access token",
+    "اسم القالب المعتمد": "Approved template name",
+    "أنشئ في WhatsApp Manager قالبًا من فئة Utility نصه متغير واحد، مثل: \"{{1}}\"، واكتب اسمه هنا. يُرسل نص الرسالة من قوالب الإشعارات في هذا المتغير.": "Create a Utility template in WhatsApp Manager whose body is a single variable, such as \"{{1}}\", and enter its name here. The text from your notification templates is sent in that variable.",
+    "لغة القالب": "Template language",
+    "مرحبًا :name، رابط سداد قسط :unit بمبلغ :amount ر.س: :url": "Hello :name, here is the link to pay the :unit instalment of SAR :amount: :url",
+    "معرّف رقم واتساب غير صالح.": "Invalid WhatsApp phone number ID.",
+    "اربط واتساب للأعمال من الإعدادات أولًا.": "Connect WhatsApp Business in the settings first.",
+    "إرسال عبر واتساب": "Send via WhatsApp"
 }

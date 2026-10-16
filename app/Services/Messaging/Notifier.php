@@ -36,7 +36,10 @@ class Notifier
                 $messages[] = $this->queue(MessageChannel::Mail, $event, $recipient['email'], $this->render($template->email_subject, $vars), $this->render($template->email_body, $vars, html: true));
             }
             if (($force || $template?->sms_enabled) && filled($recipient['mobile'] ?? null) && filled($template?->sms_body)) {
-                $messages[] = $this->queue(MessageChannel::Sms, $event, $recipient['mobile'], null, $this->render($template->sms_body, $vars));
+                // WhatsApp first when the office connected it (SMS stays the fallback inside the job); codes stay SMS
+                $channel = WhatsAppGateway::enabled() && ! in_array($event->value, WhatsAppGateway::SMS_ONLY_EVENTS, true)
+                    ? MessageChannel::WhatsApp : MessageChannel::Sms;
+                $messages[] = $this->queue($channel, $event, $recipient['mobile'], null, $this->render($template->sms_body, $vars));
             }
         }
 
