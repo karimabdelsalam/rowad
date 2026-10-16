@@ -53,13 +53,18 @@ class User extends Authenticatable implements FilamentUser, HasEmailAuthenticati
         ];
     }
 
-    /** In the public demo office, visitors cannot lock others out by changing the shared accounts' sign-in details. */
+    /** In the public demo office, visitors cannot lock others out by changing or deleting the shared accounts. */
     protected static function booted(): void
     {
+        static::deleting(function (User $user) {
+            if (\App\Support\Demo::active() && in_array($user->email, array_column(\App\Console\Commands\CreateDemoOffice::ACCOUNTS, 0), true)) {
+                throw new \App\Exceptions\BusinessRuleException(__('لا يمكن حذف حسابات النسخة التجريبية'));
+            }
+        });
         static::updating(function (User $user) {
             $demoEmails = array_column(\App\Console\Commands\CreateDemoOffice::ACCOUNTS, 0);
             if (tenancy()->initialized && tenant()->isDemo() && in_array($user->getOriginal('email'), $demoEmails, true)) {
-                foreach (['email', 'password', 'username', 'is_active', 'sms_login_enabled', 'type'] as $locked) {
+                foreach (['email', 'password', 'username', 'is_active', 'sms_login_enabled', 'type', 'is_super_admin', 'branch_id'] as $locked) {
                     if ($user->isDirty($locked)) {
                         $user->setAttribute($locked, $user->getOriginal($locked));
                     }

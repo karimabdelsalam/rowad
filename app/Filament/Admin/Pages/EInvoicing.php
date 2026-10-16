@@ -83,7 +83,7 @@ class EInvoicing extends Page
             Action::make('connect')
                 ->label(fn () => ZatcaDevice::active() ? __('إعادة الربط') : __('ربط بمنصة فاتورة'))
                 ->icon(Heroicon::OutlinedLink)
-                ->visible(fn () => PlanLimits::allows('zatca'))
+                ->visible(fn () => ! \App\Support\Demo::active() && PlanLimits::allows('zatca'))
                 ->modalHeading(__('ربط وحدة الفوترة بمنصة فاتورة'))
                 ->modalDescription(__('ادخل بوابة فاتورة (fatoora.zatca.gov.sa) ← "تسجيل وحدة حلول الفوترة الإلكترونية" ← أنشئ رمز OTP، ثم ألصقه هنا خلال ساعة. يُنشئ النظام المفتاح والشهادة ويجتاز فحوص الامتثال الستة تلقائيًا.'))
                 ->modalSubmitActionLabel(__('ربط الآن'))

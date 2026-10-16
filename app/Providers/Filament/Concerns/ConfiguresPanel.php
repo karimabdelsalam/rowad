@@ -87,6 +87,8 @@ trait ConfiguresPanel
             $panel->widgets([\App\Filament\Widgets\LoginActivities::class]);
             $panel->passwordReset(\App\Filament\Auth\RequestPasswordReset::class)->profile();
             $panel->renderHook(PanelsRenderHook::BODY_START, fn () => session()->has('impersonator_id') ? view('filament.impersonation-banner') : '');
+            // the shared public demo says what visitors can expect (nothing is sent, it cleans itself up)
+            $panel->renderHook(PanelsRenderHook::BODY_START, fn () => \App\Support\Demo::active() ? view('filament.demo-banner') : '');
             // a notice from the platform to every office (maintenance tonight, new feature…), set in the platform console
             $panel->renderHook(PanelsRenderHook::PAGE_START, fn () => ($a = \App\Support\PlatformSettings::announcement()) ? view('filament.platform-announcement', $a) : '');
             $panel->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.assistant-shortcut'));
@@ -96,6 +98,7 @@ trait ConfiguresPanel
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
                 \App\Http\Middleware\EnsureOfficeIsAccessible::class,
+                \App\Http\Middleware\TrackDemoVisit::class,
             ], isPersistent: true);
         }
 

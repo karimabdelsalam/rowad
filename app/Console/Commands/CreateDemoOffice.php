@@ -64,6 +64,8 @@ class CreateDemoOffice extends Command
         $tenant->forceFill(['status' => Tenant::STATUS_ACTIVE, 'is_demo' => true, 'trial_ends_at' => null])->save();
 
         $tenant->run(fn () => $this->seedOffice());
+        // built clean: the sample data is not a visitor's change
+        $tenant->refresh()->forceFill(['demo_changed_at' => null, 'demo_seen_at' => null])->saveQuietly();
         $url = (parse_url((string) config('app.url'), PHP_URL_SCHEME) ?: 'https').'://'.$domain
             .(($port = parse_url((string) config('app.url'), PHP_URL_PORT)) ? ':'.$port : '');
         $this->info("Demo office ready: {$url}");

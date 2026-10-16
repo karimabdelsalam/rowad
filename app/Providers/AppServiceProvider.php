@@ -31,6 +31,19 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // the shared public demo: any real change by a visitor marks it for the rebuild after they leave
+        \Illuminate\Support\Facades\Event::listen(['eloquent.created: *', 'eloquent.updated: *', 'eloquent.deleted: *'], function (string $event, array $payload) {
+            $model = $payload[0] ?? null;
+            if (! $model instanceof Model || (app()->runningInConsole() && ! app()->runningUnitTests()) || ! \App\Support\Demo::active()) {
+                return; // the demo build itself (console) and the central models are not visitor changes
+            }
+            if ($model instanceof Models\Tenant || $model instanceof Models\LoginActivity || $model instanceof \Spatie\Activitylog\Models\Activity
+                || ($model instanceof Models\User && array_diff(array_keys($model->getChanges()), ['remember_token', 'last_login_at', 'updated_at']) === [])) {
+                return; // signing in is not a change
+            }
+            \App\Support\Demo::changed();
+        });
+
         // contract signing links: limits per link, so parties signing from one office network don't block each other
         \Illuminate\Support\Facades\RateLimiter::for('sign-code', fn (\Illuminate\Http\Request $request) => \Illuminate\Cache\RateLimiting\Limit::perMinutes(10, 5)
             ->by('sign-code|'.$request->route('token')));

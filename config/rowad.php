@@ -132,6 +132,8 @@ return [
 
     // Rebuild the public demo office (demo.<base-domain>) every night at 04:00.
     'demo_reset_daily' => (bool) env('DEMO_RESET_DAILY', false),
+    // Rebuild it after a visitor changed something and left (idle for App\Support\Demo::IDLE_MINUTES).
+    'demo_auto_reset' => (bool) env('DEMO_AUTO_RESET', true),
 
     // Licensing. On aqarnova.com (mode "saas") the platform issues licenses and signs tokens with
     // LICENSE_SIGNING_KEY. A copy installed on a customer's server runs with mode "self_hosted":

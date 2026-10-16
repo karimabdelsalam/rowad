@@ -38,6 +38,14 @@ class SignupController
         return request()->getScheme().'://'.$domain.$port;
     }
 
+    /** The sign-up page on the platform's own domain (linked from offices' pages, e.g. the demo banner). */
+    public static function signupUrl(): string
+    {
+        $port = in_array(request()->getPort(), [80, 443], true) ? '' : ':'.request()->getPort();
+
+        return request()->getScheme().'://'.config('rowad.tenancy.base_domain').$port.'/signup';
+    }
+
     public function create(Request $request): View
     {
         if (! PlatformSettings::signupOpen()) {

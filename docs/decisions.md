@@ -678,3 +678,23 @@
   and reverses the bank movement.
 - Permissions: owner_payouts.view_any / view / create / transfer / cancel (included in the accountant
   role).
+
+## The public demo office: fenced and self-cleaning (2026-10-16)
+
+- Shared by every visitor, so nothing in it reaches the outside world:
+  - Messages are never sent (already the case).
+  - Mail, SMS, payment and WhatsApp connection settings are not saved.
+  - The subscription can't be cancelled and upgrade requests can't be sent.
+  - Office backups, ZATCA onboarding and deleting the three shared accounts are blocked. Their
+    sign-in details, admin flag and branch can't be changed either.
+- The assistant is limited to 10 questions an hour per visitor (IP) there, so the shared monthly AI
+  quota lasts.
+- Self-cleaning: any real change by a visitor marks the demo changed (signing in doesn't count). Every
+  5 minutes `rowad:demo:refresh` rebuilds it from scratch (about 10 seconds) once it has been changed
+  and nobody has used it for 20 minutes. The next visitor always finds it as new, and nobody is reset
+  in the middle of a visit.
+  - On by default (`DEMO_AUTO_RESET=true`). The nightly rebuild (`DEMO_RESET_DAILY`) can stay on as a
+    safety net.
+- Every demo panel shows a banner saying so, with a link to sign up a real office.
+- Still possible by design: visitors see each other's changes while they overlap. Isolating each
+  visitor in their own copy would need one database per visitor, and isn't worth it at this stage.

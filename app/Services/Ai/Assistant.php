@@ -60,6 +60,14 @@ class Assistant
         if (! ClaudeClient::configured()) {
             throw new AiUnavailable(__('المساعد الذكي غير مفعّل بعد. يضيف مدير المنصة مفتاح الخدمة لتفعيله.'));
         }
+        if (\App\Support\Demo::active()) {
+            // the shared demo's quota must last for every visitor
+            $key = 'demo-ai:'.request()->ip();
+            if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, \App\Support\Demo::AI_PER_HOUR)) {
+                throw new AiUnavailable(__('في النسخة التجريبية يمكنك طرح :n أسئلة في الساعة على المساعد الذكي. سجّل مكتبك لتجربته دون حدود.', ['n' => \App\Support\Demo::AI_PER_HOUR]));
+            }
+            \Illuminate\Support\Facades\RateLimiter::hit($key, 3600);
+        }
     }
 
     public function startConversation(User $user, ?array $context = null): AiConversation

@@ -324,6 +324,14 @@
     .rowad-einv__badge { display: inline-block; font-size: .74rem; font-weight: 700; border-radius: 999px; padding: 2px 10px; background: #f1f5f9; color: #475569; }
     .rowad-einv__badge.is-ok { background: #ecfdf5; color: #047857; } .rowad-einv__badge.is-warn { background: #fffbeb; color: #b45309; } .rowad-einv__badge.is-bad { background: #fef2f2; color: #b91c1c; }
 
+    /* ---------- Public demo banner ---------- */
+    .rowad-demo-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; padding: 7px 16px; font-size: .82rem;
+        background: linear-gradient(90deg, var(--rowad-brand-dark), var(--rowad-brand)); color: #ecfdf5; text-align: center; }
+    .rowad-demo-banner strong { background: rgb(255 255 255 / .16); border-radius: 999px; padding: 1px 10px; font-weight: 800; }
+    .rowad-demo-banner a { color: #fff; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+    .rowad-demo-banner .is-short { display: none; }
+    @media (max-width: 640px) { .rowad-demo-banner { font-size: .76rem; padding: 6px 10px; } .rowad-demo-banner .is-long { display: none; } .rowad-demo-banner .is-short { display: inline; } }
+
     /* ---------- Data import from Excel ---------- */
     .rowad-import { display: grid; gap: 16px; }
     .rowad-import__steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }

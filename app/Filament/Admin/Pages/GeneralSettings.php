@@ -261,13 +261,20 @@ class GeneralSettings extends Page
 
     public function save(): void
     {
+        $skipped = false;
         foreach ($this->form->getState() as $key => $value) {
+            if (array_key_exists($key, self::KEYS) && \App\Support\Demo::active() && in_array(self::KEYS[$key], \App\Support\Demo::LOCKED_SETTING_GROUPS, true)) {
+                $skipped = $skipped || $value != Settings::get($key);
+
+                continue;
+            }
             if (array_key_exists($key, self::KEYS)) {
                 Settings::set($key, $value instanceof BackedEnum ? $value->value : $value, self::KEYS[$key]);
             }
         }
 
-        Notification::make()->title(__('تم الحفظ'))->success()->send();
+        Notification::make()->title(__('تم الحفظ'))->success()
+            ->body($skipped ? __('في النسخة التجريبية لا تُحفظ إعدادات الربط بالبريد والرسائل والدفع والواتساب.') : null)->send();
     }
 
     /** Legacy maintenance → backup: download the office's data as a gzip'd SQL file. */
@@ -278,7 +285,7 @@ class GeneralSettings extends Page
                 ->label(__('تنزيل نسخة احتياطية'))
                 ->icon(\Filament\Support\Icons\Heroicon::OutlinedCircleStack)
                 ->color('gray')
-                ->visible(fn () => auth()->user()?->is_super_admin || auth()->user()?->can('backups.download'))
+                ->visible(fn () => ! \App\Support\Demo::active() && (auth()->user()?->is_super_admin || auth()->user()?->can('backups.download')))
                 ->action(function () {
                     $path = tempnam(sys_get_temp_dir(), 'rowad-backup-');
                     app(\App\Services\Backups\OfficeBackup::class)->write($path);

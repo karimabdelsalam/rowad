@@ -266,7 +266,7 @@ class HealthCheck
 
         $demo = Tenant::whereHas('domains', fn ($q) => $q->where('domain', 'demo.'.config('rowad.tenancy.base_domain')))->first();
         $demo?->isDemo()
-            ? $this->ok('الحساب التجريبي', 'demo.'.config('rowad.tenancy.base_domain').(config('rowad.demo_reset_daily') ? '، يُعاد كل ليلة' : ''))
+            ? $this->ok('الحساب التجريبي', 'demo.'.config('rowad.tenancy.base_domain').(config('rowad.demo_auto_reset') ? '، يُعاد تلقائيًا بعد كل زيارة' : '').(config('rowad.demo_reset_daily') ? '، وكل ليلة' : ''))
             : $this->warn_('الحساب التجريبي', 'غير موجود — نفّذ: php artisan rowad:demo');
     }
 }

@@ -12,6 +12,8 @@ Schedule::command('queue:prune-failed --hours=720')->daily();
 Schedule::call(fn () => touch(storage_path(\App\Console\Commands\Doctor::HEARTBEAT)))->everyMinute()->name('heartbeat');
 // The public demo office starts clean every day (DEMO_RESET_DAILY=true).
 Schedule::command('rowad:demo --fresh')->dailyAt('04:00')->when(fn () => config('rowad.demo_reset_daily'))->withoutOverlapping()->onOneServer();
+// …and after each visit: once a visitor changed something and has been gone a while, it is rebuilt (about 10 s).
+Schedule::command('rowad:demo:refresh')->everyFiveMinutes()->when(fn () => config('rowad.demo_auto_reset'))->withoutOverlapping()->onOneServer();
 
 // cPanel and other hosting without Supervisor: work through queued messages every minute from cron (QUEUE_WORKER=scheduler).
 if (config('rowad.queue_via_scheduler')) {

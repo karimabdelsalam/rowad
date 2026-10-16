@@ -2682,5 +2682,14 @@
     "إضافة الآيبان": "Add IBAN",
     "بانتظار التحويل": "Awaiting transfer",
     "تم التحويل": "Transferred",
-    "ملغاة": "Cancelled"
+    "ملغاة": "Cancelled",
+    "نسخة تجريبية": "Demo",
+    "جرّب كل شيء بحرية: الرسائل لا تُرسل فعليًا، وتعود البيانات لحالتها الأصلية تلقائيًا بعد انتهاء زيارتك.": "Try everything freely: no messages are actually sent, and the data returns to its original state automatically after your visit.",
+    "ابدأ تجربتك المجانية لمكتبك": "Start your office's free trial",
+    "في النسخة التجريبية يمكنك طرح :n أسئلة في الساعة على المساعد الذكي. سجّل مكتبك لتجربته دون حدود.": "In the demo you can ask the assistant :n questions an hour. Sign up your office to use it without limits.",
+    "في النسخة التجريبية لا تُحفظ إعدادات الربط بالبريد والرسائل والدفع والواتساب.": "In the demo, mail, SMS, payment and WhatsApp connection settings are not saved.",
+    "لا يمكن حذف حسابات النسخة التجريبية": "The demo accounts cannot be deleted",
+    "، يُعاد تلقائيًا بعد كل زيارة": ", rebuilt automatically after each visit",
+    "، وكل ليلة": " and every night",
+    "تعود البيانات لحالتها تلقائيًا بعد زيارتك": "Data resets automatically after your visit"
 }
