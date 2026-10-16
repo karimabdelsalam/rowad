@@ -351,6 +351,15 @@
     .rowad-import__stats .is-ok { background: #ecfdf5; border-color: #a7f3d0; } .rowad-import__stats .is-ok b { color: #047857; }
     .rowad-import__stats .is-bad { background: #fef2f2; border-color: #fecaca; } .rowad-import__stats .is-bad b { color: #b91c1c; }
     .rowad-import__note { font-size: .82rem; color: var(--rowad-muted); margin: 0; }
+    .rowad-payout__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .rowad-payout__table td { vertical-align: middle; }
+    .rowad-payout__table td small { display: block; font-size: .74rem; color: var(--rowad-muted); }
+    .rowad-payout__table .is-num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rowad-payout__table td.is-bad { color: #b91c1c; }
+    .rowad-payout__table tr.is-off td { color: var(--rowad-muted); }
+    .rowad-payout__table .rowad-einv__link { margin: 0 8px 0 0; font-size: .8rem; }
+    .rowad-payout__iban { font-family: ui-monospace, monospace; font-size: .8rem; color: var(--rowad-ink); }
+    .rowad-payout__check { width: 16px; height: 16px; accent-color: var(--rowad-brand); cursor: pointer; }
 
     /* ---------- Ejar data sheet and readiness ---------- */
     .rowad-ejar { display: grid; gap: 14px; }

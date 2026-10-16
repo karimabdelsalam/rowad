@@ -78,7 +78,7 @@ class VoucherService
      * @param  string|null  $chargeTo  legacy buildexpenses + expensestype: owners or the unit's current contract
      * @param  list<int>  $ownerTransactionIds  owner entries settled by this payout (legacy transids)
      */
-    public function createPayment(array $attributes, ?string $chargeTo = null, array $ownerTransactionIds = [], bool $withVat = false): PaymentVoucher
+    public function createPayment(array $attributes, ?string $chargeTo = null, array $ownerTransactionIds = [], bool $withVat = false, bool $notify = true): PaymentVoucher
     {
         $entries = OwnerTransaction::whereKey($ownerTransactionIds)->get();
         if ($linked = $entries->firstWhere('payment_voucher_id', '!=', null)) {
@@ -113,7 +113,9 @@ class VoucherService
             return $voucher;
         });
 
-        app(\App\Services\Messaging\DomainNotifications::class)->paymentIssued($voucher);
+        if ($notify) {
+            app(\App\Services\Messaging\DomainNotifications::class)->paymentIssued($voucher);
+        }
 
         return $voucher;
     }

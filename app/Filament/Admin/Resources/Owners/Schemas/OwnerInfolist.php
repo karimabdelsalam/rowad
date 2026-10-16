@@ -66,6 +66,9 @@ class OwnerInfolist
                                     ->state(fn (Owner $r) => $r->transactions()->where('is_settled', false)->count()),
                                 TextEntry::make('last_payment')->label(__('آخر سند صرف له'))->placeholder(__('لا يوجد'))
                                     ->state(fn (Owner $r) => $r->paymentVouchers()->latest('issued_at')->first()?->issued_at?->format('Y-m-d')),
+                                TextEntry::make('iban')->label(__('الآيبان'))->placeholder(__('لم يُضف بعد'))->copyable()->fontFamily('mono')->size('xs')
+                                    ->formatStateUsing(fn (?string $state) => \App\Support\Iban::format($state))->extraAttributes(['dir' => 'ltr'])
+                                    ->helperText(fn (Owner $r) => collect([$r->bank?->title, $r->bank_beneficiary])->filter()->join(' · ') ?: null),
                             ]),
                         ]),
                     ]),

@@ -90,10 +90,14 @@ class CreateDemoOffice extends Command
         Settings::set('logo', 'branding/demo-logo.svg');
 
         $riyadh = City::firstOrCreate(['name' => 'الرياض'], ['country_code' => 'SA']);
+        $ibans = ['SA2180000000608010167001', 'SA5510000000012345670002'];
         $owners = collect([
             ['سعد', 'محمد', 'العتيبي', '0501112233'], ['نورة', 'عبدالرحمن', 'القحطاني', '0502223344'], ['فهد', 'سليمان', 'الدوسري', '0503334455'],
         ])->map(fn ($o, $i) => Owner::create(['first_name' => $o[0], 'father_name' => $o[1], 'family_name' => $o[2], 'mobile' => $o[3], 'id_type' => 'national_id',
-            'id_number' => '10'.random_int(10000000, 99999999), 'nationality' => 'سعودي', 'birth_date' => now()->subYears(48 + $i * 6)->subDays(40 * $i)->toDateString()]));
+            'id_number' => '10'.random_int(10000000, 99999999), 'nationality' => 'سعودي', 'birth_date' => now()->subYears(48 + $i * 6)->subDays(40 * $i)->toDateString(),
+            // two owners have their transfer account, the third does not yet (payouts show what is missing)
+            'iban' => $ibans[$i] ?? null,
+            'bank_id' => isset($ibans[$i]) ? \App\Models\Lookups\Bank::query()->firstOrCreate(['title' => \App\Support\Iban::bank($ibans[$i])[0]])->id : null]));
         $clients = collect([
             ['خالد', 'عبدالله', 'الحربي'], ['ريم', 'فيصل', 'السبيعي'], ['ماجد', 'ناصر', 'الغامدي'], ['هند', 'إبراهيم', 'الزهراني'], ['شركة', 'الأفق', 'للتجارة'],
         ])->map(fn ($c, $i) => Client::create(['first_name' => $c[0], 'father_name' => $c[1], 'family_name' => $c[2], 'mobile' => '055'.(7000000 + $i * 1111), 'calendar' => 'gregorian']

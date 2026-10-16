@@ -657,3 +657,24 @@
 - Imported contracts message nobody (a new `notify` flag on `createRent`).
 - The "past payments collected" option closes instalments due before today without receipts or owner
   ledger entries, since that money was settled in the old system.
+
+## Owner payouts (2026-10-16) — vision §ب "توزيع المالك تلقائيًا"
+
+- Owners get a transfer account (IBAN, bank, beneficiary name when it isn't the owner's own). The IBAN
+  is checked (mod-97; Saudi IBANs must be SA + 22 digits) and the bank is recognised from its code.
+  The owners Excel template takes it too.
+- المالية ← توزيع مستحقات الملاك. A run lists every owner with a positive net balance up to a date:
+  open dues (rent shares) minus open deductions (commission, expenses charged to them, taxes). Owners
+  with a valid IBAN are ticked; owners without one are shown with a link to add it and cannot be paid.
+- Creating the run issues one payment voucher per owner (transfer, from the chosen office account)
+  and settles the entries it pays. Expense charges stay linked to their expense voucher and are only
+  marked settled; every settled entry is recorded on the run line, so cancelling reopens exactly those.
+- Bank file: Excel (or UTF-8 CSV) with beneficiary, IBAN, bank, SWIFT, amount, reference and purpose,
+  for the bank's bulk-transfer upload. Each Saudi bank's portal has its own template; this is the common
+  set of columns they ask for. A direct bank API needs an agreement with the bank, which is the
+  owner's call.
+- Owners are messaged (the existing owner_payout template) only when staff mark the run transferred,
+  not when it is prepared. After that it can't be cancelled; until then cancelling deletes the vouchers
+  and reverses the bank movement.
+- Permissions: owner_payouts.view_any / view / create / transfer / cancel (included in the accountant
+  role).

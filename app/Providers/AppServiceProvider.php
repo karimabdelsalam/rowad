@@ -92,6 +92,8 @@ class AppServiceProvider extends ServiceProvider
             'leave_request' => Models\LeaveRequest::class,
             'payroll_item' => Models\PayrollItem::class,
             'payroll_run' => Models\PayrollRun::class,
+            'owner_payout' => Models\OwnerPayout::class,
+            'owner_payout_item' => Models\OwnerPayoutItem::class,
             'government_license' => Models\GovernmentLicense::class,
             'inbox_message' => Models\InboxMessage::class,
             'installment' => Models\Installment::class,

@@ -35,6 +35,11 @@ class Owner extends Model implements HasMedia
         return $this->belongsTo(User::class);
     }
 
+    public function bank(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Lookups\Bank::class);
+    }
+
     public function units(): BelongsToMany
     {
         return $this->belongsToMany(Unit::class)->withPivot(['share_percent', 'expenses_percent'])->withTimestamps();
