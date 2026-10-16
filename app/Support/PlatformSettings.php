@@ -27,12 +27,24 @@ final class PlatformSettings
         'announcement_enabled' => false,
         'announcement_level' => 'info',
         'announcement_text' => '',
-        'ai_api_key' => null,          // encrypted; null: ANTHROPIC_API_KEY from .env
+        'ai_provider' => null,         // anthropic, openai, gemini; null: AI_PROVIDER from .env
+        'ai_api_key' => null,          // Claude: encrypted; null: ANTHROPIC_API_KEY from .env
         'ai_model' => null,            // null: AI_MODEL from .env
+        'openai_api_key' => null,      // encrypted; null: OPENAI_API_KEY
+        'openai_model' => null,
+        'gemini_api_key' => null,      // encrypted; null: GEMINI_API_KEY
+        'gemini_model' => null,
     ];
 
     /** Kept out of the generic form and saved only through their own setters. */
-    public const SECRETS = ['ai_api_key'];
+    public const SECRETS = ['ai_api_key', 'openai_api_key', 'gemini_api_key'];
+
+    /** provider => [stored key setting, stored model setting, .env key config, .env model config] */
+    public const AI_PROVIDERS = [
+        'anthropic' => ['ai_api_key', 'ai_model', 'rowad.ai.api_key', 'rowad.ai.model'],
+        'openai' => ['openai_api_key', 'openai_model', 'rowad.ai.openai_api_key', 'rowad.ai.openai_model'],
+        'gemini' => ['gemini_api_key', 'gemini_model', 'rowad.ai.gemini_api_key', 'rowad.ai.gemini_model'],
+    ];
 
     /** @var array<string, mixed>|null */
     private static ?array $cache = null;
@@ -70,10 +82,19 @@ final class PlatformSettings
         return array_diff_key(self::all(), array_flip(self::SECRETS));
     }
 
-    /** The AI service key: the one saved in the console (encrypted at rest), else ANTHROPIC_API_KEY. */
-    public static function aiApiKey(): ?string
+    /** The AI provider in use: anthropic (Claude), openai or gemini. */
+    public static function aiProvider(): string
     {
-        $stored = self::all()['ai_api_key'] ?? null;
+        $provider = (string) (self::get('ai_provider') ?: config('rowad.ai.provider'));
+
+        return array_key_exists($provider, self::AI_PROVIDERS) ? $provider : 'anthropic';
+    }
+
+    /** A provider's key: the one saved in the console (encrypted at rest), else the server's (.env). */
+    public static function aiApiKey(?string $provider = null): ?string
+    {
+        [$setting, , $env] = self::AI_PROVIDERS[$provider ?? self::aiProvider()];
+        $stored = self::all()[$setting] ?? null;
         if (filled($stored)) {
             try {
                 return \Illuminate\Support\Facades\Crypt::decryptString((string) $stored);
@@ -82,28 +103,32 @@ final class PlatformSettings
             }
         }
 
-        return config('rowad.ai.api_key') ?: null;
+        return config($env) ?: null;
     }
 
-    public static function aiModel(): ?string
+    public static function aiModel(?string $provider = null): ?string
     {
-        return ((string) self::get('ai_model')) ?: (config('rowad.ai.model') ?: null);
+        [, $setting, , $env] = self::AI_PROVIDERS[$provider ?? self::aiProvider()];
+
+        return ((string) self::get($setting)) ?: (config($env) ?: null);
     }
 
-    /** Where the key comes from: 'console', 'env' or null (not configured). */
-    public static function aiKeySource(): ?string
+    /** Where a provider's key comes from: 'console', 'env' or null (not configured). */
+    public static function aiKeySource(?string $provider = null): ?string
     {
-        if (filled(self::all()['ai_api_key'] ?? null) && self::aiApiKey() !== config('rowad.ai.api_key')) {
+        $provider ??= self::aiProvider();
+        [$setting, , $env] = self::AI_PROVIDERS[$provider];
+        if (filled(self::all()[$setting] ?? null) && self::aiApiKey($provider) !== config($env)) {
             return 'console';
         }
 
-        return filled(config('rowad.ai.api_key')) ? 'env' : null;
+        return filled(config($env)) ? 'env' : null;
     }
 
-    /** Save (encrypted) or remove the console key. */
-    public static function setAiApiKey(?string $key): void
+    /** Save (encrypted) or remove a provider's console key. */
+    public static function setAiApiKey(?string $key, string $provider = 'anthropic'): void
     {
-        $setting = self::query()->firstOrNew(['key' => 'ai_api_key'], ['group' => 'platform']);
+        $setting = self::query()->firstOrNew(['key' => self::AI_PROVIDERS[$provider][0]], ['group' => 'platform']);
         $setting->value = filled($key) ? \Illuminate\Support\Facades\Crypt::encryptString(trim($key)) : null;
         $setting->save();
         self::$cache = null;

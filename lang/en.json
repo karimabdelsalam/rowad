@@ -2780,5 +2780,15 @@
     "احجز معاينة": "Book a viewing",
     "استفسر": "Ask",
     "التالية": "Next",
-    "اطلب وحدة تناسبك": "Request a unit that fits you"
+    "اطلب وحدة تناسبك": "Request a unit that fits you",
+    "المزوّد المستخدم": "Provider in use",
+    "يمكن حفظ مفاتيح أكثر من مزوّد والتبديل بينها في أي وقت؛ يعمل المساعد وقراءة المستندات والكتابة بأي منها.": "You can save keys for several providers and switch at any time; the assistant, document reading and writing help work with any of them.",
+    "المزوّد المستخدم الآن": "Provider in use now",
+    "مفتاح API": "API key",
+    "من :where. يُحفظ مشفّرًا ولا يُعرض مرة أخرى.": "From :where. Stored encrypted and never shown again.",
+    "أسماء النماذج تتغير مع الوقت؛ يمكن كتابة أي نموذج يدعمه المزوّد.": "Model names change over time; you can type any model the provider supports.",
+    "يعود النظام إلى المفتاح المضبوط على السيرفر (:env) إن وُجد.": "The system falls back to the server's key (:env) if there is one.",
+    "المساعد الذكي غير مفعّل: أضف مفتاح :provider والنموذج.": "The AI assistant is off: add the :provider key and model.",
+    "مفعّل عبر :provider بالمفتاح المحفوظ هنا — النموذج :model": "On via :provider with the key saved here — model :model",
+    "مفعّل عبر :provider بالمفتاح المضبوط على السيرفر — النموذج :model": "On via :provider with the server's key — model :model"
 }

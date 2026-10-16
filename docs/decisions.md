@@ -743,3 +743,22 @@
   - On phones, a bottom action bar with the price, WhatsApp, call and book.
   - Open Graph tags so shared links show the unit's photo.
 - The demo office gets two units for sale and a drawn city-skyline hero image.
+
+## AI providers: OpenAI and Gemini beside Claude (2026-10-16)
+
+- Platform settings ← الذكاء الاصطناعي:
+  - Choose the provider in use (Claude, OpenAI or Google Gemini).
+  - Each provider has its own key (encrypted, never shown again) and model, so all three can be stored
+    and switched at any time.
+  - `.env` stays the fallback (AI_PROVIDER, ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY and
+    their models).
+  - OPENAI_BASE_URL lets an OpenAI-compatible endpoint (e.g. Azure) be used.
+- The assistant code keeps speaking the Anthropic Messages format. Adapters translate requests and
+  replies:
+  - OpenAI Chat Completions: images and PDFs as data URLs, tools as functions, tool results as "tool"
+    messages, `max_completion_tokens`.
+  - Gemini generateContent: inline data, function declarations, function responses matched back by
+    name, thought signatures carried with function calls, thoughts dropped from answers.
+  - Tool calls, document reading and writing help therefore work the same with any provider.
+- Suggested models: gpt-5-mini / gpt-5 / gpt-5-nano and gemini-2.5-flash / -pro / -flash-lite. Model names
+  change, so any ID can be typed, and "Save and test" checks it at once.

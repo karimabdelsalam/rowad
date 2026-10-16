@@ -95,9 +95,17 @@ return [
     // AI assistant (Anthropic Messages API). Both the key and the model are chosen by the owner;
     // without them the assistant shows "not configured" instead of failing.
     'ai' => [
+        // anthropic (Claude), openai, or gemini; each can also be set from the platform console
+        'provider' => env('AI_PROVIDER', 'anthropic'),
         'api_key' => env('ANTHROPIC_API_KEY'),
         'model' => env('AI_MODEL'),
         'base_url' => env('AI_BASE_URL', 'https://api.anthropic.com'),
+        'openai_api_key' => env('OPENAI_API_KEY'),
+        'openai_model' => env('OPENAI_MODEL'),
+        'openai_base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com'), // any OpenAI-compatible endpoint
+        'gemini_api_key' => env('GEMINI_API_KEY'),
+        'gemini_model' => env('GEMINI_MODEL'),
+        'gemini_base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com'),
         'max_tokens' => (int) env('AI_MAX_TOKENS', 2048),
         'timeout' => (int) env('AI_TIMEOUT', 90),
         'max_tool_rounds' => 6,
