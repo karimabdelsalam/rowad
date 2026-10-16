@@ -90,6 +90,13 @@ class ClientInfolist
                 ]),
             ]),
             Grid::make(1)->columnSpan(['lg' => 1])->schema([
+                Section::make(__('سلوك السداد'))->icon(Heroicon::OutlinedShieldExclamation)
+                    ->description(__('تقدير آلي من سجل الدفعات'))
+                    ->schema([
+                        \Filament\Infolists\Components\ViewEntry::make('payment_risk')->hiddenLabel()
+                            ->view('filament.insights.payment-risk')
+                            ->viewData(fn (Client $r) => ['risk' => app(\App\Services\Insights\PaymentRisk::class)->forClient($r)]),
+                    ]),
                 Section::make(__('بيانات المنشأة'))->icon(Heroicon::OutlinedBuildingOffice)->visible(fn (Client $r) => $r->kind === ClientKind::Company || filled($r->company_name))->schema([
                     TextEntry::make('company_name')->label(__('اسم المنشأة'))->weight('bold')->placeholder('-'),
                     TextEntry::make('company_registration_number')->label(__('السجل التجاري'))->placeholder('-')->copyable(),

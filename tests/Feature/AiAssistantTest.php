@@ -206,7 +206,8 @@ class AiAssistantTest extends TestCase
         $owner = app(PortalAccounts::class)->issue($unit->owners()->first(), 'o@office.test', 'secret-pass-1')['user'];
         $tenant = app(PortalAccounts::class)->issue($client, 'c@office.test', 'secret-pass-1')['user'];
 
-        $inputs = ['unit_details' => ['unit_id' => $unit->id], 'rent_contract_details' => ['number' => $contract->number],
+        $inputs = ['unit_details' => ['unit_id' => $unit->id], 'suggest_rent' => ['unit_id' => $unit->id], 'payment_risk' => ['client_id' => $client->id],
+            'rent_contract_details' => ['number' => $contract->number],
             'search_people' => ['type' => 'owner'], 'installments' => ['status' => 'overdue']];
         foreach ([$admin, $owner, $tenant] as $user) {
             foreach (Assistant::tools($user) as $tool) {

@@ -220,6 +220,41 @@
         .rowad-install__close { font: inherit; font-size: 1.3rem; line-height: 1; color: var(--rowad-muted); background: none; border: 0; cursor: pointer; padding: 2px 6px; }
     }
 
+    /* ---------- insights: payment risk + rent advice ---------- */
+    .rowad-risk__top { display: flex; align-items: center; gap: 14px; }
+    .rowad-risk__gauge { --c: #10b981; width: 64px; height: 64px; flex: none; border-radius: 50%; display: grid; place-items: center;
+        background: conic-gradient(var(--c) calc(var(--p) * 1%), #e8eef0 0); position: relative; }
+    .rowad-risk__gauge::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
+    .rowad-risk__gauge span { position: relative; font-weight: 800; font-size: 1.15rem; color: var(--rowad-ink); }
+    .rowad-risk.is-warn .rowad-risk__gauge { --c: #f59e0b; } .rowad-risk.is-bad .rowad-risk__gauge { --c: #ef4444; } .rowad-risk.is-muted .rowad-risk__gauge { --c: #cbd5e1; }
+    .rowad-risk__label { margin: 0; font-size: .76rem; color: var(--rowad-muted); font-weight: 600; }
+    .rowad-risk__level { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--rowad-ink); }
+    .rowad-risk.is-ok .rowad-risk__level { color: #047857; } .rowad-risk.is-warn .rowad-risk__level { color: #b45309; } .rowad-risk.is-bad .rowad-risk__level { color: #b91c1c; }
+    .rowad-risk__reasons { margin: 12px 0 0; padding-inline-start: 18px; display: grid; gap: 4px; font-size: .86rem; color: #334155; }
+    .rowad-risk__foot { margin: 10px 0 0; font-size: .72rem; color: var(--rowad-muted); }
+    .rowad-advice__kicker { margin: 0; font-size: .76rem; color: var(--rowad-muted); font-weight: 600; }
+    .rowad-advice__value { margin: 2px 0 10px; font-size: 1.6rem; font-weight: 800; color: var(--rowad-ink); letter-spacing: -.01em; }
+    .rowad-advice__value small { font-size: .85rem; color: var(--rowad-muted); font-weight: 700; }
+    .rowad-advice__bar { position: relative; height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--rowad-brand-soft), var(--rowad-brand-light), var(--rowad-brand-soft)); }
+    .rowad-advice__bar i { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 4px; background: var(--rowad-ink); transform: translateX(50%); }
+    [dir="ltr"] .rowad-advice__bar i { transform: translateX(-50%); }
+    .rowad-advice__ends { display: flex; justify-content: space-between; font-size: .74rem; color: var(--rowad-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .rowad-advice__gap { margin: 12px 0 0; font-size: .86rem; font-weight: 700; color: #047857; }
+    .rowad-advice__gap.is-under { color: #b45309; } .rowad-advice__gap.is-over { color: #b91c1c; }
+    .rowad-advice__basis { margin: 8px 0 0; font-size: .74rem; color: var(--rowad-muted); }
+    .rowad-advice__empty { margin: 0; font-size: .86rem; color: var(--rowad-muted); }
+    .rowad-riskl { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .rowad-riskl__row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--rowad-line); background: #fbfcfc; }
+    .rowad-riskl__score { width: 40px; height: 40px; flex: none; border-radius: 12px; display: grid; place-items: center; font-weight: 800; color: #92400e; background: #fef3c7; }
+    .rowad-riskl__row.is-high .rowad-riskl__score { color: #991b1b; background: #fee2e2; }
+    .rowad-riskl__text { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.35; }
+    .rowad-riskl__text b { font-size: .9rem; color: var(--rowad-ink); }
+    .rowad-riskl__text a:hover b { color: var(--rowad-brand); }
+    .rowad-riskl__text small { font-size: .74rem; color: var(--rowad-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rowad-riskl__amount { font-weight: 800; color: #b91c1c; font-size: .88rem; font-variant-numeric: tabular-nums; }
+    .rowad-riskl__call { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; color: var(--rowad-brand); background: var(--rowad-brand-soft); }
+    .rowad-riskl__call svg { width: 18px; height: 18px; }
+
     /* ---------- getting-started checklist ---------- */
     .rowad-start { background: #fff; border: 1px solid var(--rowad-line); border-radius: 20px; box-shadow: var(--rowad-shadow); padding: 20px 24px; }
     .rowad-start__head { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; margin-bottom: 14px; }

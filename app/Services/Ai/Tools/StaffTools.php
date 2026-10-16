@@ -86,7 +86,37 @@ final class StaffTools
             Tool::make('support_tickets', 'Support tickets from owners and tenants, newest first.',
                 ['status' => ['type' => 'string', 'enum' => ['open', 'answered', 'closed']], 'limit' => self::LIMIT],
                 'support_tickets.view_any', fn (array $in) => self::tickets($in)),
+            Tool::make('payment_risk', 'Late-payment risk of tenants from their payment history with this office: score 0-100, level, reasons and stats. Without client_id returns the tenants of active contracts most at risk; with client_id returns that tenant.',
+                ['client_id' => ['type' => 'integer'], 'limit' => self::LIMIT],
+                'clients.view_any', fn (array $in) => self::paymentRisk($in)),
+            Tool::make('suggest_rent', 'Suggested fair yearly rent for a unit from recent contracts of comparable units in this office (same category, rooms ±1, similar size; district, then city, then office), with the 25-75% range, sample size, confidence and how the current rent compares. Find the unit id with search_units first.',
+                ['unit_id' => ['type' => 'integer']],
+                'units.view', fn (array $in) => self::suggestRent($in)),
         ];
+    }
+
+    private static function paymentRisk(array $in): array
+    {
+        $risk = app(\App\Services\Insights\PaymentRisk::class);
+        if (! empty($in['client_id'])) {
+            $client = \App\Models\Client::find((int) $in['client_id']);
+
+            return $client ? ['client' => $client->displayName()] + $risk->forClient($client) : ['error' => 'client_not_found'];
+        }
+
+        return ['tenants' => array_map(fn (array $r) => ['client_id' => $r['client']->id, 'name' => $r['client']->displayName()]
+            + array_diff_key($r, ['client' => 1]), $risk->atRisk(Fmt::limit($in, 10, 30)))];
+    }
+
+    private static function suggestRent(array $in): array
+    {
+        $unit = \App\Models\Unit::find((int) ($in['unit_id'] ?? 0));
+        if ($unit === null) {
+            return ['error' => 'unit_not_found'];
+        }
+        $advice = app(\App\Services\Insights\RentAdvisor::class)->forUnit($unit);
+
+        return ['unit' => $unit->title] + ($advice ?? ['suggested' => null, 'reason' => 'not enough recent contracts of comparable units']);
     }
 
     private static function overview(): array

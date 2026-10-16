@@ -26,8 +26,9 @@ class SendOutgoingMessage implements ShouldQueue
     {
     }
 
-    public function handle(SmsGateway $sms, \App\Services\Messaging\WhatsAppGateway $whatsapp): void
+    public function handle(SmsGateway $sms, ?\App\Services\Messaging\WhatsAppGateway $whatsapp = null): void
     {
+        $whatsapp ??= app(\App\Services\Messaging\WhatsAppGateway::class);
         $message = OutgoingMessage::find($this->messageId);
         if ($message === null || $message->status === 'sent') {
             return;

@@ -112,6 +112,15 @@ class UnitInfolist
                             ->visible(fn (Unit $record) => $record->currentContract instanceof RentContract),
                     ]),
 
+                    Section::make(__('السعر المقترح'))->icon(Heroicon::OutlinedSparkles)
+                        ->description(__('من عقود وحدات مماثلة لدى المؤسسة'))
+                        ->visible(fn (Unit $record) => $record->offer_type !== \App\Enums\OfferType::Sale)
+                        ->schema([
+                            \Filament\Infolists\Components\ViewEntry::make('rent_advice')->hiddenLabel()
+                                ->view('filament.insights.rent-advice')
+                                ->viewData(fn (Unit $record) => ['advice' => app(\App\Services\Insights\RentAdvisor::class)->forUnit($record)]),
+                        ]),
+
                     Section::make(__('الأسعار'))->icon(Heroicon::OutlinedBanknotes)->columns(2)->schema([
                         TextEntry::make('rent_amount')->label(__('الإيجار السنوي'))->numeric(2)->suffix(' '.__('ر.س'))->weight('bold')->placeholder('-')->columnSpanFull(),
                         TextEntry::make('monthly_rent')->label(__('الإيجار الشهري'))->numeric(2)->placeholder('-'),

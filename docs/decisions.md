@@ -454,3 +454,20 @@
 - The tenant's payments table puts "ادفع الآن" first and hides secondary columns on small screens so
   paying needs no sideways scrolling.
 - Web Push is the next step on top of the service worker (the API already stores device tokens).
+
+## Predictive layer: payment risk and suggested rent (2026-10-16) — roadmap phase 4
+
+- Deterministic and explainable on purpose (no model call, no data leaves the office): staff must be
+  able to see why a tenant is flagged or why a price is suggested.
+- `Insights\PaymentRisk`: score 0–100 from the tenant's own past-due instalments — arrears beyond a
+  5-day grace (weight 30 + up to 20 by age), share of late payments (35), average delay (10),
+  open part-payments (5). Levels: low < 30 ≤ medium < 60 ≤ high; fewer than two past-due instalments
+  and nothing overdue = "not enough history". Shown on the client page (gauge + reasons), in a dashboard
+  list with a call button, and as the `payment_risk` assistant tool.
+- `Insights\RentAdvisor`: suggested yearly rent from rent contracts started in the last 24 months on
+  comparable units of the same office — same category, rooms ±1 (shops/offices only against units
+  without rooms), half to double the area — preferring the district, then the city, then the office
+  (first tier with three or more contracts). Median price per m² × area when areas are known, else the
+  median rent; the 25–75% range; at least two contracts or no suggestion; confidence by sample size.
+  Contracts are annualised from `yearly_rent` or their own instalments. Shown on the unit page with the
+  current rent's position in the range, and as the `suggest_rent` assistant tool.
