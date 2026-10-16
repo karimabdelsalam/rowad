@@ -82,8 +82,9 @@ final class Branding
         }
         $vars .= '--rowad-brand:'.self::color().';--rowad-brand-dark:'.$palette[700].';--rowad-brand-soft:'.$palette[50].';';
         $vars .= '--rowad-brand-line:'.$palette[200].';--rowad-brand-light:'.$palette[400].';';
-        $vars .= '--rowad-side:color-mix(in oklab, '.$palette[950].' 80%, #000);--rowad-side-2:color-mix(in oklab, '.$palette[900].' 75%, #000);';
-        $vars .= '--rowad-side-ink:'.$palette[100].';--rowad-side-muted:color-mix(in oklab, '.$palette[300].' 70%, transparent);';
+        // the sidebar stays a deep navy, only tinted by the office colour (its accents carry the brand)
+        $vars .= '--rowad-side:color-mix(in oklab, '.$palette[950].' 22%, #0b1324);--rowad-side-2:color-mix(in oklab, '.$palette[900].' 16%, #0f1a2e);';
+        $vars .= '--rowad-side-ink:#e2e8f0;--rowad-side-muted:color-mix(in oklab, '.$palette[300].' 25%, #8391a7);';
 
         return ':root{'.$vars.'}';
     }

@@ -2,20 +2,7 @@
     use App\Models\Tenant;
     use App\Support\Settings;
 
-    $user = filament()->auth()->user();
     $panel = filament()->getCurrentPanel()?->getId();
-    $roleLabels = ['admin' => 'مدير', 'accountant' => 'محاسب', 'agent' => 'مسوّق', 'viewer' => 'مشاهد'];
-    $role = $user?->roles?->first()?->name;
-    $who = match (true) {
-        $panel === 'owner' => __('مالك'),
-        $panel === 'client' => __('مستأجر / عميل'),
-        $user?->is_super_admin ?? false => __('مدير النظام'),
-        default => __($roleLabels[$role] ?? 'موظف'),
-    };
-    $initials = mb_substr(trim((string) $user?->name), 0, 1);
-    if ($panel === 'admin' && ($branchId = \App\Support\Branches::current()) !== null) {
-        $who .= ' · '.\App\Models\Branch::query()->whereKey($branchId)->value('name');
-    }
 
     $plan = null;
     if ($panel === 'admin' && tenancy()->initialized && \App\Filament\Admin\Pages\Subscription::canAccess()) {
@@ -35,6 +22,7 @@
     }
     $contact = $panel !== 'admin' && tenancy()->initialized ? (Settings::get('mobile') ?: Settings::get('phone')) : null;
 @endphp
+@if ($plan || $contact)
 <div class="rowad-side-footer" x-show="$store.sidebar.isOpen" x-cloak>
     @if ($plan)
         <a href="{{ $plan['url'] }}" class="rowad-side-plan is-{{ $plan['tone'] }}">
@@ -48,10 +36,5 @@
             <span class="rowad-side-plan__text"><b>{{ __('تواصل مع المكتب') }}</b><small dir="ltr">{{ $contact }}</small></span>
         </a>
     @endif
-    @if ($user)
-        <a href="{{ filament()->hasProfile() ? filament()->getProfileUrl() : '#' }}" class="rowad-side-user">
-            <span class="rowad-side-user__avatar">{{ $initials }}</span>
-            <span class="rowad-side-user__text"><b>{{ $user->name }}</b><small>{{ $who }}</small></span>
-        </a>
-    @endif
 </div>
+@endif

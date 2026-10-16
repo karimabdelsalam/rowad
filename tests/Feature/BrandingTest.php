@@ -68,7 +68,7 @@ class BrandingTest extends TestCase
 
         $page = $this->get("{$this->host}/admin")->assertOk();
         $page->assertSee('rowad-brand__logo', false)->assertSee('--rowad-brand:#1d4ed8', false)
-            ->assertSee('rowad-quick__btn', false)->assertSee('rowad-side-user', false);
+            ->assertSee('rowad-quick__btn', false)->assertSee('rowad-top-user', false)->assertSee('مدير');
 
         $this->get("{$this->host}/branding/logo")->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
 

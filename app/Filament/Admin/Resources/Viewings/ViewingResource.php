@@ -25,6 +25,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /** مواعيد المعاينة: booked from the website or by staff, with the outcome of each visit. */
 class ViewingResource extends Resource
@@ -139,5 +140,22 @@ class ViewingResource extends Resource
     public static function getPages(): array
     {
         return ['index' => ManageViewings::route('/')];
+    }
+
+    protected static array $globalSearchWith = ['unit'];
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'mobile'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return __('معاينة: :name', ['name' => $record->name]);
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('الوحدة') => $record->unit?->title, __('الموعد') => $record->starts_at ? "\u{2066}".$record->starts_at->format('Y-m-d H:i')."\u{2069}" : null]);
     }
 }

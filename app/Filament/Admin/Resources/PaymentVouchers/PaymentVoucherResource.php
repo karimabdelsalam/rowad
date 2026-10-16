@@ -9,13 +9,14 @@ use App\Filament\Admin\Resources\PaymentVouchers\Pages\ViewPaymentVoucher;
 use App\Filament\Admin\Resources\PaymentVouchers\Schemas\PaymentVoucherForm;
 use App\Filament\Admin\Resources\PaymentVouchers\Schemas\PaymentVoucherInfolist;
 use App\Filament\Admin\Resources\PaymentVouchers\Tables\PaymentVouchersTable;
+use App\Filament\Resource;
 use App\Models\PaymentVoucher;
 use BackedEnum;
-use App\Filament\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PaymentVoucherResource extends Resource
@@ -72,5 +73,20 @@ class PaymentVoucherResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'party_name', 'reason', 'cheque_number'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return __('سند صرف :number', ['number' => $record->number]);
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('إلى') => $record->party_name, __('المبلغ') => static::searchMoney($record->amount), __('التاريخ') => static::searchDate($record->issued_at)]);
     }
 }

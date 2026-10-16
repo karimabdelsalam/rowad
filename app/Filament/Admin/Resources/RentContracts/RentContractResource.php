@@ -6,16 +6,18 @@ use App\Filament\Admin\Resources\RentContracts\Pages\CreateRentContract;
 use App\Filament\Admin\Resources\RentContracts\Pages\EditRentContract;
 use App\Filament\Admin\Resources\RentContracts\Pages\ListRentContracts;
 use App\Filament\Admin\Resources\RentContracts\Pages\ViewRentContract;
+use App\Filament\Admin\Resources\RentContracts\RelationManagers\InstallmentsRelationManager;
 use App\Filament\Admin\Resources\RentContracts\Schemas\RentContractForm;
 use App\Filament\Admin\Resources\RentContracts\Schemas\RentContractInfolist;
 use App\Filament\Admin\Resources\RentContracts\Tables\RentContractsTable;
+use App\Filament\Resource;
 use App\Models\RentContract;
 use BackedEnum;
-use App\Filament\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class RentContractResource extends Resource
@@ -52,7 +54,7 @@ class RentContractResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Admin\Resources\RentContracts\RelationManagers\InstallmentsRelationManager::class,
+            InstallmentsRelationManager::class,
         ];
     }
 
@@ -72,5 +74,23 @@ class RentContractResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    protected static array $globalSearchWith = ['unit', 'clients'];
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'unit.title', 'clients.full_name', 'clients.company_name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return __('عقد إيجار :number', ['number' => $record->number]);
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('الوحدة') => $record->unit?->title, __('المستأجر') => $record->clients->first()?->displayName(),
+            __('ينتهي') => static::searchDate($record->end_date)]);
     }
 }

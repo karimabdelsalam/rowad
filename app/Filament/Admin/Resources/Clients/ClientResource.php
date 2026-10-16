@@ -9,13 +9,14 @@ use App\Filament\Admin\Resources\Clients\Pages\ViewClient;
 use App\Filament\Admin\Resources\Clients\Schemas\ClientForm;
 use App\Filament\Admin\Resources\Clients\Schemas\ClientInfolist;
 use App\Filament\Admin\Resources\Clients\Tables\ClientsTable;
+use App\Filament\Resource;
 use App\Models\Client;
 use BackedEnum;
-use App\Filament\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClientResource extends Resource
@@ -72,5 +73,20 @@ class ClientResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['full_name', 'company_name', 'id_number', 'mobile', 'company_registration_number'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return $record->displayName();
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('الهوية') => $record->id_number ?: $record->company_registration_number, __('الجوال') => $record->mobile]);
     }
 }

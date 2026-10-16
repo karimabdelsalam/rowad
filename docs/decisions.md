@@ -762,3 +762,29 @@
   - Tool calls, document reading and writing help therefore work the same with any provider.
 - Suggested models: gpt-5-mini / gpt-5 / gpt-5-nano and gemini-2.5-flash / -pro / -flash-lite. Model names
   change, so any ID can be typed, and "Save and test" checks it at once.
+
+## App shell and command search (Ctrl+K) (2026-10-16)
+
+- Layout follows the owner's reference:
+  - A deep-navy sidebar that runs the full height of the screen. The office colour no longer paints
+    the whole sidebar; it only tints it, and carries the accents (active item bar, icons, buttons).
+  - A "filter the menu" box at the top of the sidebar. It is forgiving of hamza / taa marbuta, and
+    Enter opens the first match.
+  - The page's breadcrumbs and title sit in the topbar on desktop.
+  - The page header became a card with the section's icon (taken from the active menu item), the
+    title and the page's actions. A header with nothing but a title is hidden on desktop, since the
+    title is already in the topbar.
+  - Topbar end: quick "new", the search box with a Ctrl K / ⌘K badge, full screen, notifications,
+    the assistant, and the user's name and role beside the avatar (it opens the user menu). The user
+    row moved out of the sidebar footer, which now keeps only the plan / office contact.
+- The top search box is a command palette (`App\Filament\Support\CommandSearch`):
+  - Ctrl+K / ⌘K focuses it from anywhere.
+  - "Pages & actions" come first: navigation items by name or section, and "new …" for every resource
+    the user may create. "اضافة وحدة" finds "إضافة وحدة"; "جديد" alone lists what can be added.
+  - Then records, five per section: units (title, number, deed, building), owners, clients, employees
+    (name, ID, mobile…), rent and sale contracts (number, unit, tenant / buyer), receipt and payment
+    vouchers, invoices, buildings and viewings. Each result has a one-line summary.
+  - Everything respects permissions: a section or action the user can't open never shows.
+- Calculator and dark-mode buttons from the reference were left out: the panels are designed for the
+  light surface (dark mode is off), and a calculator adds little next to the amounts the system works
+  out itself.

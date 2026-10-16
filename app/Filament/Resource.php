@@ -4,7 +4,10 @@ namespace App\Filament;
 
 use Filament\Resources\Resource as FilamentResource;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 /**
@@ -13,6 +16,12 @@ use UnitEnum;
  */
 abstract class Resource extends FilamentResource
 {
+    /** The top search box (Ctrl+K) shows a few matches per section; the list page has the rest. */
+    protected static int $globalSearchResultsLimit = 5;
+
+    /** Relations the search result lines read, loaded with the matches. @var list<string> */
+    protected static array $globalSearchWith = [];
+
     /** Permission prefix in config/rowad.php, e.g. "units". Null disables the permission gate. */
     protected static ?string $permission = null;
 
@@ -26,6 +35,22 @@ abstract class Resource extends FilamentResource
         $group = parent::getNavigationGroup();
 
         return is_string($group) ? __($group) : $group;
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(static::$globalSearchWith);
+    }
+
+    /** A date in a search result line, kept left-to-right inside Arabic text. */
+    protected static function searchDate(mixed $date): ?string
+    {
+        return $date ? "\u{2066}".Carbon::parse($date)->format('Y-m-d')."\u{2069}" : null;
+    }
+
+    protected static function searchMoney(mixed $amount): ?string
+    {
+        return $amount === null ? null : "\u{2066}".number_format((float) $amount, 2)."\u{2069} ".__('ر.س');
     }
 
     public static function getModelLabel(): string
@@ -60,7 +85,7 @@ abstract class Resource extends FilamentResource
             'create' => 'create',
             'update', 'reorder' => 'update',
             'delete', 'deleteAny', 'forceDelete', 'forceDeleteAny', 'restore', 'restoreAny', 'replicate' => 'delete',
-            default => \Illuminate\Support\Str::snake($action),
+            default => Str::snake($action),
         };
 
         return $user->can(static::$permission.'.'.$ability) ? Response::allow() : Response::deny();

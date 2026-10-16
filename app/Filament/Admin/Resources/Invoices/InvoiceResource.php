@@ -8,12 +8,13 @@ use App\Filament\Admin\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Admin\Resources\Invoices\Schemas\InvoiceForm;
 use App\Filament\Admin\Resources\Invoices\Schemas\InvoiceInfolist;
 use App\Filament\Admin\Resources\Invoices\Tables\InvoicesTable;
+use App\Filament\Resource;
 use App\Models\Invoice;
 use BackedEnum;
-use App\Filament\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class InvoiceResource extends Resource
 {
@@ -60,5 +61,20 @@ class InvoiceResource extends Resource
             'create' => CreateInvoice::route('/create'),
             'view' => ViewInvoice::route('/{record}'),
         ];
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'customer_name', 'customer_vat_number'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return __('فاتورة :number', ['number' => $record->number]);
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('العميل') => $record->customer_name, __('الإجمالي') => static::searchMoney($record->total), __('التاريخ') => static::searchDate($record->issue_date)]);
     }
 }

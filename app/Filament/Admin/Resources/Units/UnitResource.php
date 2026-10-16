@@ -9,13 +9,14 @@ use App\Filament\Admin\Resources\Units\Pages\ViewUnit;
 use App\Filament\Admin\Resources\Units\Schemas\UnitForm;
 use App\Filament\Admin\Resources\Units\Schemas\UnitInfolist;
 use App\Filament\Admin\Resources\Units\Tables\UnitsTable;
+use App\Filament\Resource;
 use App\Models\Unit;
 use BackedEnum;
-use App\Filament\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UnitResource extends Resource
@@ -72,5 +73,22 @@ class UnitResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    protected static array $globalSearchWith = ['building'];
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['title', 'number', 'deed_number', 'building.title'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return $record->title.($record->number ? ' · '.$record->number : '');
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('العمارة') => $record->building?->title, __('الحالة') => $record->status?->getLabel()]);
     }
 }

@@ -2,13 +2,26 @@
 
 namespace App\Providers\Filament\Concerns;
 
+use App\Auth\SmsAuthentication;
+use App\Filament\Auth\Login;
+use App\Filament\Auth\RequestPasswordReset;
+use App\Filament\Support\CommandSearch;
+use App\Filament\Support\InitialsAvatar;
+use App\Filament\Widgets\LoginActivities;
+use App\Http\Middleware\EnsureOfficeIsAccessible;
+use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\TrackDemoVisit;
+use App\Support\Demo;
+use App\Support\PlatformSettings;
 use Filament\Actions\Action;
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -27,9 +40,9 @@ trait ConfiguresPanel
         $panel = $panel
             ->id($id)
             ->path($path)
-            ->login($tenant ? \App\Filament\Auth\Login::class : \Filament\Auth\Pages\Login::class)
-            ->font('Cairo', url: '/fonts/cairo/cairo.css', provider: \Filament\FontProviders\LocalFontProvider::class) // self-hosted
-            ->defaultAvatarProvider(\App\Filament\Support\InitialsAvatar::class)
+            ->login($tenant ? Login::class : \Filament\Auth\Pages\Login::class)
+            ->font('Cairo', url: '/fonts/cairo/cairo.css', provider: LocalFontProvider::class) // self-hosted
+            ->defaultAvatarProvider(InitialsAvatar::class)
             ->spa(hasPrefetching: true) // page changes swap the content only; links prefetch on hover
             ->spaUrlExceptions(['*/print/*', '*/sign/*', '*/pay/*', '*/media/*', '*/locale/*', '*/demo/*', '*/impersonate/*',
                 '*/platform-access/*', '*/reactivate*', '*/branding/*', '*/manifest/*', '*/logout'])
@@ -38,7 +51,7 @@ trait ConfiguresPanel
                 'primary' => self::brandTeal(),
                 'gray' => Color::Slate,
             ])
-            ->maxContentWidth(\Filament\Support\Enums\Width::Full) // use the whole screen; wide tables shouldn't scroll beside empty margins
+            ->maxContentWidth(Width::Full) // use the whole screen; wide tables shouldn't scroll beside empty margins
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16.5rem')
             ->collapsedSidebarWidth('4.25rem')
@@ -48,6 +61,15 @@ trait ConfiguresPanel
                     ->icon(Heroicon::OutlinedLanguage)
                     ->url(fn () => route('locale.switch', app()->getLocale() === 'ar' ? 'en' : 'ar')),
             ])
+            // the top search box is a command palette: Ctrl+K / ⌘K, pages and "new …" actions besides records
+            ->globalSearch(CommandSearch::class)
+            ->globalSearchKeyBindings(['mod+k'])
+            ->globalSearchFieldSuffix(fn () => str_contains((string) request()->userAgent(), 'Mac') ? '⌘K' : 'Ctrl K')
+            // app shell: page title in the topbar, a menu filter, full screen, who is signed in beside the avatar
+            ->renderHook(PanelsRenderHook::TOPBAR_LOGO_AFTER, fn () => view('filament.topbar-title'))
+            ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('filament.sidebar-filter'))
+            ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_AFTER, fn () => view('filament.topbar-tools'))
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.topbar-user'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('filament.locale-switch'))
             ->favicon(asset('favicon.svg'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.theme'))
@@ -60,7 +82,7 @@ trait ConfiguresPanel
                 StartSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
-                \App\Http\Middleware\SetLocale::class,
+                SetLocale::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
@@ -83,22 +105,22 @@ trait ConfiguresPanel
             if (in_array($id, ['owner', 'client'], true)) {
                 $panel->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('filament.portal-mobile') : '');
             }
-            $panel->multiFactorAuthentication([\App\Auth\SmsAuthentication::make()]);
-            $panel->widgets([\App\Filament\Widgets\LoginActivities::class]);
-            $panel->passwordReset(\App\Filament\Auth\RequestPasswordReset::class)->profile();
+            $panel->multiFactorAuthentication([SmsAuthentication::make()]);
+            $panel->widgets([LoginActivities::class]);
+            $panel->passwordReset(RequestPasswordReset::class)->profile();
             $panel->renderHook(PanelsRenderHook::BODY_START, fn () => session()->has('impersonator_id') ? view('filament.impersonation-banner') : '');
             // the shared public demo says what visitors can expect (nothing is sent, it cleans itself up)
-            $panel->renderHook(PanelsRenderHook::BODY_START, fn () => \App\Support\Demo::active() ? view('filament.demo-banner') : '');
+            $panel->renderHook(PanelsRenderHook::BODY_START, fn () => Demo::active() ? view('filament.demo-banner') : '');
             // a notice from the platform to every office (maintenance tonight, new feature…), set in the platform console
-            $panel->renderHook(PanelsRenderHook::PAGE_START, fn () => ($a = \App\Support\PlatformSettings::announcement()) ? view('filament.platform-announcement', $a) : '');
+            $panel->renderHook(PanelsRenderHook::PAGE_START, fn () => ($a = PlatformSettings::announcement()) ? view('filament.platform-announcement', $a) : '');
             $panel->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.assistant-shortcut'));
 
             // Persistent so Livewire update requests are also resolved to the office's database.
             $panel->middleware([
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
-                \App\Http\Middleware\EnsureOfficeIsAccessible::class,
-                \App\Http\Middleware\TrackDemoVisit::class,
+                EnsureOfficeIsAccessible::class,
+                TrackDemoVisit::class,
             ], isPersistent: true);
         }
 

@@ -9,13 +9,14 @@ use App\Filament\Admin\Resources\Buildings\Pages\ViewBuilding;
 use App\Filament\Admin\Resources\Buildings\Schemas\BuildingForm;
 use App\Filament\Admin\Resources\Buildings\Schemas\BuildingInfolist;
 use App\Filament\Admin\Resources\Buildings\Tables\BuildingsTable;
+use App\Filament\Resource;
 use App\Models\Building;
 use BackedEnum;
-use App\Filament\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class BuildingResource extends Resource
@@ -72,5 +73,20 @@ class BuildingResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['title', 'number', 'plot_number', 'street'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return (string) $record->title;
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('الرقم') => $record->number, __('الشارع') => $record->street]);
     }
 }

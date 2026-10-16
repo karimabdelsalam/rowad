@@ -2790,5 +2790,21 @@
     "يعود النظام إلى المفتاح المضبوط على السيرفر (:env) إن وُجد.": "The system falls back to the server's key (:env) if there is one.",
     "المساعد الذكي غير مفعّل: أضف مفتاح :provider والنموذج.": "The AI assistant is off: add the :provider key and model.",
     "مفعّل عبر :provider بالمفتاح المحفوظ هنا — النموذج :model": "On via :provider with the key saved here — model :model",
-    "مفعّل عبر :provider بالمفتاح المضبوط على السيرفر — النموذج :model": "On via :provider with the server's key — model :model"
+    "مفعّل عبر :provider بالمفتاح المضبوط على السيرفر — النموذج :model": "On via :provider with the server's key — model :model",
+    "الصفحات والإجراءات": "Pages & actions",
+    "إضافة :label": "New :label",
+    "إجراء": "Action",
+    "إنشاء جديد": "Create new",
+    "ابحث في القائمة…": "Filter the menu…",
+    "ملء الشاشة": "Full screen",
+    "الخروج من ملء الشاشة": "Exit full screen",
+    "إدارة المنصة": "Platform admin",
+    "العمارة": "Building",
+    "عقد إيجار :number": "Rent contract :number",
+    "عقد بيع :number": "Sale contract :number",
+    "سند قبض :number": "Receipt :number",
+    "سند صرف :number": "Payment voucher :number",
+    "فاتورة :number": "Invoice :number",
+    "ينتهي": "Ends",
+    "معاينة: :name": "Viewing: :name"
 }

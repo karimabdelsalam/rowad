@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\SaleContracts;
 
+use App\Filament\Admin\Resources\RentContracts\RelationManagers\InstallmentsRelationManager;
 use App\Filament\Admin\Resources\SaleContracts\Pages\CreateSaleContract;
 use App\Filament\Admin\Resources\SaleContracts\Pages\EditSaleContract;
 use App\Filament\Admin\Resources\SaleContracts\Pages\ListSaleContracts;
@@ -9,13 +10,14 @@ use App\Filament\Admin\Resources\SaleContracts\Pages\ViewSaleContract;
 use App\Filament\Admin\Resources\SaleContracts\Schemas\SaleContractForm;
 use App\Filament\Admin\Resources\SaleContracts\Schemas\SaleContractInfolist;
 use App\Filament\Admin\Resources\SaleContracts\Tables\SaleContractsTable;
+use App\Filament\Resource;
 use App\Models\SaleContract;
 use BackedEnum;
-use App\Filament\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SaleContractResource extends Resource
@@ -52,7 +54,7 @@ class SaleContractResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Admin\Resources\RentContracts\RelationManagers\InstallmentsRelationManager::class,
+            InstallmentsRelationManager::class,
         ];
     }
 
@@ -72,5 +74,23 @@ class SaleContractResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    protected static array $globalSearchWith = ['unit', 'clients'];
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'unit.title', 'clients.full_name', 'clients.company_name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return __('عقد بيع :number', ['number' => $record->number]);
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array_filter([__('الوحدة') => $record->unit?->title, __('المشتري') => $record->clients->first()?->displayName(),
+            __('المبلغ') => static::searchMoney($record->total_amount)]);
     }
 }
