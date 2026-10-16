@@ -15,7 +15,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Guarded(['id'])]
 class Building extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia;
+    use SoftDeletes, InteractsWithMedia, \App\Models\Concerns\BelongsToBranch;
 
     protected function casts(): array
     {

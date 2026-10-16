@@ -23,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
  * On the central connection: platform administrators.
  */
 #[Fillable(['type', 'name', 'username', 'email', 'mobile', 'national_id', 'password', 'locale', 'email_verified_at',
-    'is_active', 'is_super_admin', 'sms_login_enabled', 'last_login_at'])]
+    'is_active', 'is_super_admin', 'sms_login_enabled', 'last_login_at', 'branch_id'])]
 #[Hidden(['password', 'legacy_password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, HasEmailAuthentication
 {
@@ -33,6 +33,7 @@ class User extends Authenticatable implements FilamentUser, HasEmailAuthenticati
     /** Mirrors the column defaults so new instances are complete before a refresh. */
     protected $attributes = [
         'type' => 'staff',
+        'branch_id' => null,
         'locale' => 'ar',
         'is_active' => true,
         'is_super_admin' => false,
@@ -103,6 +104,11 @@ class User extends Authenticatable implements FilamentUser, HasEmailAuthenticati
     public function toggleEmailAuthentication(bool $condition): void
     {
         $this->forceFill(['sms_login_enabled' => $condition])->save();
+    }
+
+    public function branch(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function owner(): HasOne

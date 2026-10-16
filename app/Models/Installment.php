@@ -17,7 +17,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 #[Guarded(['id'])]
 class Installment extends Model
 {
-    use LogsActivity;
+    use LogsActivity, \App\Models\Concerns\ScopedByUnitBranch;
 
     protected $attributes = ['calendar' => 'gregorian'];
 

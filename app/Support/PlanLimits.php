@@ -28,6 +28,7 @@ class PlanLimits
         'custom_domain' => 'نطاق خاص باسم مؤسستك',
         'ai' => 'المساعد الذكي والتحليلات',
         'online_payments' => 'التحصيل الإلكتروني (روابط دفع)',
+        'branches' => 'تعدد الفروع',
     ];
 
     /** quota key => [plan column, label] */

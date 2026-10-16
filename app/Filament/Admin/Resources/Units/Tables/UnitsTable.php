@@ -29,9 +29,11 @@ class UnitsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['building', 'category', 'owners', 'city']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['building', 'category', 'owners', 'city', 'branch']))
             ->defaultSort('id', 'desc')
             ->columns([
+                TextColumn::make('branch.name')->label(__('الفرع'))->badge()->color('gray')->placeholder('-')->toggleable()
+                    ->visible(fn () => \App\Support\Branches::inUse() && \App\Support\Branches::current() === null),
                 TextColumn::make('title')->label(__('الوحدة'))->weight('bold')->searchable()->sortable()
                     ->description(fn ($record) => $record->building?->title ?? $record->city?->name),
                 TextColumn::make('building.title')->label(__('العقار'))->searchable()->sortable()->toggleable(isToggledHiddenByDefault: true),
@@ -58,6 +60,9 @@ class UnitsTable
                 TextColumn::make('created_at')->dateTime('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('branch_id')->label(__('الفرع'))
+                    ->options(fn () => \App\Support\Branches::options())
+                    ->visible(fn () => \App\Support\Branches::inUse() && \App\Support\Branches::current() === null),
                 SelectFilter::make('status')->options(UnitStatus::class),
                 SelectFilter::make('offer_type')->options(OfferType::class),
                 SelectFilter::make('building_id')->label(__('العقار'))->relationship('building', 'title')->searchable()->preload(),

@@ -65,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
             'activity' => \Spatie\Activitylog\Models\Activity::class,
             'bank_account' => Models\BankAccount::class,
             'bank_transaction' => Models\BankTransaction::class,
+            'branch' => Models\Branch::class,
             'building' => Models\Building::class,
             'campaign' => Models\Campaign::class,
             'citizen' => Models\Citizen::class,

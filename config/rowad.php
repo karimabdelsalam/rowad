@@ -31,6 +31,7 @@ return [
         'owner_transactions' => ['view_any', 'view', 'settle', 'reverse'],
         'receipt_vouchers' => [...$crud, 'print'],
         'online_payments' => ['view_any', 'view'],
+        'branches' => $crud,
         'payment_vouchers' => [...$crud, 'print'],
         'invoices' => ['view_any', 'view', 'create', 'print'],
         'bank_accounts' => [...$crud, 'set_default'],

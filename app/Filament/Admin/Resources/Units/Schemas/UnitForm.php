@@ -38,6 +38,11 @@ class UnitForm
                 Tab::make(__('البيانات الأساسية'))->columns(3)->schema([
                     TextInput::make('title')->required()->maxLength(255),
                     Select::make('building_id')->relationship('building', 'title')->searchable()->preload(),
+                    \Filament\Forms\Components\Select::make('branch_id')->label(__('الفرع'))
+                    ->options(fn () => \App\Support\Branches::options())
+                    ->default(fn () => \App\Support\Branches::current())
+                    ->disabled(fn () => \App\Support\Branches::current() !== null)->dehydrated()
+                    ->visible(fn () => \App\Support\Branches::inUse()),
                     Select::make('property_category_id')->relationship('category', 'title')->searchable()->preload()->live(),
                     Select::make('offer_type')->options(OfferType::class)->default('rent')->required()->live(),
                     Select::make('status')->options(UnitStatus::class)->default('available')->required(),

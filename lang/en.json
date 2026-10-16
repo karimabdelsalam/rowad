@@ -2142,5 +2142,14 @@
     "العائد :p%": "Yield :p%",
     "الإيجار أقل من السوق :p%": "Rent :p% below market",
     "الإيجار أعلى من المماثل :p%": "Rent :p% above comparable units",
-    "من بداية :year حتى اليوم. الأرقام من كشف حسابك لدى المكتب؛ العائد = صافي الدخل السنوي ÷ القيمة السوقية التقديرية.": "From the start of :year to today. Figures come from your statement with the office; yield = yearly net income ÷ estimated market value."
+    "من بداية :year حتى اليوم. الأرقام من كشف حسابك لدى المكتب؛ العائد = صافي الدخل السنوي ÷ القيمة السوقية التقديرية.": "From the start of :year to today. Figures come from your statement with the office; yield = yearly net income ÷ estimated market value.",
+    "الفرع": "Branch",
+    "الفروع": "Branches",
+    "فرع": "Branch",
+    "كل الفروع": "All branches",
+    "اتركه فارغًا ليرى المستخدم كل الفروع.": "Leave empty so the user sees every branch.",
+    "اربط الموظف بفرع ليرى وحدات ذلك الفرع وعقوده وسنداته فقط. الموظف بلا فرع يرى كل الفروع.": "Link a staff member to a branch to show them only that branch's units, contracts and vouchers. Staff without a branch see every branch.",
+    "اسم الفرع": "Branch name",
+    "تبقى الوحدات والموظفون، ويصبحون بلا فرع (يراهم المدير فقط).": "Units and staff remain, without a branch (visible to managers only).",
+    "تعدد الفروع": "Multiple branches"
 }

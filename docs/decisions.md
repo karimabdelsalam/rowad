@@ -481,3 +481,16 @@
 - Yield needs a value: new optional `units.market_value` (staff fill it in the unit form); yield =
   annualised net ÷ (value × owner share). Without a value the page says so instead of guessing.
 - Read-only from data the office already keeps; nothing new for staff to enter beyond the value.
+
+## Multi-branch offices (2026-10-16) — roadmap phase 5, part 2
+
+- Enterprise-plan feature `branches`. A `branches` table and a nullable `branch_id` on users, buildings,
+  units, receipt and payment vouchers.
+- Scoping is a global scope, so every screen, report, export, API call and assistant tool obeys it
+  without per-screen code: staff with a branch see only rows of their branch; contracts and
+  instalments follow their unit (`whereHas('unit')`, which applies the unit's own scope). Staff
+  without a branch, super admins, portal users, queued jobs and the scheduler see everything.
+- New rows take the creator's branch; otherwise they follow their unit or building, so a voucher
+  posted by the payment webhook (no user) still lands in the unit's branch.
+- Owners and clients stay shared across branches (one person can deal with several branches).
+- Only staff without a branch manage branches; deleting a branch leaves its rows unassigned.

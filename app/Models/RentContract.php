@@ -22,7 +22,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Guarded(['id'])]
 class RentContract extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia, LogsActivity;
+    use SoftDeletes, InteractsWithMedia, LogsActivity, \App\Models\Concerns\ScopedByUnitBranch;
 
     protected $attributes = ['calendar' => 'gregorian'];
 

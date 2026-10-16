@@ -15,6 +15,11 @@ class BuildingForm
             ->components([
                 TextInput::make('title')
                     ->required(),
+                \Filament\Forms\Components\Select::make('branch_id')->label(__('الفرع'))
+                    ->options(fn () => \App\Support\Branches::options())
+                    ->default(fn () => \App\Support\Branches::current())
+                    ->disabled(fn () => \App\Support\Branches::current() !== null)->dehydrated()
+                    ->visible(fn () => \App\Support\Branches::inUse()),
                 TextInput::make('property_category_id')
                     ->numeric(),
                 TextInput::make('number'),

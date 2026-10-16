@@ -13,6 +13,9 @@
         default => __($roleLabels[$role] ?? 'موظف'),
     };
     $initials = mb_substr(trim((string) $user?->name), 0, 1);
+    if ($panel === 'admin' && ($branchId = \App\Support\Branches::current()) !== null) {
+        $who .= ' · '.\App\Models\Branch::query()->whereKey($branchId)->value('name');
+    }
 
     $plan = null;
     if ($panel === 'admin' && tenancy()->initialized && \App\Filament\Admin\Pages\Subscription::canAccess()) {

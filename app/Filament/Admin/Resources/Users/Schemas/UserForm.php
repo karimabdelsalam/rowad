@@ -26,6 +26,11 @@ class UserForm
                     ->label('Email address')
                     ->email(),
                 TextInput::make('mobile'),
+                Select::make('branch_id')->label(__('الفرع'))
+                    ->options(fn () => \App\Support\Branches::options())
+                    ->placeholder(__('كل الفروع'))
+                    ->helperText(__('اتركه فارغًا ليرى المستخدم كل الفروع.'))
+                    ->visible(fn () => \App\Support\Branches::inUse() && \App\Support\Branches::current() === null),
                 TextInput::make('national_id'),
                 DateTimePicker::make('email_verified_at'),
                 TextInput::make('password')
