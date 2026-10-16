@@ -390,3 +390,17 @@
   data: identity, owner, unit, contract, SMS, team, website) to users who can edit settings, until all
   steps are done or an admin hides it (`onboarding_dismissed` setting). The website step starts done
   because the public site is on by default.
+
+## Self-service cancellation and 30-day retention (2026-10-16)
+
+- An office admin cancels from the subscription page (reason, optional note, typing the office name).
+  The office closes at once (status `cancelled`, panels/website/API return 402), trial and paid rows
+  become `cancelled`, and `purge_after` = now + 30 days (`SubscriptionManager::RETENTION_DAYS`).
+- Coming back is one click: the confirmation email carries a signed link on the office's own domain
+  (`/reactivate?tenant=…`, valid until the purge date, outside the accessibility gate). The closed
+  page can resend that link to the office email but never shows it. Reactivation restores the rows
+  (trial → trialing, paid → active) and the status (active / trial / past_due as a short grace).
+  The platform console's "تفعيل" also clears a cancellation.
+- `rowad:subscriptions` (daily) emails a reminder three days before the purge and then deletes the
+  office (tenancy's DeleteDatabase); nothing is kept after that.
+- Reasons are stored in the tenant's `cancellation` data for the platform to learn from.

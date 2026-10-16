@@ -13,6 +13,14 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 | are Filament panels (/admin, /owner, /client); these are the public pages.
 */
 
+// A cancelled office is closed, so coming back cannot go through its panels: a signed link from the
+// cancellation email (valid until the purge date) reopens it, and the closed page can resend that link.
+Route::middleware(['web', InitializeTenancyByDomain::class, PreventAccessFromCentralDomains::class])->group(function () {
+    Route::get('/reactivate', [\App\Http\Controllers\Site\ReactivationController::class, 'show'])->middleware('signed:relative')->name('office.reactivate');
+    Route::post('/reactivate', [\App\Http\Controllers\Site\ReactivationController::class, 'store'])->middleware('signed:relative');
+    Route::post('/reactivate/resend', [\App\Http\Controllers\Site\ReactivationController::class, 'resend'])->middleware('throttle:3,10')->name('office.reactivate.resend');
+});
+
 Route::middleware([
     'web',
     InitializeTenancyByDomain::class,

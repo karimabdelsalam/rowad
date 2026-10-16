@@ -15,7 +15,8 @@ class CheckSubscriptions extends Command
     public function handle(SubscriptionManager $subscriptions): int
     {
         $done = $subscriptions->checkExpirations();
-        $this->info(sprintf('past due: %d, suspended: %d, reminders: %d', $done['past_due'], $done['suspended'], $done['reminders']));
+        $this->info(sprintf('past due: %d, suspended: %d, reminders: %d, purge reminders: %d, purged: %d',
+            $done['past_due'], $done['suspended'], $done['reminders'], $done['purge_reminders'], $done['purged']));
 
         return self::SUCCESS;
     }

@@ -30,9 +30,11 @@ class TenantInfolist
                     'sub' => [$r->domains->pluck('domain')->implode(' · '), $r->email, $r->phone],
                     'facts' => [
                         Parts::fact('الحالة', TenantForm::statuses()[$r->status], self::tone($r->status)),
-                        $r->status === Tenant::STATUS_TRIAL
-                            ? Parts::fact('تنتهي التجربة', $r->trial_ends_at?->format('Y-m-d'), $r->trial_ends_at?->lt(now()->addDays(7)) ? 'warning' : null)
-                            : Parts::fact('مدفوع حتى', $paidUntil?->format('Y-m-d') ?? '-', $paidUntil && $paidUntil->lt(now()->addDays(7)) ? 'danger' : null),
+                        match (true) {
+                            $r->status === Tenant::STATUS_CANCELLED => Parts::fact('تُحذف البيانات في', $r->purge_after?->format('Y-m-d') ?? '-', 'danger'),
+                            $r->status === Tenant::STATUS_TRIAL => Parts::fact('تنتهي التجربة', $r->trial_ends_at?->format('Y-m-d'), $r->trial_ends_at?->lt(now()->addDays(7)) ? 'warning' : null),
+                            default => Parts::fact('مدفوع حتى', $paidUntil?->format('Y-m-d') ?? '-', $paidUntil && $paidUntil->lt(now()->addDays(7)) ? 'danger' : null),
+                        },
                         Parts::fact('الوحدات', isset($r->usage['units']) ? number_format($r->usage['units']).' / '.($r->plan?->max_units ? number_format($r->plan->max_units) : '∞') : '-'),
                         Parts::fact('مسجلة منذ', $r->created_at?->locale(app()->getLocale())->diffForHumans()),
                     ],

@@ -144,6 +144,27 @@ class Subscription extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('cancel')
+                ->label(__('إلغاء الاشتراك'))
+                ->color('danger')
+                ->icon(Heroicon::OutlinedXCircle)
+                ->visible(fn () => tenant()->status !== Tenant::STATUS_CANCELLED && (auth()->user()?->is_super_admin || auth()->user()?->hasRole('admin')))
+                ->modalHeading(__('إلغاء اشتراك المؤسسة'))
+                ->modalDescription(__('يتوقف الدخول إلى لوحة الإدارة والبوابات والموقع فورًا لكل المستخدمين. تبقى بياناتك محفوظة :days يومًا يمكنك خلالها إعادة التفعيل بضغطة واحدة من رسالة التأكيد، ثم تُحذف نهائيًا.', ['days' => \App\Services\Platform\SubscriptionManager::RETENTION_DAYS]))
+                ->modalSubmitActionLabel(__('إلغاء الاشتراك نهائيًا'))
+                ->schema([
+                    Radio::make('reason')->label(__('سبب الإلغاء'))->options(collect(\App\Services\Platform\SubscriptionManager::CANCEL_REASONS)->map(fn ($l) => __($l))->all())->required(),
+                    Textarea::make('note')->label(__('ما الذي كان يمكن أن يُبقيك معنا؟'))->rows(3)->maxLength(1000),
+                    \Filament\Forms\Components\TextInput::make('confirm')->label(__('اكتب اسم المؤسسة للتأكيد'))->required()
+                        ->rule(fn () => fn (string $attribute, mixed $value, \Closure $fail) => trim((string) $value) === tenant()->name ?: $fail(__('الاسم غير مطابق'))),
+                ])
+                ->action(function (array $data) {
+                    $user = auth()->user();
+                    app(\App\Services\Platform\SubscriptionManager::class)->cancel(tenant(), $data['reason'], $data['note'] ?? null, $user?->name, $user?->email);
+                    Notification::make()->success()->title(__('أُلغي الاشتراك. أرسلنا رابط إعادة التفعيل إلى بريدك.'))->send();
+                    auth()->logout();
+                    $this->redirect('/admin/login');
+                }),
             Action::make('requestUpgrade')
                 ->label(__('طلب ترقية الباقة'))
                 ->icon(Heroicon::OutlinedArrowTrendingUp)

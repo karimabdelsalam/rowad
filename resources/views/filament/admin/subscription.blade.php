@@ -100,4 +100,5 @@
             @endif
         </section>
     </div>
+    <p style="margin-top:18px;font-size:.85rem;color:rgb(100 116 139)">{{ __('يمكنك إلغاء الاشتراك في أي وقت من زر "إلغاء الاشتراك" أعلى الصفحة؛ تبقى بياناتك محفوظة :days يومًا ثم تُحذف نهائيًا.', ['days' => \App\Services\Platform\SubscriptionManager::RETENTION_DAYS]) }}</p>
 </x-filament-panels::page>

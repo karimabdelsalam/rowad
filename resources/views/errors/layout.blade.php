@@ -20,7 +20,7 @@
         h1 { font-size: 1.6rem; margin: 14px 0 8px; }
         p { color: #64748b; margin: 0 0 24px; line-height: 1.8; }
         .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        a.btn { display: inline-block; padding: 10px 20px; border-radius: 12px; font-weight: 700; text-decoration: none; }
+        a.btn, button.btn { display: inline-block; padding: 10px 20px; border-radius: 12px; font-weight: 700; text-decoration: none; font: inherit; font-weight: 700; cursor: pointer; border: 0; }
         a.primary { background: #0f766e; color: #fff; }
         a.ghost { border: 1px solid #e2e8f0; color: #0f172a; }
         .credit { margin-top: 26px; font-size: .8rem; color: #94a3b8; }

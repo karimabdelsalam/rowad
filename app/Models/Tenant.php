@@ -23,14 +23,22 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
     public static function getCustomColumns(): array
     {
-        return ['id', 'name', 'email', 'phone', 'plan_id', 'status', 'trial_ends_at'];
+        return ['id', 'name', 'email', 'phone', 'plan_id', 'status', 'trial_ends_at', 'cancelled_at', 'purge_after'];
     }
 
     protected function casts(): array
     {
         return [
             'trial_ends_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'purge_after' => 'datetime',
         ];
+    }
+
+    /** A cancelled office keeps its data until purge_after; within that window it can be reactivated. */
+    public function canBeReactivated(): bool
+    {
+        return $this->status === self::STATUS_CANCELLED && $this->purge_after !== null && $this->purge_after->isFuture();
     }
 
     public function plan(): BelongsTo

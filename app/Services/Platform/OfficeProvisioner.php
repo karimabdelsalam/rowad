@@ -137,6 +137,6 @@ class OfficeProvisioner
 
     public function activate(Tenant $tenant): void
     {
-        $tenant->update(['status' => Tenant::STATUS_ACTIVE]);
+        $tenant->forceFill(['status' => Tenant::STATUS_ACTIVE, 'cancelled_at' => null, 'purge_after' => null, 'cancellation' => null])->save();
     }
 }
