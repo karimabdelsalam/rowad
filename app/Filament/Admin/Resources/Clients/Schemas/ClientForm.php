@@ -44,7 +44,7 @@ class ClientForm
                         ]),
                     ]),
                 PersonFormSections::name()->heading(fn (Get $get) => $isCompany($get) ? __('اسم المفوض') : __('الاسم')),
-                PersonFormSections::identity(),
+                PersonFormSections::identity(readFromPhoto: true),
                 PersonFormSections::contact(),
                 PersonFormSections::notesAndFiles(),
                 PersonFormSections::account(),

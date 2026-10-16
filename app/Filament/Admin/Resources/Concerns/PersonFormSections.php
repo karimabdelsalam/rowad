@@ -28,9 +28,11 @@ class PersonFormSections
     }
 
     /** @param  list<\Filament\Schemas\Components\Component>  $extra */
-    public static function identity(array $extra = []): Section
+    public static function identity(array $extra = [], bool $readFromPhoto = false): Section
     {
         return Section::make(__('الهوية'))->icon(Heroicon::OutlinedCreditCard)
+            ->key('identity')
+            ->afterHeader($readFromPhoto ? [ReadDocumentAction::make('id')] : [])
             ->columns(['default' => 1, 'sm' => 2, 'lg' => 3])
             ->schema([
                 Select::make('id_type')->options(IdType::class),

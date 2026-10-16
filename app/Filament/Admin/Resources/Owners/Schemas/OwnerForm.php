@@ -13,7 +13,7 @@ class OwnerForm
             ->columns(1)
             ->components([
                 PersonFormSections::name(),
-                PersonFormSections::identity(),
+                PersonFormSections::identity(readFromPhoto: true),
                 PersonFormSections::contact(),
                 PersonFormSections::notesAndFiles(),
                 PersonFormSections::account(),

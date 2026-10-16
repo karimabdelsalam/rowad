@@ -94,6 +94,7 @@ class UnitForm
                 ]),
 
                 Tab::make(__('الصك والحدود'))->columns(3)->schema([
+                    \Filament\Schemas\Components\Actions::make([\App\Filament\Admin\Resources\Concerns\ReadDocumentAction::make('deed')])->key('deedReader')->columnSpanFull(),
                     TextInput::make('plan_number'),
                     TextInput::make('plot_number'),
                     // legacy building.deed: several title deeds per unit

@@ -2545,5 +2545,18 @@
     "لم يحضر": "No-show",
     "موعد معاينة": "Viewing",
     "مواعيد المعاينة": "Viewings",
-    "موقع المكتب": "Website"
+    "موقع المكتب": "Website",
+    "تعبئة من صورة الصك": "Fill from deed photo",
+    "تعبئة من صورة الهوية": "Fill from ID photo",
+    "قراءة الصك بالذكاء الاصطناعي": "Read the deed with AI",
+    "قراءة الهوية بالذكاء الاصطناعي": "Read the ID with AI",
+    "صوّر المستند بوضوح وارفعه؛ تُعبأ الحقول تلقائيًا لتراجعها قبل الحفظ. لا تُحفظ الصورة في النظام.": "Upload a clear photo of the document; the fields are filled for you to review before saving. The image is not stored.",
+    "قراءة وتعبئة": "Read and fill",
+    "عُبئ :n حقلًا من المستند — راجعها قبل الحفظ": ":n fields filled from the document — review them before saving",
+    "لم نتمكن من قراءة بيانات واضحة، جرّب صورة أوضح": "Couldn't read clear data; try a sharper photo",
+    "ارفع صورة (JPG / PNG) أو ملف PDF": "Upload an image (JPG / PNG) or a PDF",
+    "الملف أكبر من 5 ميجابايت": "The file is larger than 5 MB",
+    "قراءة صك": "Deed reading",
+    "قراءة هوية": "ID reading",
+    "تعذّرت قراءة المستند، جرّب صورة أوضح": "Couldn't read the document; try a sharper photo"
 }

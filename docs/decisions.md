@@ -621,3 +621,15 @@
   (matched by mobile, so returning visitors aren't duplicated). Staff can also book on the phone,
   outside the website hours.
 - The public form works without JavaScript (all days listed); with it, one day at a time.
+
+## Reading IDs and deeds from photos (2026-10-16) — vision §ب "قراءة الصكوك والهويات"
+
+- Client and owner forms: "تعبئة من صورة الهوية" (national ID, iqama, GCC ID, passport) fills the
+  four-part Arabic name, ID type and number, nationality, date of birth and place of issue. A
+  Hijri-only birth date is converted (Umm al-Qura); Arabic-Indic digits become Western digits.
+- Unit form: "تعبئة من صورة الصك" fills plan, plot and area and adds the deed (number, Hijri date,
+  issuer) to the deeds list unless it is already there.
+- Images or PDFs up to 5 MB go to the AI service (vision) and are not stored; fields are only filled,
+  never saved, so staff review first. The model is told to leave unclear fields empty.
+- Each reading counts as one assistant question against the plan's monthly AI quota and needs the
+  plan feature `ai`, like the other AI tools.
