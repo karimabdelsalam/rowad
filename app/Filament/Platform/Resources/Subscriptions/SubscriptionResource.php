@@ -20,7 +20,9 @@ class SubscriptionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
 
-    protected static ?int $navigationSort = 3;
+    protected static string|\UnitEnum|null $navigationGroup = \App\Filament\Platform\Nav::Offices;
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'اشتراك';
 

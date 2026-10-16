@@ -14,6 +14,7 @@ class ManageGovernmentOrganizations extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\Lookups\GovernmentOrganization::class, 'title'),
         ];
     }
 }

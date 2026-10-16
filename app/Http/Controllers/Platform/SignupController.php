@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Plan;
 use App\Services\Platform\OfficeProvisioner;
+use App\Support\PlatformSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -35,17 +36,21 @@ class SignupController
 
     public function create(Request $request): View
     {
+        if (! PlatformSettings::signupOpen()) {
+            return view('platform.signup-closed', ['message' => PlatformSettings::get('signup_closed_message')]);
+        }
         $plans = $this->plans();
 
         return view('platform.signup', [
             'plans' => $plans,
-            'selected' => (int) old('plan_id', $request->integer('plan') ?: $plans->firstWhere('slug', 'professional')?->id),
+            'selected' => (int) old('plan_id', $request->integer('plan') ?: PlatformSettings::defaultPlan()?->id),
             'baseDomain' => config('rowad.tenancy.base_domain'),
         ]);
     }
 
     public function store(Request $request, OfficeProvisioner $provisioner): RedirectResponse
     {
+        abort_unless(PlatformSettings::signupOpen(), 403, __('التسجيل مغلق حاليًا'));
         // bots fill every field; people never see this one
         if (filled($request->input('website'))) {
             return redirect()->to(route('central.home', [], false));

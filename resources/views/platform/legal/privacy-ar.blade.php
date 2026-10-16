@@ -32,4 +32,4 @@
 <p>الاتصال مشفر (HTTPS)، وكلمات المرور مشفرة، ونأخذ نسخًا احتياطية يومية، ويمكن تفعيل التحقق برمز SMS عند الدخول.</p>
 
 <h2>9. حقوقك</h2>
-<p>لك الحق في الاطلاع على بياناتك وتصحيحها وطلب حذفها. إن كنت مالكًا أو مستأجرًا لدى مؤسسة تستخدم عقار نوفا فتواصل معها أولًا لأنها المسؤولة عن بياناتك، ويمكنك التواصل معنا أيضًا: @if (filled(config('rowad.contact.email')))<a href="mailto:{{ config('rowad.contact.email') }}">{{ config('rowad.contact.email') }}</a>@else عبر بيانات التواصل في الموقع @endif.</p>
+<p>لك الحق في الاطلاع على بياناتك وتصحيحها وطلب حذفها. إن كنت مالكًا أو مستأجرًا لدى مؤسسة تستخدم عقار نوفا فتواصل معها أولًا لأنها المسؤولة عن بياناتك، ويمكنك التواصل معنا أيضًا: @if (filled(\App\Support\PlatformSettings::contact('email')))<a href="mailto:{{ \App\Support\PlatformSettings::contact('email') }}">{{ \App\Support\PlatformSettings::contact('email') }}</a>@else عبر بيانات التواصل في الموقع @endif.</p>

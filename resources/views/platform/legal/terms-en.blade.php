@@ -37,4 +37,4 @@
 <p>We may update these terms and will notify organizations of material changes before they apply. These terms are governed by the laws of the Kingdom of Saudi Arabia.</p>
 
 <h2>10. Contact</h2>
-<p>Questions: @if (filled(config('rowad.contact.email')))<a href="mailto:{{ config('rowad.contact.email') }}">{{ config('rowad.contact.email') }}</a>@else through the contact details on this site @endif.</p>
+<p>Questions: @if (filled(\App\Support\PlatformSettings::contact('email')))<a href="mailto:{{ \App\Support\PlatformSettings::contact('email') }}">{{ \App\Support\PlatformSettings::contact('email') }}</a>@else through the contact details on this site @endif.</p>

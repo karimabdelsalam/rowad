@@ -20,7 +20,9 @@ class PlanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
 
-    protected static ?int $navigationSort = 2;
+    protected static string|\UnitEnum|null $navigationGroup = \App\Filament\Platform\Nav::Billing;
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'باقة';
 

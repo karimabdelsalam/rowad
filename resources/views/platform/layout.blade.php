@@ -145,13 +145,13 @@
                     <h4>{{ __('الدعم') }}</h4>
                     <ul>
                         <li><a href="{{ route('central.home', [], false) }}#faq">{{ __('الأسئلة الشائعة') }}</a></li>
-                        @if (filled($contactEmail = config('rowad.contact.email')))
+                        @if (filled($contactEmail = \App\Support\PlatformSettings::contact('email')))
                             <li><a href="mailto:{{ $contactEmail }}" dir="ltr">{{ $contactEmail }}</a></li>
                         @endif
-                        @if (filled($contactPhone = config('rowad.contact.phone')))
+                        @if (filled($contactPhone = \App\Support\PlatformSettings::contact('phone')))
                             <li><a href="tel:{{ preg_replace('/[^0-9+]/', '', $contactPhone) }}" dir="ltr">{{ $contactPhone }}</a></li>
                         @endif
-                        @if (filled($whatsapp = config('rowad.contact.whatsapp')))
+                        @if (filled($whatsapp = \App\Support\PlatformSettings::contact('whatsapp')))
                             <li><a href="https://wa.me/{{ preg_replace('/\D/', '', $whatsapp) }}" target="_blank" rel="noopener">{{ __('واتساب') }}</a></li>
                         @endif
                         <li><a href="{{ route('central.terms', [], false) }}">{{ __('شروط الاستخدام') }}</a></li>

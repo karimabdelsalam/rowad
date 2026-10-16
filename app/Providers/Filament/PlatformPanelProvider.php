@@ -3,7 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Providers\Filament\Concerns\ConfiguresPanel;
-use Filament\Pages\Dashboard;
+use App\Filament\Platform\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 

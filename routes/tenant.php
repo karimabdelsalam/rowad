@@ -45,6 +45,9 @@ Route::middleware([
         ->middleware('throttle:30,1')->name('demo.login');
 
     Route::get('/impersonate/stop', [\App\Http\Controllers\ImpersonationController::class, 'stop'])->name('portal.impersonate.stop');
+    // platform console → "open as the office admin" (signed link generated for this office's domain)
+    Route::get('/platform-access/{user}', \App\Http\Controllers\PlatformAccessController::class)
+        ->middleware(['signed', 'throttle:10,1'])->name('platform.access');
 });
 
 Route::prefix('api/v1')->name('api.v1.')->middleware([

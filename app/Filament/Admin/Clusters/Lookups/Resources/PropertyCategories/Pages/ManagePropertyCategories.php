@@ -14,6 +14,7 @@ class ManagePropertyCategories extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\Lookups\PropertyCategory::class, 'title'),
         ];
     }
 }

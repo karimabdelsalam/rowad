@@ -38,9 +38,9 @@ class LicenseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'التراخيص';
+    protected static string|\UnitEnum|null $navigationGroup = \App\Filament\Platform\Nav::Billing;
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'ترخيص';
 
@@ -141,7 +141,7 @@ class LicenseResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $q) => $q->with('plan')->withCount(['activeActivations'])->withMax('activations', 'last_seen_at'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('plan')->withCount(['activeActivations'])->withMax('activations', 'last_seen_at'))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('customer_name')->label(__('العميل'))->searchable()->weight('bold')

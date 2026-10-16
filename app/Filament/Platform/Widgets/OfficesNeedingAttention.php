@@ -12,9 +12,9 @@ use Illuminate\Database\Eloquent\Builder;
 /** Who to call this week: upgrade requests, trials about to end, and offices that have not paid. */
 class OfficesNeedingAttention extends TableWidget
 {
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 5;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 'full', 'xl' => 8];
 
     public function table(Table $table): Table
     {
@@ -29,7 +29,7 @@ class OfficesNeedingAttention extends TableWidget
             ->paginated([5, 10])
             ->emptyStateHeading(__('لا شيء يحتاج متابعة الآن'))
             ->emptyStateIcon('heroicon-o-check-circle')
-            ->recordUrl(fn (Tenant $record) => TenantResource::getUrl('edit', ['record' => $record]))
+            ->recordUrl(fn (Tenant $record) => TenantResource::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('name')->label(__('المؤسسة'))->weight('bold')->description(fn (Tenant $record) => $record->domains->first()?->domain),
                 TextColumn::make('reason')->label(__('السبب'))->badge()

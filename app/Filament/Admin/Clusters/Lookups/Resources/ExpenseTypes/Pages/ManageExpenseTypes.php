@@ -14,6 +14,7 @@ class ManageExpenseTypes extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\Lookups\ExpenseType::class, 'title'),
         ];
     }
 }

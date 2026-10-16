@@ -68,6 +68,8 @@ trait ConfiguresPanel
             $panel->widgets([\App\Filament\Widgets\LoginActivities::class]);
             $panel->passwordReset(\App\Filament\Auth\RequestPasswordReset::class)->profile();
             $panel->renderHook(PanelsRenderHook::BODY_START, fn () => session()->has('impersonator_id') ? view('filament.impersonation-banner') : '');
+            // a notice from the platform to every office (maintenance tonight, new feature…), set in the platform console
+            $panel->renderHook(PanelsRenderHook::PAGE_START, fn () => ($a = \App\Support\PlatformSettings::announcement()) ? view('filament.platform-announcement', $a) : '');
             $panel->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.assistant-shortcut'));
 
             // Persistent so Livewire update requests are also resolved to the office's database.

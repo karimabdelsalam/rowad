@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\PlatformSettings;
 use App\Support\Settings;
 use Illuminate\Support\Str;
 use Throwable;
@@ -52,7 +53,7 @@ class OfficeProvisioner
                 'phone' => $data['phone'] ?? null,
                 'plan_id' => $plan?->id,
                 'status' => Tenant::STATUS_TRIAL,
-                'trial_ends_at' => now()->addDays($plan?->trial_days ?? 14),
+                'trial_ends_at' => now()->addDays(PlatformSettings::trialDays($plan)),
             ]);
             $tenant->domains()->create(['domain' => $domain]);
 
@@ -118,10 +119,11 @@ class OfficeProvisioner
     {
         $subdomain = Str::of($subdomain)->lower()->trim()->replaceMatches('/[^a-z0-9-]/', '')->trim('-')->toString();
 
-        if (strlen($subdomain) < 3 || strlen($subdomain) > 40) {
-            throw new BusinessRuleException(__('النطاق الفرعي يجب أن يكون من 3 إلى 40 حرفًا إنجليزيًا أو رقمًا'));
+        $min = PlatformSettings::subdomainMinLength();
+        if (strlen($subdomain) < $min || strlen($subdomain) > 40) {
+            throw new BusinessRuleException(__('النطاق الفرعي يجب أن يكون من :min إلى 40 حرفًا إنجليزيًا أو رقمًا', ['min' => $min]));
         }
-        if (in_array($subdomain, self::RESERVED_SUBDOMAINS, true)) {
+        if (in_array($subdomain, PlatformSettings::reservedSubdomains(), true)) {
             throw new BusinessRuleException(__('هذا النطاق محجوز'));
         }
 

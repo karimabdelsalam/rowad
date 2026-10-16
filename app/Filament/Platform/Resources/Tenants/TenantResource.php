@@ -5,7 +5,9 @@ namespace App\Filament\Platform\Resources\Tenants;
 use App\Filament\Platform\Resources\Tenants\Pages\CreateTenant;
 use App\Filament\Platform\Resources\Tenants\Pages\EditTenant;
 use App\Filament\Platform\Resources\Tenants\Pages\ListTenants;
+use App\Filament\Platform\Resources\Tenants\Pages\ViewTenant;
 use App\Filament\Platform\Resources\Tenants\Schemas\TenantForm;
+use App\Filament\Platform\Resources\Tenants\Schemas\TenantInfolist;
 use App\Filament\Platform\Resources\Tenants\Tables\TenantsTable;
 use App\Models\Tenant;
 use BackedEnum;
@@ -20,6 +22,8 @@ class TenantResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
+    protected static string|\UnitEnum|null $navigationGroup = \App\Filament\Platform\Nav::Offices;
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'مؤسسة';
@@ -29,6 +33,11 @@ class TenantResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return TenantForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return TenantInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table
@@ -48,6 +57,7 @@ class TenantResource extends Resource
         return [
             'index' => ListTenants::route('/'),
             'create' => CreateTenant::route('/create'),
+            'view' => ViewTenant::route('/{record}'),
             'edit' => EditTenant::route('/{record}/edit'),
         ];
     }

@@ -14,6 +14,7 @@ class ManageDistricts extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\District::class, 'name', extra: [\Filament\Forms\Components\Select::make('city_id')->label(__('المدينة'))->options(fn () => \App\Models\City::orderBy('name')->pluck('name', 'id'))->searchable()->required()]),
         ];
     }
 }

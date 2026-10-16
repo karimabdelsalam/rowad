@@ -14,6 +14,7 @@ class ManageDeedTypes extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\Lookups\DeedType::class, 'title'),
         ];
     }
 }

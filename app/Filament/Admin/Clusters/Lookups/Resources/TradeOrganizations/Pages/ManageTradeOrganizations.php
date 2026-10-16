@@ -14,6 +14,7 @@ class ManageTradeOrganizations extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\Lookups\TradeOrganization::class, 'title'),
         ];
     }
 }

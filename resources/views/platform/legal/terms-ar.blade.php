@@ -37,4 +37,4 @@
 <p>قد نحدّث هذه الشروط، وسنبلغ المؤسسات بأي تغيير جوهري قبل سريانه. تخضع هذه الشروط لأنظمة المملكة العربية السعودية.</p>
 
 <h2>10. التواصل</h2>
-<p>لأي استفسار: @if (filled(config('rowad.contact.email')))<a href="mailto:{{ config('rowad.contact.email') }}">{{ config('rowad.contact.email') }}</a>@else عبر بيانات التواصل في الموقع @endif.</p>
+<p>لأي استفسار: @if (filled(\App\Support\PlatformSettings::contact('email')))<a href="mailto:{{ \App\Support\PlatformSettings::contact('email') }}">{{ \App\Support\PlatformSettings::contact('email') }}</a>@else عبر بيانات التواصل في الموقع @endif.</p>

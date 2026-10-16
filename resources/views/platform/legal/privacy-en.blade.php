@@ -32,4 +32,4 @@
 <p>Connections are encrypted (HTTPS), passwords are hashed, backups are taken daily, and SMS verification at sign-in can be enabled.</p>
 
 <h2>9. Your rights</h2>
-<p>You may access, correct and ask for deletion of your data. If you are an owner or tenant of an organization that uses Aqar Nova, contact that organization first, as it is responsible for your data; you can also contact us: @if (filled(config('rowad.contact.email')))<a href="mailto:{{ config('rowad.contact.email') }}">{{ config('rowad.contact.email') }}</a>@else through the contact details on this site @endif.</p>
+<p>You may access, correct and ask for deletion of your data. If you are an owner or tenant of an organization that uses Aqar Nova, contact that organization first, as it is responsible for your data; you can also contact us: @if (filled(\App\Support\PlatformSettings::contact('email')))<a href="mailto:{{ \App\Support\PlatformSettings::contact('email') }}">{{ \App\Support\PlatformSettings::contact('email') }}</a>@else through the contact details on this site @endif.</p>

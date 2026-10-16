@@ -11,7 +11,7 @@ use Filament\Widgets\TableWidget;
 
 class RecentOffices extends TableWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 6;
 
     protected int|string|array $columnSpan = 'full';
 
@@ -21,7 +21,7 @@ class RecentOffices extends TableWidget
             ->heading(__('أحدث المؤسسات'))
             ->query(fn () => Tenant::query()->with(['plan', 'domains'])->latest()->limit(5))
             ->paginated(false)
-            ->recordUrl(fn (Tenant $record) => TenantResource::getUrl('edit', ['record' => $record]))
+            ->recordUrl(fn (Tenant $record) => TenantResource::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('name')->label(__('المؤسسة'))->weight('bold')->description(fn (Tenant $record) => $record->domains->first()?->domain),
                 TextColumn::make('plan.name_ar')->label(__('الباقة'))->placeholder('-'),

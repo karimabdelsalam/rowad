@@ -4,6 +4,7 @@ namespace App\Filament\Platform\Pages;
 
 use App\Services\Licensing\LicenseClient;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,7 +16,9 @@ class LicensePage extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
-    protected static ?int $navigationSort = 90;
+    protected static string|\UnitEnum|null $navigationGroup = \App\Filament\Platform\Nav::Billing;
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $slug = 'license';
 

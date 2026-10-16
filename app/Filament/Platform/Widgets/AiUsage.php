@@ -8,7 +8,7 @@ use Filament\Widgets\Widget;
 /** Who uses the AI most this month, so the platform can watch its AI bill and suggest upgrades. */
 class AiUsage extends Widget
 {
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 7;
 
     protected int|string|array $columnSpan = 'full';
 

@@ -148,6 +148,20 @@
     .rowad-thread__empty { color: var(--rowad-muted); font-size: .9rem; text-align: center; padding: 8px 0 0; }
     .dark .rowad-thread__msg { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
     .dark .rowad-thread__msg.is-me { background: rgba(20,184,166,.15); }
+    /* platform console: health rows and status list */
+    .rowad-health { display: flex; flex-direction: column; }
+    .rowad-health__row { display: grid; grid-template-columns: 28px 220px 1fr; gap: 12px; align-items: baseline; padding: 10px 4px; border-bottom: 1px solid var(--rowad-line); font-size: .9rem; }
+    .rowad-health__row:last-child { border-bottom: 0; }
+    .rowad-health__mark { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-weight: 800; font-size: .8rem; }
+    .rowad-health__row.is-ok .rowad-health__mark { background: #dcfce7; color: #166534; }
+    .rowad-health__row.is-warn .rowad-health__mark { background: #fef3c7; color: #92400e; }
+    .rowad-health__row.is-fail .rowad-health__mark { background: #fee2e2; color: #991b1b; }
+    .rowad-health__row.is-fail b { color: #991b1b; }
+    .rowad-health__detail { color: var(--rowad-muted); }
+    @media (max-width: 640px) { .rowad-health__row { grid-template-columns: 28px 1fr; } .rowad-health__detail { grid-column: 2; } }
+    .rowad-status { display: grid; gap: 8px; margin: 0; }
+    .rowad-status div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rowad-line); font-size: .9rem; }
+    .rowad-status dt { color: var(--rowad-muted); } .rowad-status dd { margin: 0; font-weight: 700; direction: ltr; unicode-bidi: plaintext; }
     .rowad-credit { text-align: center; font-size: .8rem; color: var(--rowad-muted); padding: 18px 16px 22px; }
     .rowad-credit--compact { padding: 14px 0 0; }
     .rowad-credit a { color: var(--rowad-brand); font-weight: 700; }
@@ -155,6 +169,7 @@
     .rowad-plan-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 16px 0 4px; padding: 12px 16px; border-radius: 14px; font-weight: 600; font-size: .92rem; border: 1px solid; }
     .rowad-plan-notice--warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
     .rowad-plan-notice--danger { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    .rowad-plan-notice--info { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
     .rowad-plan-notice__icon { width: 20px; height: 20px; flex: none; }
     .rowad-plan-notice a { margin-inline-start: auto; text-decoration: underline; font-weight: 700; }
     .rowad-ai-shortcut { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700; color: #fff;

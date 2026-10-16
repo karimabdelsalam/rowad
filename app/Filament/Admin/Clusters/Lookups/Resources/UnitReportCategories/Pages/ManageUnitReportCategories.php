@@ -14,6 +14,7 @@ class ManageUnitReportCategories extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\Lookups\UnitReportCategory::class, 'title'),
         ];
     }
 }

@@ -14,6 +14,7 @@ class ManageCities extends ManageRecords
     {
         return [
             CreateAction::make(),
+            \App\Filament\Admin\Clusters\Lookups\BulkAddAction::make(\App\Models\City::class, 'name', defaults: ['country_code' => 'SA']),
         ];
     }
 }
