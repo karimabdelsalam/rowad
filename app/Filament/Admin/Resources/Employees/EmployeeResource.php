@@ -24,7 +24,7 @@ class EmployeeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'التشغيل';
+    protected static string|\UnitEnum|null $navigationGroup = 'الموارد البشرية';
 
     protected static ?int $navigationSort = 1;
 

@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Pages;
 use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -33,7 +34,7 @@ class GeneralSettings extends Page
 
     /** setting key => group */
     public const KEYS = [
-        'site_name' => 'identity', 'site_name_en' => 'identity', 'logo' => 'identity', 'address1' => 'identity', 'address2' => 'identity',
+        'site_name' => 'identity', 'site_name_en' => 'identity', 'logo' => 'identity', 'brand_color' => 'identity', 'address1' => 'identity', 'address2' => 'identity',
         'phone' => 'identity', 'mobile' => 'identity', 'fax' => 'identity', 'email' => 'identity', 'vat_number' => 'identity',
         'commercial_register' => 'identity',
         'currency' => 'localization', 'phone_code' => 'localization', 'timezone' => 'localization', 'system_calendar' => 'localization',
@@ -45,6 +46,9 @@ class GeneralSettings extends Page
         'sms_provider' => 'sms', 'sms_username' => 'sms', 'sms_password' => 'sms', 'sms_sender' => 'sms',
         'sms_login_staff' => 'sms', 'sms_login_clients' => 'sms',
         'support_ticket_prefix' => 'general', 'google_maps_key' => 'general',
+        'hr_gosi_saudi_employee' => 'hr', 'hr_gosi_saudi_employer' => 'hr', 'hr_gosi_expat_employer' => 'hr', 'hr_gosi_wage_cap' => 'hr',
+        'hr_annual_leave_days' => 'hr', 'hr_annual_leave_days_senior' => 'hr', 'hr_overtime_rate' => 'hr', 'hr_payroll_day' => 'hr',
+        'hr_wps_establishment_id' => 'hr',
     ];
 
     /** Legacy class.sms.php providers. */
@@ -96,7 +100,10 @@ class GeneralSettings extends Page
                 Tab::make(__('بيانات المنشأة'))->columns(2)->schema([
                     TextInput::make('site_name')->label(__('اسم المؤسسة'))->required(),
                     TextInput::make('site_name_en')->label(__('اسم المؤسسة بالإنجليزية')),
-                    FileUpload::make('logo')->label(__('الشعار'))->image()->disk('public')->directory('branding')->columnSpanFull(),
+                    FileUpload::make('logo')->label(__('الشعار'))->image()->disk('public')->directory('branding')->imagePreviewHeight('96')
+                        ->helperText(__('يظهر في لوحة الإدارة وبوابات الملاك والمستأجرين وصفحة الدخول والمطبوعات وموقع المؤسسة.')),
+                    ColorPicker::make('brand_color')->label(__('لون الهوية'))->hex()
+                        ->helperText(__('اتركه فارغًا للون الافتراضي. يُلوّن الأزرار والقائمة الجانبية بلون مؤسستك.')),
                     TextInput::make('address1')->label(__('المدينة')),
                     TextInput::make('address2')->label(__('العنوان')),
                     TextInput::make('phone')->label(__('هاتف'))->tel(),
@@ -155,6 +162,17 @@ class GeneralSettings extends Page
                                 $notification->send();
                             }),
                     ])->columnSpanFull(),
+                ]),
+                Tab::make(__('الموارد البشرية'))->columns(['default' => 1, 'md' => 3])->schema([
+                    TextInput::make('hr_gosi_saudi_employee')->label(__('التأمينات — حصة الموظف السعودي %'))->numeric()->placeholder('9.75'),
+                    TextInput::make('hr_gosi_saudi_employer')->label(__('التأمينات — حصة المنشأة عن السعودي %'))->numeric()->placeholder('11.75'),
+                    TextInput::make('hr_gosi_expat_employer')->label(__('التأمينات — حصة المنشأة عن غير السعودي %'))->numeric()->placeholder('2'),
+                    TextInput::make('hr_gosi_wage_cap')->label(__('الحد الأعلى للأجر الخاضع'))->numeric()->placeholder('45000'),
+                    TextInput::make('hr_annual_leave_days')->label(__('الإجازة السنوية (أيام)'))->integer()->placeholder('21'),
+                    TextInput::make('hr_annual_leave_days_senior')->label(__('الإجازة السنوية بعد 5 سنوات'))->integer()->placeholder('30'),
+                    TextInput::make('hr_overtime_rate')->label(__('معامل الساعة الإضافية'))->numeric()->placeholder('1.5'),
+                    TextInput::make('hr_payroll_day')->label(__('يوم صرف الرواتب'))->integer()->minValue(1)->maxValue(31)->placeholder('27'),
+                    TextInput::make('hr_wps_establishment_id')->label(__('رقم المنشأة في وزارة الموارد البشرية (لملف حماية الأجور)'))->maxLength(30),
                 ]),
                 Tab::make(__('أخرى'))->columns(2)->schema([
                     TextInput::make('support_ticket_prefix')->label(__('بادئة رقم تذكرة الدعم')),

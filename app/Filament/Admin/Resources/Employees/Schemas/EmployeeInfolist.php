@@ -33,16 +33,44 @@ class EmployeeInfolist
                 ];
             }),
             Grid::make(1)->columnSpan(['lg' => 2])->schema([
-                Section::make(__('الوظيفة والراتب'))->icon(Heroicon::OutlinedBanknotes)->columns(['default' => 2, 'md' => 4])->schema([
-                    TextEntry::make('work')->label(__('الوظيفة'))->placeholder('-')->weight('bold')->columnSpan(2),
+                Section::make(__('الوظيفة'))->icon(Heroicon::OutlinedBriefcase)->columns(['default' => 2, 'md' => 4])->schema([
+                    TextEntry::make('job_title')->label(__('المسمى الوظيفي'))->placeholder('-')->weight('bold'),
+                    TextEntry::make('department')->label(__('القسم'))->placeholder('-'),
+                    TextEntry::make('status')->label(__('الحالة'))->badge()
+                        ->formatStateUsing(fn ($state) => ['active' => __('على رأس العمل'), 'on_leave' => __('في إجازة'), 'terminated' => __('منتهي الخدمة')][$state] ?? $state)
+                        ->color(fn ($state) => ['active' => 'success', 'on_leave' => 'warning', 'terminated' => 'danger'][$state] ?? 'gray'),
+                    TextEntry::make('employment_type')->label(__('نوع التوظيف'))->badge()->color('gray')
+                        ->formatStateUsing(fn ($state) => ['full_time' => __('دوام كامل'), 'part_time' => __('دوام جزئي'), 'contract' => __('عقد مؤقت')][$state] ?? $state),
                     Parts::date('start_date', 'تاريخ التعيين'),
                     TextEntry::make('tenure')->label(__('مدة الخدمة'))->placeholder('-')
                         ->state(fn (Employee $r) => $r->start_date?->locale(app()->getLocale())->diffForHumans(today(), ['parts' => 2, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE])),
-                    Parts::money('salary', 'الراتب الشهري')->weight('bold'),
-                    TextEntry::make('rent_commission')->label(__('عمولة الإيجار'))->numeric(2)->suffix(' %')->placeholder('-'),
-                    TextEntry::make('sale_commission')->label(__('عمولة البيع'))->numeric(2)->suffix(' %')->placeholder('-'),
+                    Parts::date('contract_end_date', 'نهاية العقد'),
+                    TextEntry::make('weekly_hours')->label(__('ساعات العمل الأسبوعية'))->numeric(),
                     TextEntry::make('education')->label(__('المؤهل'))->placeholder('-'),
                     TextEntry::make('marital_status')->label(__('الحالة الاجتماعية'))->placeholder('-'),
+                ]),
+                Section::make(__('الراتب والتأمينات'))->icon(Heroicon::OutlinedBanknotes)->columns(['default' => 2, 'md' => 4])->schema([
+                    Parts::money('salary', 'الراتب الأساسي')->weight('bold'),
+                    Parts::money('housing_allowance', 'بدل السكن'),
+                    Parts::money('transport_allowance', 'بدل النقل'),
+                    Parts::money('other_allowances', 'بدلات أخرى'),
+                    TextEntry::make('total_wage')->label(__('الأجر الشامل'))->weight('bold')->color('success')->state(fn (Employee $r) => Parts::amount($r->totalWage())),
+                    TextEntry::make('gosi_employee')->label(__('التأمينات — حصة الموظف'))->state(fn (Employee $r) => Parts::amount(\App\Services\Hr\Gosi::contributions($r)['employee']))
+                        ->helperText(fn (Employee $r) => $r->gosi_subscribed ? \App\Services\Hr\Gosi::contributions($r)['employee_rate'].' %' : __('غير مشترك')),
+                    TextEntry::make('gosi_employer')->label(__('التأمينات — حصة المنشأة'))->state(fn (Employee $r) => Parts::amount(\App\Services\Hr\Gosi::contributions($r)['employer']))
+                        ->helperText(fn (Employee $r) => $r->gosi_subscribed ? \App\Services\Hr\Gosi::contributions($r)['employer_rate'].' %' : null),
+                    TextEntry::make('gosi_number')->label(__('رقم التأمينات'))->placeholder('-')->extraAttributes(['dir' => 'ltr']),
+                    TextEntry::make('bank.title')->label(__('البنك'))->placeholder('-'),
+                    TextEntry::make('iban')->label(__('الآيبان'))->placeholder('-')->copyable()->extraAttributes(['dir' => 'ltr'])->fontFamily('mono')->size('xs')->columnSpan(2),
+                    TextEntry::make('commissions')->label(__('العمولات'))->state(fn (Employee $r) => __('إيجار :r% · بيع :s%', ['r' => (float) $r->rent_commission, 's' => (float) $r->sale_commission])),
+                ]),
+                Section::make(__('الإجازات ونهاية الخدمة'))->icon(Heroicon::OutlinedCalendarDays)->columns(['default' => 2, 'md' => 4])->schema([
+                    TextEntry::make('leave_entitlement')->label(__('رصيد السنة'))->state(fn (Employee $r) => trans_choice('{1} يوم واحد|[2,*] :count يومًا', \App\Services\Hr\LeaveBalance::entitlement($r))),
+                    TextEntry::make('leave_used')->label(__('المستخدم'))->state(fn (Employee $r) => trans_choice('{0} لا شيء|{1} يوم واحد|[2,*] :count يومًا', \App\Services\Hr\LeaveBalance::used($r))),
+                    TextEntry::make('leave_left')->label(__('المتبقي'))->weight('bold')->color('success')->state(fn (Employee $r) => trans_choice('{0} لا شيء|{1} يوم واحد|[2,*] :count يومًا', \App\Services\Hr\LeaveBalance::remaining($r))),
+                    TextEntry::make('eosb')->label(__('مكافأة نهاية الخدمة اليوم'))->weight('bold')
+                        ->state(fn (Employee $r) => Parts::amount(\App\Services\Hr\EndOfService::calculate($r, now(), \App\Enums\EndOfServiceReason::Termination)['award']))
+                        ->helperText(__('بافتراض الإنهاء من صاحب العمل (الكاملة)')),
                 ]),
                 Section::make(__('الجزاءات'))->icon(Heroicon::OutlinedExclamationTriangle)
                     ->visible(fn (Employee $r) => $r->penalties->isNotEmpty())

@@ -27,6 +27,9 @@ class PrintController
         'owner_statement' => [Owner::class, 'owner_transactions.view_any'],
         'letter' => [\App\Models\Letter::class, 'letters.print'],
         'unit' => [\App\Models\Unit::class, 'units.view'],
+        'payslip' => [\App\Models\PayrollItem::class, 'payroll.view'],
+        'payroll' => [\App\Models\PayrollRun::class, 'payroll.view'],
+        'end_of_service' => [\App\Models\EndOfServiceSettlement::class, 'end_of_service.view'],
     ];
 
     public function __invoke(Request $request, string $type, int $id, DocumentData $documents): View
@@ -43,12 +46,18 @@ class PrintController
             $record instanceof Owner => $documents->ownerStatement($record, $request->query('from'), $request->query('to')),
             $record instanceof \App\Models\Letter => $documents->letter($record),
             $record instanceof \App\Models\Unit => $documents->unitSheet($record),
+            $record instanceof \App\Models\PayrollItem => $documents->payslip($record),
+            $record instanceof \App\Models\PayrollRun => $documents->payroll($record),
+            $record instanceof \App\Models\EndOfServiceSettlement => $documents->endOfService($record),
         };
 
         $title = match (true) {
             $record instanceof Owner => $record->full_name,
             $record instanceof \App\Models\Letter => $record->type?->getLabel(),
             $record instanceof \App\Models\Unit => $record->title,
+            $record instanceof \App\Models\PayrollItem => __('قسيمة راتب').' — '.$record->employee?->full_name,
+            $record instanceof \App\Models\PayrollRun => __('مسيّر رواتب').' '.$record->periodLabel(),
+            $record instanceof \App\Models\EndOfServiceSettlement => __('تسوية نهاية خدمة').' — '.$record->employee?->full_name,
             default => $record->number,
         };
 

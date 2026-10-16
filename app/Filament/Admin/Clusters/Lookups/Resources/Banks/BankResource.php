@@ -38,6 +38,7 @@ class BankResource extends Resource
             ->components([
                 TextInput::make('title')
                     ->required(),
+                TextInput::make('swift')->label(__('رمز SWIFT/BIC'))->maxLength(11)->extraInputAttributes(['dir' => 'ltr'])->helperText(__('مطلوب في ملف حماية الأجور، مثل RJHISARI')),
             ]);
     }
 

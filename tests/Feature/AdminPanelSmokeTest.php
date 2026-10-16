@@ -54,8 +54,14 @@ class AdminPanelSmokeTest extends TestCase
         foreach ($panel->getResources() as $resource) {
             // A create page exists exactly when the role system has a create permission for it.
             $creatable = in_array('create', $permissions[$permissionOf($resource)] ?? ['create'], true);
-            $createsInModal = is_subclass_of($resource::getPages()['index']->getPage(), \Filament\Resources\Pages\ManageRecords::class);
-            $this->assertSame($creatable, $resource::hasPage('create') || $createsInModal, "{$resource} create page");
+            $indexPage = $resource::getPages()['index']->getPage();
+            $createsInModal = is_subclass_of($indexPage, \Filament\Resources\Pages\ManageRecords::class);
+            // Some records are generated rather than typed in (e.g. a payroll run): the list page then
+            // carries a "generate" header action instead of a create page.
+            $generates = method_exists($indexPage, 'getHeaderActions')
+                && collect((new \ReflectionMethod($indexPage, 'getHeaderActions'))->invoke(app($indexPage)))
+                    ->contains(fn ($action) => $action->getName() === 'generate');
+            $this->assertSame($creatable, $resource::hasPage('create') || $createsInModal || $generates, "{$resource} create page");
 
             foreach (['index', 'create'] as $page) {
                 if (! $resource::hasPage($page)) {

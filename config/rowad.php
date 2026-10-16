@@ -17,6 +17,10 @@ return [
         'citizens' => $crud,
         'employees' => $crud,
         'employee_penalties' => $crud,
+        'leave_requests' => [...$crud, 'approve'],
+        'employee_advances' => $crud,
+        'payroll' => ['view_any', 'view', 'create', 'update', 'approve', 'pay', 'delete', 'export'],
+        'end_of_service' => [...$crud, 'pay'],
         'company_partners' => $crud,
         'government_licenses' => $crud,
         'rent_contracts' => [...$crud, 'end', 'cancel', 'archive', 'print'],
@@ -50,6 +54,7 @@ return [
     'roles' => [
         'admin' => '*',
         'accountant' => [
+            'payroll.*', 'employee_advances.*', 'end_of_service.*', 'leave_requests.view_any', 'leave_requests.view', 'employees.view_any', 'employees.view',
             'installments.*', 'owner_transactions.*', 'receipt_vouchers.*', 'payment_vouchers.*', 'invoices.*',
             'bank_accounts.*', 'reports.*', 'units.view_any', 'units.view', 'owners.view_any', 'owners.view',
             'clients.view_any', 'clients.view', 'rent_contracts.view_any', 'rent_contracts.view',

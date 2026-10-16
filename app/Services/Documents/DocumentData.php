@@ -42,6 +42,41 @@ class DocumentData
     }
 
     /** Legacy building/printable: a unit's data sheet with the organisation's document header. */
+    /** The office header/footer the HR sheets share with the unit sheet. */
+    private function sheetFrame(): array
+    {
+        $template = \App\Models\PrintTemplate::where('key', 'rent_contract')->first();
+        $dir = resource_path('print-templates');
+        $org = $this->renderer->organisationVariables();
+
+        return [
+            'header' => strtr($template?->header ?: (string) file_get_contents("{$dir}/_header.html"), $org),
+            'footer' => strtr($template?->footer ?: (string) file_get_contents("{$dir}/_footer.html"), $org),
+            'currency' => $org['{$}'],
+        ];
+    }
+
+    public function payslip(\App\Models\PayrollItem $item): string
+    {
+        $item->loadMissing(['employee.bank', 'run', 'paymentVoucher']);
+
+        return view('print.payslip', ['item' => $item, 'run' => $item->run, 'employee' => $item->employee] + $this->sheetFrame())->render();
+    }
+
+    public function payroll(\App\Models\PayrollRun $run): string
+    {
+        $run->loadMissing(['items.employee', 'approver']);
+
+        return view('print.payroll', ['run' => $run] + $this->sheetFrame())->render();
+    }
+
+    public function endOfService(\App\Models\EndOfServiceSettlement $s): string
+    {
+        $s->loadMissing(['employee', 'paymentVoucher']);
+
+        return view('print.end-of-service', ['s' => $s, 'employee' => $s->employee] + $this->sheetFrame())->render();
+    }
+
     public function unitSheet(\App\Models\Unit $unit): string
     {
         $unit->loadMissing(['building', 'category', 'city', 'district', 'owners', 'deeds.deedType', 'meters.meterType', 'currentContract']);
