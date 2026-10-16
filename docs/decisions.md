@@ -574,3 +574,19 @@
 - A party can decline with a reason; the office is notified.
 - This is an e-signature with identity verification by mobile code, not a Nafath-backed signature;
   Nafath would need a government integration agreement.
+
+## Collection ladder for late rent (2026-10-16) — vision §ب "روبوت التحصيل"
+
+- Off by default (Settings ← التحصيل): turning it on starts sending messages to tenants, so each office
+  opts in. Days are configurable (defaults 3 / 10 / 20 days late).
+- Stage 1: first late notice (template `rent_overdue`, with the pay link when e-collection is on).
+  Stage 2: firmer notice (`rent_overdue_2`) and a follow-up task (with the tenant's mobile) for the office
+  admin — employees aren't linked to user accounts, so tasks go to the admin.
+  Stage 3: a formal warning, issued as an official letter (existing letters module and print design)
+  listing every late instalment of the contract with a 7-day deadline; the tenant gets `rent_warning`
+  and staff are alerted.
+- Only active rent contracts, never expenses instalments; an instalment climbs at most one stage a day,
+  so switching it on never jumps straight to a warning. Sale contracts keep their existing daily
+  overdue reminders.
+- Staff can issue the warning manually from an instalment row; the ladder stage shows (and links to
+  the letter) in the instalments list, with a filter.

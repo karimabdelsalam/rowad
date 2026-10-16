@@ -54,6 +54,8 @@ class GeneralSettings extends Page
         'hr_gosi_saudi_employee' => 'hr', 'hr_gosi_saudi_employer' => 'hr', 'hr_gosi_expat_employer' => 'hr', 'hr_gosi_wage_cap' => 'hr',
         'hr_annual_leave_days' => 'hr', 'hr_annual_leave_days_senior' => 'hr', 'hr_overtime_rate' => 'hr', 'hr_payroll_day' => 'hr',
         'hr_wps_establishment_id' => 'hr',
+        'collection_escalation_enabled' => 'collection', 'collection_stage1_days' => 'collection', 'collection_stage2_days' => 'collection',
+        'collection_stage3_days' => 'collection',
     ];
 
     /** Legacy class.sms.php providers. */
@@ -212,6 +214,13 @@ class GeneralSettings extends Page
                     TextInput::make('hr_overtime_rate')->label(__('معامل الساعة الإضافية'))->numeric()->placeholder('1.5'),
                     TextInput::make('hr_payroll_day')->label(__('يوم صرف الرواتب'))->integer()->minValue(1)->maxValue(31)->placeholder('27'),
                     TextInput::make('hr_wps_establishment_id')->label(__('رقم المنشأة في وزارة الموارد البشرية (لملف حماية الأجور)'))->maxLength(30),
+                ]),
+                Tab::make(__('التحصيل'))->columns(['default' => 1, 'md' => 3])->schema([
+                    \Filament\Forms\Components\Toggle::make('collection_escalation_enabled')->label(__('تفعيل سلّم التحصيل الآلي للإيجارات المتأخرة'))->columnSpanFull()
+                        ->helperText(__('يوميًا: تنبيه أول للمستأجر، ثم تنبيه ثانٍ مع مهمة متابعة للموظف، ثم إنذار رسمي جاهز للطباعة. يتقدم كل قسط خطوة واحدة في اليوم كحد أقصى.')),
+                    TextInput::make('collection_stage1_days')->label(__('التنبيه الأول بعد (يوم تأخير)'))->integer()->minValue(1)->placeholder('3'),
+                    TextInput::make('collection_stage2_days')->label(__('التنبيه الثاني والمتابعة بعد'))->integer()->minValue(1)->placeholder('10'),
+                    TextInput::make('collection_stage3_days')->label(__('الإنذار الرسمي بعد'))->integer()->minValue(1)->placeholder('20'),
                 ]),
                 Tab::make(__('أخرى'))->columns(2)->schema([
                     TextInput::make('support_ticket_prefix')->label(__('بادئة رقم تذكرة الدعم')),

@@ -64,6 +64,10 @@ class InstallmentsTable
                     ->formatStateUsing(fn ($state) => ['collected' => __('محصّل'), 'late' => __('متأخر'), 'partial' => __('جزئي'), 'due' => __('مستحق')][$state])
                     ->color(fn ($state) => ['collected' => 'success', 'late' => 'danger', 'partial' => 'warning', 'due' => 'info'][$state])
                     ->icon(fn ($state) => ['collected' => Heroicon::OutlinedCheckCircle, 'late' => Heroicon::OutlinedExclamationCircle, 'partial' => Heroicon::OutlinedClock, 'due' => Heroicon::OutlinedCalendar][$state]),
+                TextColumn::make('escalation_stage')->label(__('سلّم التحصيل'))->badge()->toggleable()
+                    ->state(fn (Installment $record) => $record->escalation_stage > 0 ? __(\App\Services\Collection\CollectionEscalation::STAGES[$record->escalation_stage]) : null)
+                    ->color(fn (Installment $record) => $record->escalation_stage >= 3 ? 'danger' : 'warning')
+                    ->url(fn (Installment $record) => $record->warning_letter_id ? route('documents.print', ['type' => 'letter', 'id' => $record->warning_letter_id]) : null, true),
                 TextColumn::make('collected_at')->label(__('تاريخ التحصيل'))->dateTime('Y-m-d')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -72,6 +76,8 @@ class InstallmentsTable
                 Filter::make('overdue')
                     ->label(__('متأخرة'))
                     ->query(fn (Builder $query) => $query->where('is_collected', false)->whereDate('due_date', '<', today())),
+                SelectFilter::make('escalation_stage')->label(__('سلّم التحصيل'))
+                    ->options(collect(\App\Services\Collection\CollectionEscalation::STAGES)->map(fn ($l) => __($l))->all()),
                 Filter::make('due_this_month')
                     ->label(__('مستحقة هذا الشهر'))
                     ->query(fn (Builder $query) => $query->whereBetween('due_date', [today()->startOfMonth(), today()->endOfMonth()])),
@@ -138,6 +144,23 @@ class InstallmentsTable
                     ->requiresConfirmation()
                     ->visible(fn (Installment $record) => ! $record->is_collected && (float) $record->paid_amount > 0 && self::allowed('reset'))
                     ->action(fn (Installment $record) => self::run(fn () => app(InstallmentCollector::class)->resetPartial($record), __('تم إلغاء الدفعات الجزئية'))),
+                Action::make('warn')
+                    ->label(__('إصدار إنذار رسمي'))
+                    ->icon(Heroicon::OutlinedExclamationTriangle)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription(__('يصدر خطاب إنذار بكل الأقساط المتأخرة في هذا العقد، ويُبلغ المستأجر.'))
+                    ->visible(fn (Installment $record) => ! $record->is_collected && $record->warning_letter_id === null && $record->due_date?->isPast()
+                        && $record->contract_type === 'rent_contract' && self::allowed('collect'))
+                    ->action(function (Installment $record) {
+                        $late = Installment::query()->where('contract_type', $record->contract_type)->where('contract_id', $record->contract_id)
+                            ->where('is_collected', false)->where('type', '!=', \App\Enums\InstallmentType::Expenses->value)
+                            ->whereNull('warning_letter_id')->whereDate('due_date', '<', today())->get();
+                        $letter = app(\App\Services\Collection\CollectionEscalation::class)->warn($late);
+                        Notification::make()->success()->title(__('صدر الإنذار'))
+                            ->actions([Action::make('print')->label(__('طباعة'))->url(route('documents.print', ['type' => 'letter', 'id' => $letter->id]), shouldOpenInNewTab: true)])
+                            ->send();
+                    }),
                 Action::make('printReceipt')
                     ->label(__('طباعة سند القبض'))
                     ->icon(Heroicon::OutlinedPrinter)

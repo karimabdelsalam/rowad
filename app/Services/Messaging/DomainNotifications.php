@@ -76,10 +76,11 @@ class DomainNotifications
         ], [$this->person($person)]);
     }
 
-    public function installmentReminder(E $event, Installment $installment): void
+    /** @param array<string, string> $overrides e.g. a total across several late instalments */
+    public function installmentReminder(E $event, Installment $installment, array $overrides = []): void
     {
         $installment->loadMissing(['unit', 'contract.clients']);
-        $this->notifier->send($event, $this->installmentVars($installment),
+        $this->notifier->send($event, $overrides + $this->installmentVars($installment),
             $installment->contract->clients->map(fn (Client $c) => $this->person($c))->all());
     }
 
@@ -111,6 +112,7 @@ class DomainNotifications
             'amount' => $this->money($installment->remainingAmount()),
             'due_date' => $this->date($installment->due_date, $installment->calendar?->value),
             'contract_number' => $installment->contract?->number,
+            'days_late' => (string) max(0, (int) $installment->due_date->diffInDays(today(), false)),
             'pay_link' => $payUrl ?? '',
             // a whole sentence so templates read well whether or not e-collection is on
             'pay_line' => $payUrl ? __('للسداد الإلكتروني الآن (مدى / بطاقة / Apple Pay): :url', ['url' => $payUrl]) : '',

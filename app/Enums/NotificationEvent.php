@@ -33,6 +33,9 @@ enum NotificationEvent: string implements HasLabel
     case MaintenanceApproval = 'maintenance_approval'; // new: owner asked to approve a repair cost
     case SignatureRequest = 'signature_request';     // new: link to sign a contract electronically
     case SignatureOtp = 'signature_otp';             // new: code confirming an electronic signature
+    case RentOverdue = 'rent_overdue';               // new: collection ladder, first late notice
+    case RentOverdueSecond = 'rent_overdue_2';       // new: collection ladder, second notice
+    case RentWarning = 'rent_warning';               // new: collection ladder, formal warning issued
 
     public static function fromLegacy(string $action): self
     {
@@ -82,6 +85,7 @@ enum NotificationEvent: string implements HasLabel
             self::MaintenanceApproval => ['name', 'code', 'unit', 'title', 'amount', 'login_url'],
             self::SignatureRequest => ['name', 'contract_number', 'unit', 'sign_url'],
             self::SignatureOtp => ['name', 'code', 'contract_number'],
+            self::RentOverdue, self::RentOverdueSecond, self::RentWarning => ['name', 'unit', 'amount', 'due_date', 'contract_number', 'days_late', 'pay_line'],
         };
     }
 
@@ -111,6 +115,9 @@ enum NotificationEvent: string implements HasLabel
             self::MaintenanceApproval => 'طلب موافقة على تكلفة صيانة (للمالك)',
             self::SignatureRequest => 'رابط التوقيع الإلكتروني للعقد',
             self::SignatureOtp => 'رمز تأكيد التوقيع الإلكتروني',
+            self::RentOverdue => 'تأخر سداد الإيجار — تنبيه أول',
+            self::RentOverdueSecond => 'تأخر سداد الإيجار — تنبيه ثانٍ',
+            self::RentWarning => 'إنذار رسمي بسداد الإيجار',
         });
     }
 }

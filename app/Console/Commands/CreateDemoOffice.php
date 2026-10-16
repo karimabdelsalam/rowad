@@ -197,6 +197,14 @@ class CreateDemoOffice extends Command
         SupportTicket::create(['owner_id' => $owners[2]->id, 'unit_id' => $units[5]->id, 'type' => 'problem', 'subject' => 'تسريب مياه في المطبخ',
             'message' => 'أبلغني المستأجر بوجود تسريب تحت المغسلة.'] + SupportTicket::newTicketDefaults());
 
+        // collection ladder on: first notices for this month's late rent, and a formal warning already issued to one tenant
+        Settings::set('collection_escalation_enabled', true, 'collection');
+        $late = \App\Models\Installment::query()->where('unit_id', $units[4]->id)->where('is_collected', false)->whereDate('due_date', '<', now())->get();
+        if ($late->isNotEmpty()) {
+            app(\App\Services\Collection\CollectionEscalation::class)->warn($late);
+        }
+        app(\App\Services\Collection\CollectionEscalation::class)->run();
+
         // e-signature: the owner of the portal tenant's contract has signed, the tenant still has to
         $signing = app(\App\Services\Signing\ContractSigning::class);
         $signed = \App\Models\RentContract::where('unit_id', $units[5]->id)->first();
