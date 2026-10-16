@@ -78,6 +78,7 @@ class CreateDemoOffice extends Command
         foreach ([
             'site_name_en' => 'Al Rowad Real Estate', 'phone' => '0112345678', 'mobile' => '0551234567', 'email' => 'info@alrowad.sa',
             'address1' => 'الرياض', 'address2' => 'حي العليا، طريق الملك فهد', 'vat_number' => '300123456700003',
+            'commercial_register' => '1010234567', 'fal_license_number' => '1100012345',
             'landing_hero_title' => 'وحدات سكنية وتجارية للإيجار في الرياض',
             'landing_hero_subtitle' => 'شقق وفلل ومكاتب مُدارة باحترافية — تواصل معنا واحجز معاينتك اليوم',
             'landing_about' => 'مؤسسة الرواد العقارية تدير أكثر من 300 وحدة سكنية وتجارية في الرياض منذ 2009، ويخدم الملاك والمستأجرين بعقود موثقة ومتابعة دقيقة للتحصيل والصيانة.',
@@ -91,10 +92,20 @@ class CreateDemoOffice extends Command
         $riyadh = City::firstOrCreate(['name' => 'الرياض'], ['country_code' => 'SA']);
         $owners = collect([
             ['سعد', 'محمد', 'العتيبي', '0501112233'], ['نورة', 'عبدالرحمن', 'القحطاني', '0502223344'], ['فهد', 'سليمان', 'الدوسري', '0503334455'],
-        ])->map(fn ($o) => Owner::create(['first_name' => $o[0], 'father_name' => $o[1], 'family_name' => $o[2], 'mobile' => $o[3], 'id_type' => 'national_id', 'id_number' => '10'.random_int(10000000, 99999999)]));
+        ])->map(fn ($o, $i) => Owner::create(['first_name' => $o[0], 'father_name' => $o[1], 'family_name' => $o[2], 'mobile' => $o[3], 'id_type' => 'national_id',
+            'id_number' => '10'.random_int(10000000, 99999999), 'nationality' => 'سعودي', 'birth_date' => now()->subYears(48 + $i * 6)->subDays(40 * $i)->toDateString()]));
         $clients = collect([
             ['خالد', 'عبدالله', 'الحربي'], ['ريم', 'فيصل', 'السبيعي'], ['ماجد', 'ناصر', 'الغامدي'], ['هند', 'إبراهيم', 'الزهراني'], ['شركة', 'الأفق', 'للتجارة'],
-        ])->map(fn ($c, $i) => Client::create(['first_name' => $c[0], 'father_name' => $c[1], 'family_name' => $c[2], 'mobile' => '055'.(7000000 + $i * 1111), 'calendar' => 'gregorian']));
+        ])->map(fn ($c, $i) => Client::create(['first_name' => $c[0], 'father_name' => $c[1], 'family_name' => $c[2], 'mobile' => '055'.(7000000 + $i * 1111), 'calendar' => 'gregorian']
+            // one tenant still lacks a birth date, so the demo shows an Ejar checklist with something missing
+            + ($i === 4 ? ['kind' => 'company', 'company_name' => 'شركة الأفق للتجارة', 'company_registration_number' => '1010456789', 'vat_number' => '310456789000003'] : [])
+            + ($i === 3 ? ['id_type' => 'iqama', 'id_number' => '2'.random_int(100000000, 999999999), 'nationality' => 'أردني']
+                : ['id_type' => 'national_id', 'id_number' => '10'.random_int(10000000, 99999999), 'nationality' => 'سعودي', 'birth_date' => now()->subYears(30 + $i * 3)->toDateString()])));
+        $districts = [
+            \App\Models\District::firstOrCreate(['name' => 'العليا', 'city_id' => $riyadh->id]),
+            \App\Models\District::firstOrCreate(['name' => 'النرجس', 'city_id' => $riyadh->id]),
+        ];
+        $electricity = \App\Models\Lookups\MeterType::where('title', 'كهرباء')->value('id');
 
         $towers = [
             Building::create(['title' => 'برج الرواد', 'city_id' => $riyadh->id, 'address' => 'حي العليا', 'floors' => 12]),
@@ -108,7 +119,8 @@ class CreateDemoOffice extends Command
             ['شقة 305 — غرفتان', 0, 2, 105, 33000, false], ['محل تجاري 3', 1, 0, 60, 65000, false],
         ] as $i => [$title, $tower, $rooms, $area, $rent, $listed]) {
             $unit = Unit::create([
-                'title' => $title, 'building_id' => $towers[$tower]->id, 'offer_type' => 'rent', 'city_id' => $riyadh->id,
+                'title' => $title, 'building_id' => $towers[$tower]->id, 'offer_type' => 'rent', 'city_id' => $riyadh->id, 'district_id' => $districts[$tower]->id,
+                'number' => (string) (101 + $i * 101), 'deed_number' => (string) (310105040000 + $i * 7311),
                 'rooms' => $rooms ?: null, 'area' => $area, 'rent_amount' => $rent, 'rent_period' => 'year', 'rent_payment_cycle' => 'quarter',
                 'is_published' => $listed, 'show_price' => true, 'is_featured' => $i < 2, 'floor' => (string) ($i + 1),
                 'details' => 'وحدة مجددة بالكامل، مطبخ راكب، مكيفات سبليت، موقف خاص، قريبة من الخدمات والمدارس.',
@@ -117,6 +129,9 @@ class CreateDemoOffice extends Command
                 'latitude' => $tower === 0 ? 24.6905 + $i * 0.0004 : 24.8312 + $i * 0.0004, 'longitude' => $tower === 0 ? 46.6853 : 46.6619,
             ]);
             $unit->owners()->attach($owners[$i % 3]->id, ['share_percent' => 100, 'expenses_percent' => 100]);
+            if ($electricity) {
+                $unit->meters()->create(['meter_type_id' => $electricity, 'number' => (string) (4100230000 + $i * 1597)]);
+            }
             if ($i < 6) {
                 $unit->addMediaFromString($this->photo($palette[$i], $title))->usingFileName("unit-{$i}.jpg")->toMediaCollection('photos');
             }
@@ -146,6 +161,13 @@ class CreateDemoOffice extends Command
             Date::setTestNow($today);
         }
         $collector->collect($units[5]->installments()->where('is_collected', false)->orderBy('due_date')->first());
+
+        // Ejar: most contracts documented, one waiting for the tenant's approval, one not started (its tenant lacks a birth date)
+        foreach ([5 => 'documented', 6 => 'documented', 1 => 'documented', 7 => 'awaiting_parties'] as $unitIndex => $status) {
+            $contract = \App\Models\RentContract::where('unit_id', $units[$unitIndex]->id)->first();
+            $contract->forceFill(['ejar_status' => $status, 'ejar_number' => $status === 'documented' ? (string) (20154000000 + $unitIndex * 48271) : null,
+                'ejar_documented_at' => $status === 'documented' ? $contract->start_date->copy()->subDays(2) : null])->save();
+        }
 
         // a land sold in quarterly installments after a down payment, the passed ones collected
         $land = Unit::create(['title' => 'أرض سكنية 58 — حي الملقا', 'offer_type' => 'sale', 'city_id' => $riyadh->id, 'area' => 625,

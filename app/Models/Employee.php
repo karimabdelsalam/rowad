@@ -37,6 +37,7 @@ class Employee extends Model implements HasMedia
             'id_expiry_notified_at' => 'datetime',
             'id_type' => IdType::class,
             'id_issue_date' => 'date',
+            'birth_date' => 'date',
             'id_expiry_date' => 'date',
             'start_date' => 'date',
             'contract_end_date' => 'date',

@@ -32,6 +32,7 @@ class Client extends Model implements HasMedia
         return [
             'id_type' => IdType::class,
             'id_issue_date' => 'date',
+            'birth_date' => 'date',
             'kind' => ClientKind::class,
             'calendar' => Calendar::class,
             'billing_info' => 'array',

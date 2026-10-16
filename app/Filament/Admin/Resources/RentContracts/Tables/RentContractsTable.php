@@ -34,10 +34,12 @@ class RentContractsTable
                 TextColumn::make('clients.full_name')->label(__('المستأجرون'))->listWithLineBreaks()->searchable(),
                 TextColumn::make('start_date')->date('Y-m-d')->sortable(),
                 TextColumn::make('end_date')->date('Y-m-d')->sortable(),
+                TextColumn::make('ejar_status')->label(__('منصة إيجار'))->badge()->toggleable()
+                    ->description(fn ($record) => $record->ejar_number),
                 TextColumn::make('payment_cycle')->badge(),
                 TextColumn::make('rent_amount')->numeric(2)->sortable(),
                 TextColumn::make('next_payment_date')->date('Y-m-d')->sortable(),
-                TextColumn::make('next_payment_amount')->numeric(2)->toggleable(),
+                TextColumn::make('next_payment_amount')->numeric(2)->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')->badge()->color(fn (ContractStatus $state) => match ($state) {
                     ContractStatus::Active => 'success',
                     ContractStatus::Ended => 'gray',
@@ -47,6 +49,7 @@ class RentContractsTable
             ])
             ->filters([
                 SelectFilter::make('status')->options(ContractStatus::class),
+                SelectFilter::make('ejar_status')->label(__('التوثيق في إيجار'))->options(\App\Enums\EjarStatus::class),
                 SelectFilter::make('payment_cycle')->options(PaymentCycle::class),
                 TernaryFilter::make('archived')
                     ->label(__('الأرشيف'))

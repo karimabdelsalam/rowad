@@ -536,3 +536,21 @@
 - Photos are private: served only to staff, the reporting tenant and the unit's owners.
 - Requests follow the unit's branch scope. New notification events `maintenance_update` (tenant) and
   `maintenance_approval` (owner) with editable templates.
+
+## Ejar documentation (2026-10-16) — roadmap phase 2, part 1
+
+- Ejar's integration API is only available to licensed partners under an agreement with the platform,
+  so it cannot be built or tested without the owner's credentials. What every office can use today:
+  - Each rent contract carries an Ejar status (not documented → awaiting the parties → documented, or
+    "not required" with a reason), the Ejar contract number, date and the documented PDF.
+  - "بيانات التوثيق في إيجار": a sheet of every field Ejar asks for — brokerage office (CR and FAL
+    licence, a new setting), each lessor and lessee (ID type/number, date of birth, mobile; companies by
+    CR), the property (deed, city, district, unit number, area, electricity meter) and the contract
+    terms — with a copy button per field, so staff never retype. Empty required fields form a readiness
+    checklist on the contract page.
+  - Date of birth (Ejar verifies parties with it) added to owners, clients and employees.
+  - Tenants and owners see the Ejar status and number in their portals and can download the PDF.
+  - The contracts list has an Ejar column and filter; the dashboard counts active contracts not yet
+    documented.
+- When the owner obtains Ejar API access, submission plugs in behind the same sheet (it already holds
+  the payload) and the status fields; no screen changes are needed.

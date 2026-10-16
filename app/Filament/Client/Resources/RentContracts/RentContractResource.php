@@ -59,6 +59,7 @@ class RentContractResource extends PortalResource
                 Parts::date('next_payment_date', 'الدفعة القادمة'),
                 Parts::money('next_payment_amount', 'مبلغها'),
                 TextEntry::make('status')->label(__('الحالة'))->badge(),
+                ...Parts::ejar(),
             ]),
         ]);
     }

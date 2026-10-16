@@ -22,6 +22,7 @@ class ViewRentContract extends ViewRecord
                 ->color('gray')
                 ->url(fn () => route('documents.print', ['type' => 'rent_contract', 'id' => $this->record->getKey()]))
                 ->openUrlInNewTab(),
+            \App\Filament\Admin\Resources\RentContracts\EjarActions::group(),
             EditAction::make(),
         ];
     }

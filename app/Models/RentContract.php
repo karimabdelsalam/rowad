@@ -24,7 +24,7 @@ class RentContract extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia, LogsActivity, \App\Models\Concerns\ScopedByUnitBranch;
 
-    protected $attributes = ['calendar' => 'gregorian'];
+    protected $attributes = ['calendar' => 'gregorian', 'ejar_status' => 'pending'];
 
     protected function casts(): array
     {
@@ -47,6 +47,8 @@ class RentContract extends Model implements HasMedia
             'next_payment_date' => 'date',
             'next_payment_amount' => 'decimal:2',
             'status' => ContractStatus::class,
+            'ejar_status' => \App\Enums\EjarStatus::class,
+            'ejar_documented_at' => 'date',
             'ended_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'archived_at' => 'datetime',

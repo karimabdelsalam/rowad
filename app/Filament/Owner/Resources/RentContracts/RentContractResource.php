@@ -61,6 +61,7 @@ class RentContractResource extends PortalResource
                 Parts::money('rent_amount', 'الإيجار السنوي')->weight('bold'),
                 Parts::date('next_payment_date', 'الدفعة القادمة'),
                 Parts::money('next_payment_amount', 'مبلغها'),
+                ...Parts::ejar(),
             ]),
         ]);
     }

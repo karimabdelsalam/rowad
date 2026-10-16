@@ -38,6 +38,7 @@ class PersonFormSections
                 TextInput::make('nationality')->maxLength(100),
                 TextInput::make('id_source')->maxLength(190),
                 DatePicker::make('id_issue_date'),
+                DatePicker::make('birth_date')->label(__('تاريخ الميلاد'))->maxDate(today()),
                 ...$extra,
             ]);
     }

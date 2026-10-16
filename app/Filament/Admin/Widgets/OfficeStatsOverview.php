@@ -30,6 +30,9 @@ class OfficeStatsOverview extends StatsOverviewWidget
         $money = fn (float $v) => number_format($v, 0).' '.\App\Support\Settings::currencyLabel();
         $lastMonth = $trend['collected'][4] ?? 0;
         $change = $lastMonth > 0 ? round(($s['collected_this_month'] - $lastMonth) / $lastMonth * 100) : null;
+        $undocumented = \App\Models\RentContract::query()->where('status', \App\Enums\ContractStatus::Active)
+            ->whereIn('ejar_status', [\App\Enums\EjarStatus::Pending->value, \App\Enums\EjarStatus::AwaitingParties->value])->count();
+        $maintenance = \App\Models\MaintenanceRequest::query()->open()->count();
 
         return [
             Stat::make(__('محصل هذا الشهر'), $money($s['collected_this_month']))
@@ -51,18 +54,20 @@ class OfficeStatsOverview extends StatsOverviewWidget
                 ->color('primary'),
             Stat::make(__('عقود إيجار سارية'), number_format($s['active_contracts']))
                 ->icon(Heroicon::OutlinedDocumentText)
-                ->description(__(':count تنتهي خلال 60 يومًا', ['count' => $attention['expiring']]))
-                ->color($attention['expiring'] > 0 ? 'warning' : 'gray'),
+                ->description(__(':count تنتهي خلال 60 يومًا', ['count' => $attention['expiring']])
+                    .($undocumented > 0 ? ' · '.__(':count غير موثقة في إيجار', ['count' => $undocumented]) : ''))
+                ->color($attention['expiring'] > 0 || $undocumented > 0 ? 'warning' : 'gray'),
             Stat::make(__('مستحقات الملاك'), $money($s['owners_payable']))
                 ->icon(Heroicon::OutlinedScale)
                 ->description(__('غير مسواة')),
             Stat::make(__('وحدات متاحة'), number_format($s['available']))
                 ->icon(Heroicon::OutlinedKey)
                 ->description(__('جاهزة للتأجير')),
-            Stat::make(__('تذاكر دعم مفتوحة'), number_format($attention['open_tickets']))
-                ->icon(Heroicon::OutlinedLifebuoy)
-                ->description(__('من الملاك والعملاء'))
-                ->color($attention['open_tickets'] > 0 ? 'warning' : 'gray'),
+            Stat::make(__('طلبات صيانة مفتوحة'), number_format($maintenance))
+                ->icon(Heroicon::OutlinedWrenchScrewdriver)
+                ->description(__('و:count تذاكر دعم مفتوحة', ['count' => $attention['open_tickets']]))
+                ->url(\App\Filament\Admin\Resources\MaintenanceRequests\MaintenanceRequestResource::getUrl())
+                ->color($maintenance + $attention['open_tickets'] > 0 ? 'warning' : 'gray'),
         ];
     }
 }

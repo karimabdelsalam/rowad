@@ -60,6 +60,7 @@ final class Parts
             TextEntry::make('id_number')->label(__('رقم الهوية'))->placeholder('-')->copyable()->extraAttributes(['dir' => 'ltr']),
             TextEntry::make('id_source')->label(__('مصدرها'))->placeholder('-'),
             self::date('id_issue_date', 'تاريخ الإصدار'),
+            self::date('birth_date', 'تاريخ الميلاد'),
             TextEntry::make('nationality')->label(__('الجنسية'))->placeholder('-'),
         ]);
     }
@@ -88,6 +89,19 @@ final class Parts
                 ->state(fn (Model $r) => $r->user?->email ?? $r->user?->username)->extraAttributes(['dir' => 'ltr']),
             TextEntry::make('user.last_login_at')->label(__('آخر دخول'))->dateTime('Y-m-d H:i')->placeholder(__('لم يدخل بعد'))->columnSpanFull(),
         ]);
+    }
+
+    /** @return list<TextEntry> the contract's Ejar documentation as tenants and owners see it */
+    public static function ejar(): array
+    {
+        return [
+            TextEntry::make('ejar_status')->label(__('التوثيق في إيجار'))->badge(),
+            TextEntry::make('ejar_number')->label(__('رقم العقد في إيجار'))->copyable()->weight('bold')->visible(fn (Model $r) => filled($r->ejar_number)),
+            TextEntry::make('ejar_pdf')->label(__('العقد الموثق'))->color('primary')->icon(Heroicon::OutlinedDocumentArrowDown)->columnSpanFull()
+                ->state(fn (Model $r) => $r->getFirstMedia('ejar') ? __('تنزيل نسخة إيجار (PDF)') : null)
+                ->url(fn (Model $r) => ($media = $r->getFirstMedia('ejar')) ? route('site.media', ['media' => $media]) : null, true)
+                ->visible(fn (Model $r) => $r->getFirstMedia('ejar') !== null),
+        ];
     }
 
     /** A plain stat tile used inside the header `facts`. */

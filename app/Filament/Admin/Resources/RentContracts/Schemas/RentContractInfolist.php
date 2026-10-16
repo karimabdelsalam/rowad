@@ -76,6 +76,23 @@ class RentContractInfolist
                             TextEntry::make('next_payment_amount')->label(__('المبلغ'))->numeric(2)->weight('bold'),
                         ]),
 
+                    Section::make(__('منصة إيجار'))->icon(Heroicon::OutlinedBuildingLibrary)->columns(2)->schema([
+                        TextEntry::make('ejar_status')->label(__('التوثيق'))->badge()->columnSpanFull(),
+                        TextEntry::make('ejar_number')->label(__('رقم العقد في إيجار'))->copyable()->weight('bold')
+                            ->visible(fn (RentContract $record) => filled($record->ejar_number)),
+                        TextEntry::make('ejar_documented_at')->label(__('تاريخ التوثيق'))->date('Y-m-d')
+                            ->visible(fn (RentContract $record) => $record->ejar_documented_at !== null),
+                        TextEntry::make('ejar_notes')->label(__('ملاحظة'))->columnSpanFull()
+                            ->visible(fn (RentContract $record) => filled($record->ejar_notes) && $record->ejar_status === \App\Enums\EjarStatus::NotRequired),
+                        TextEntry::make('ejar_pdf')->label(__('العقد الموثق'))->columnSpanFull()->color('primary')->icon(Heroicon::OutlinedDocumentArrowDown)
+                            ->state(fn (RentContract $record) => $record->getFirstMedia('ejar')?->file_name)
+                            ->url(fn (RentContract $record) => ($media = $record->getFirstMedia('ejar')) ? route('site.media', ['media' => $media]) : null, true)
+                            ->visible(fn (RentContract $record) => $record->getFirstMedia('ejar') !== null),
+                        \Filament\Infolists\Components\ViewEntry::make('ejar_readiness')->hiddenLabel()->columnSpanFull()
+                            ->view('filament.admin.ejar-readiness')
+                            ->visible(fn (RentContract $record) => in_array($record->ejar_status, [\App\Enums\EjarStatus::Pending, \App\Enums\EjarStatus::AwaitingParties], true)),
+                    ]),
+
                     ContractInfolistParts::progress(),
 
                     ContractInfolistParts::record(),
