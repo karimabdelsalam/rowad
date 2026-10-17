@@ -51,6 +51,7 @@ class ReceiptVouchersTable
                     ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
                     ->url(fn ($record) => route('documents.print', ['type' => 'receipt_voucher', 'id' => $record->getKey()]))
                     ->openUrlInNewTab(),
+                \App\Filament\Support\DocumentActions::pdf('receipt_voucher'),
 ViewAction::make(), EditAction::make()]);
     }
 }

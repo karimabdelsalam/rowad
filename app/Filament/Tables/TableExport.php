@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tables;
 
+use App\Services\Documents\DocumentData;
 use BackedEnum;
 use DateTimeInterface;
 use Filament\Actions\Action;
@@ -13,8 +14,9 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Illuminate\Contracts\Support\Htmlable;
+use Filament\Widgets\Widget;
 use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Str;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Entity\SheetView;
@@ -41,6 +43,10 @@ final class TableExport
                 ->label(__('طباعة'))
                 ->icon(Heroicon::OutlinedPrinter)
                 ->action(fn (HasTable $livewire) => self::print($livewire)),
+            Action::make('pdfTable')
+                ->label(__('تصدير PDF'))
+                ->icon(Heroicon::OutlinedDocumentArrowDown)
+                ->action(fn (HasTable $livewire) => self::print($livewire, pdf: true)),
         ])->label(__('تصدير'))->icon(Heroicon::OutlinedEllipsisVertical)->button()->color('gray')
             ->visible(fn (HasTable $livewire) => self::allowed($livewire));
     }
@@ -62,17 +68,45 @@ final class TableExport
         }, $name.'-'.now()->format('Y-m-d').'.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
     }
 
-    public static function print(HasTable $livewire): void
+    /**
+     * The table as a report on the office letterhead (A4 landscape) in a new tab: printed, or saved as a PDF ($pdf).
+     * It carries the filters in use, the number of rows and totals of the money columns.
+     */
+    public static function print(HasTable $livewire, bool $pdf = false): void
     {
         [$headings, $rows] = self::snapshot($livewire, self::PRINT_LIMIT);
-        $html = view('print.table', [
-            'title' => self::title($livewire),
+        $title = self::title($livewire);
+        $filters = collect($livewire->getTable()->getFilterIndicators())
+            ->map(fn ($indicator) => self::plain($indicator->getLabel()))->filter()->values()->all();
+
+        $body = view('print.table', [
+            'title' => $title,
             'headings' => $headings,
             'rows' => $rows,
+            'totals' => self::totals($rows),
+            'filters' => $filters,
             'truncated' => count($rows) >= self::PRINT_LIMIT,
-        ])->render();
+        ] + app(DocumentData::class)->letterhead())->render();
+        $html = view('print.document', ['html' => $body, 'title' => $title, 'landscape' => true, 'autoPrint' => ! $pdf, 'autoPdf' => $pdf])->render();
 
-        $livewire->js('(() => { const w = window.open("", "_blank"); w.document.open(); w.document.write('.json_encode($html).'); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); })()');
+        $livewire->js('(() => { const w = window.open("", "_blank"); w.document.open(); w.document.write('.json_encode($html).'); w.document.close(); w.focus(); })()');
+    }
+
+    /** Sum of each column holding amounts (decimals); null where a total means nothing (names, phones, counts). @return list<float|null> */
+    private static function totals(array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+        $totals = [];
+        foreach (array_keys($rows[0]) as $i) {
+            $values = array_column($rows, $i);
+            $money = array_filter($values, fn ($v) => is_float($v));
+            $totals[] = $money !== [] && count(array_filter($values, fn ($v) => $v !== null && ! is_float($v) && ! is_int($v))) === 0
+                ? round(array_sum(array_map(fn ($v) => (float) $v, $values)), 2) : null;
+        }
+
+        return array_filter($totals, fn ($t) => $t !== null) === [] ? [] : $totals;
     }
 
     /** @return array{0: list<string>, 1: list<list<scalar|null>>} */
@@ -168,7 +202,7 @@ final class TableExport
     public static function register(): void
     {
         Table::configureUsing(function (Table $table) {
-            if (! $table->getLivewire() instanceof \Filament\Widgets\Widget) {
+            if (! $table->getLivewire() instanceof Widget) {
                 $table->headerActions([self::actions()]);
             }
         });

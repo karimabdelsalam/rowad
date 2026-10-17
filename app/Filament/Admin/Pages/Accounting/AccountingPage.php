@@ -16,6 +16,9 @@ abstract class AccountingPage extends Page
     #[Url]
     public ?string $until = null;
 
+    /** Wide reports print / save across the page. */
+    protected static bool $landscape = false;
+
     /** accounting.* permission in config/rowad.php */
     protected static string $ability;
 
@@ -46,6 +49,9 @@ abstract class AccountingPage extends Page
     {
         return [
             Action::make('print')->label(__('طباعة'))->icon(Heroicon::OutlinedPrinter)->color('gray')->alpineClickHandler('window.print()'),
+            Action::make('pdf')->label('PDF')->icon(Heroicon::OutlinedArrowDownTray)->color('gray')->tooltip(__('تحميل نسخة PDF'))
+                ->alpineClickHandler(fn () => sprintf("rowadPagePdf('.fi-page-content', '%s', %s)",
+                    preg_replace('/[^\pL\pN-]+/u', '', \Illuminate\Support\Str::slug($this->getTitle(), '-', null).'-'.$this->until), static::$landscape ? 'true' : 'false')),
         ];
     }
 

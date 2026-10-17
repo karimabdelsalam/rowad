@@ -766,8 +766,8 @@
 ## App shell and command search (Ctrl+K) (2026-10-16)
 
 - Layout follows the owner's reference:
-  - A deep-navy sidebar that runs the full height of the screen. The office colour no longer paints
-    the whole sidebar; it only tints it, and carries the accents (active item bar, icons, buttons).
+  - A sidebar that runs the full height of the screen, in the office's own dark brand colour (teal by
+    default). The owner wanted the reference's layout, not its navy colour.
   - A "filter the menu" box at the top of the sidebar. It is forgiving of hamza / taa marbuta, and
     Enter opens the first match.
   - The page's breadcrumbs and title sit in the topbar on desktop.
@@ -831,3 +831,36 @@
 - Permissions: `accounts.*`, `journal_entries.*`, and `accounting.trial_balance | ledger | statements |
   rebuild`. Admins and accountants have them; agents don't.
 - Not done yet: closing a year into retained earnings, locking closed periods, and cost centres.
+
+## Print and PDF for every document (2026-10-17)
+
+- Every document has a print layout on the office's letterhead:
+  - Editable templates (print templates page): receipts, payment vouchers, invoices / tax invoices,
+    rent and sale contracts, letters, and owner statements.
+  - Fixed layouts on the same header and footer: unit sheet, payslip, payroll, end of service, and
+    three new sheets: journal entry (with approval signatures), owner payout statement (owners, IBANs,
+    dues, deductions, net), and maintenance work order (request, location, tenant, technician,
+    sign-off).
+- PDF is drawn by the browser itself from the same printed sheet, so Arabic shaping, word spacing, the
+  Cairo font and the layout are exactly what prints. html-to-image renders the page through an SVG
+  foreignObject, and jsPDF writes A4 pages; both are self-hosted under `public/vendor/pdf`.
+  - Long documents are split at the bottom of a row, paragraph or section, never through a line.
+  - html2canvas was tried first and dropped: it loses spaces between some Arabic words.
+  - It needs no server tools (Chromium, wkhtmltopdf), so it works on shared hosting too.
+  - The pages are images inside the PDF, so their text can't be selected or searched.
+- Where the buttons are:
+  - Every print page has "طباعة" and "تحميل PDF"; `?pdf=1` downloads on opening.
+  - Document pages (receipt, payment voucher, invoice, contracts, unit, journal entry, owner payout,
+    maintenance request, end of service, payroll) have Print and PDF buttons; voucher, invoice and
+    contract tables have a PDF row action.
+  - The Export menu of every table (lists and reports) has Excel, Print and PDF.
+  - Accounting reports have Print and PDF (the trial balance landscape).
+  - Creating a voucher opens its page, ready to print.
+- Every printed or exported list and report is a proper report on the office letterhead:
+  - title, issue date, record count, who issued it, and the filters in use;
+  - a styled table with an index column, and a totals row for amount columns;
+  - the office footer, on A4 landscape;
+  - a PDF that splits across pages between rows.
+- The accounting reports print and save with the same letterhead, title and period.
+- The QR sheets and the portals (owner statement, vouchers, contracts, units) have PDF next to Print.
+

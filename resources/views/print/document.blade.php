@@ -9,7 +9,7 @@
     <style>
         /* Rowad document design system — the classes the default print templates use (resources/print-templates). */
         :root { --brand: #0f766e; --brand-soft: #f0fdfa; --brand-line: #ccfbf1; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --soft: #f8fafc; }
-        @page { size: A4; margin: 12mm 12mm 14mm; }
+        @page { size: A4{{ ($landscape ?? false) ? ' landscape' : '' }}; margin: 12mm 12mm 14mm; }
         * { box-sizing: border-box; }
         html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         body { font-family: 'Cairo', system-ui, sans-serif; color: var(--ink); font-size: 12.5px; line-height: 1.75; margin: 0; background: #eef1f4; }
@@ -99,6 +99,20 @@
 
         .toolbar { position: sticky; top: 0; z-index: 5; display: flex; justify-content: center; gap: 8px; background: rgb(255 255 255 / .9); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); padding: 8px; }
         .toolbar button { font: inherit; font-weight: 700; padding: 6px 18px; border-radius: 10px; border: 1px solid var(--brand); background: var(--brand); color: #fff; cursor: pointer; }
+        .toolbar button.ghost { background: #fff; color: var(--brand); }
+        /* reports: landscape sheet, a compact table with an index column, a totals row and the filters in use */
+        .sheet.landscape { width: 297mm; min-height: 210mm; padding: 12mm 12mm 14mm; }
+        table.report { font-size: 11px; }
+        table.report th { background: var(--brand-soft); color: #134e4a; border-bottom: 1px solid var(--brand-line); white-space: nowrap; }
+        table.report td { padding: 6px 10px; }
+        table.report .idx { width: 34px; text-align: center; color: var(--muted); }
+        table.report tfoot td { background: var(--brand); color: #fff; font-weight: 800; border-bottom: 0; }
+        table.report tfoot td.idx { color: rgb(255 255 255 / .7); }
+        .report-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+        .toolbar button[disabled] { opacity: .6; cursor: progress; }
+        /* while the PDF is drawn: the bare A4 sheet, no screen shadow or margin */
+        body.pdf-mode { background: #fff; }
+        body.pdf-mode .sheet { margin: 0; box-shadow: none; min-height: 0; }
         .pagebreak { break-before: page; }
         @media print {
             body { background: #fff; }
@@ -110,8 +124,33 @@
 </head>
 <body>
     @unless ($embedded ?? false)
-        <div class="toolbar"><button onclick="window.print()">{{ __('طباعة / حفظ PDF') }}</button></div>
+        <div class="toolbar">
+            <button type="button" onclick="window.print()">{{ __('طباعة') }}</button>
+            <button type="button" class="ghost" id="pdf-btn" onclick="rowadPdf()">{{ __('تحميل PDF') }}</button>
+        </div>
     @endunless
-    <div class="sheet">{!! $html !!}</div>
+    <div @class(['sheet', 'landscape' => $landscape ?? false])>{!! $html !!}</div>
+    @unless ($embedded ?? false)
+        {{-- PDF drawn by the browser from the same sheet, so Arabic text, fonts and layout match the print exactly, on any hosting --}}
+        <script src="{{ asset('vendor/pdf/rowad-pdf.js') }}"></script>
+        <script>
+            async function rowadPdf() {
+                const button = document.getElementById('pdf-btn');
+                button.disabled = true;
+                document.body.classList.add('pdf-mode');
+                try {
+                    await RowadPdf.save(document.querySelector('.sheet'), @js((\Illuminate\Support\Str::slug($title, '-', null) ?: 'document').'.pdf'), { landscape: @js($landscape ?? false) });
+                } finally {
+                    document.body.classList.remove('pdf-mode');
+                    button.disabled = false;
+                }
+            }
+            @if ($autoPdf ?? request()->boolean('pdf'))
+                window.addEventListener('load', () => rowadPdf());
+            @elseif ($autoPrint ?? false)
+                window.addEventListener('load', () => document.fonts.ready.then(() => setTimeout(() => window.print(), 200)));
+            @endif
+        </script>
+    @endunless
 </body>
 </html>

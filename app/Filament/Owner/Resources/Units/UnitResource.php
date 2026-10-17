@@ -132,6 +132,7 @@ class UnitResource extends PortalResource
                 ViewAction::make()->label(__('التفاصيل'))->modalWidth('6xl'),
                 \Filament\Actions\Action::make('print')->label(__('طباعة'))->icon(Heroicon::OutlinedPrinter)
                     ->url(fn ($record) => route('documents.print', ['type' => 'unit', 'id' => $record->getKey()]), true),
+                \App\Filament\Support\DocumentActions::pdf('unit', portal: true),
             ]);
     }
 

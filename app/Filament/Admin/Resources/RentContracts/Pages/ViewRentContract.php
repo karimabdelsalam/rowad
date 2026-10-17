@@ -16,12 +16,7 @@ class ViewRentContract extends ViewRecord
     {
         return [
             \App\Filament\Admin\Pages\Assistant::askAboutAction('rent_contract'),
-            Action::make('print')
-                ->label(__('طباعة العقد'))
-                ->icon(Heroicon::OutlinedPrinter)
-                ->color('gray')
-                ->url(fn () => route('documents.print', ['type' => 'rent_contract', 'id' => $this->record->getKey()]))
-                ->openUrlInNewTab(),
+            ...\App\Filament\Support\DocumentActions::make('rent_contract', __('طباعة العقد')),
             \App\Filament\Admin\Resources\RentContracts\SignatureActions::request(),
             \App\Filament\Admin\Resources\RentContracts\EjarActions::group(),
             EditAction::make(),

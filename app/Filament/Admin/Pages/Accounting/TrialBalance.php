@@ -19,6 +19,8 @@ class TrialBalance extends AccountingPage
 
     public bool $details = true;
 
+    protected static bool $landscape = true;
+
     public static function getNavigationLabel(): string
     {
         return __('ميزان المراجعة');

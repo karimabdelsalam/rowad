@@ -60,6 +60,7 @@ class ViewPayrollRun extends ViewRecord
                     }),
                 Action::make('print')->label(__('طباعة المسيّر'))->icon(Heroicon::OutlinedPrinter)
                     ->url(fn () => route('documents.print', ['type' => 'payroll', 'id' => $this->getRecord()->getKey()]), shouldOpenInNewTab: true),
+                \App\Filament\Support\DocumentActions::pdf('payroll')->label(__('المسيّر PDF')),
                 Action::make('reopen')->label(__('إعادة فتح للتعديل'))->icon(Heroicon::OutlinedLockOpen)->color('warning')->requiresConfirmation()
                     ->visible(fn () => $this->getRecord()->status === PayrollStatus::Approved && Hr::can('payroll.approve'))
                     ->action(fn () => $this->run(fn () => app(Payroll::class)->reopen($this->getRecord()), __('أُعيد فتح المسيّر'))),

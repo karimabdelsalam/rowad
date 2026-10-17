@@ -78,6 +78,7 @@ class ItemsRelationManager extends RelationManager
                     ->after(fn () => $this->getOwnerRecord()->refreshTotals()),
                 Action::make('payslip')->label(__('قسيمة'))->icon(Heroicon::OutlinedPrinter)
                     ->url(fn (PayrollItem $r) => route('documents.print', ['type' => 'payslip', 'id' => $r->getKey()]), shouldOpenInNewTab: true),
+                \App\Filament\Support\DocumentActions::pdf('payslip')->iconButton(),
             ]);
     }
 }

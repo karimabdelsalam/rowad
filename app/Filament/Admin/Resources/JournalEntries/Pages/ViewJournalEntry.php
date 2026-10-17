@@ -27,8 +27,7 @@ class ViewJournalEntry extends ViewRecord
             Action::make('source')->label(__('فتح المستند'))->icon(Heroicon::OutlinedArrowTopRightOnSquare)->color('gray')
                 ->visible(JournalEntryResource::sourceUrl($entry) !== null)
                 ->url(JournalEntryResource::sourceUrl($entry)),
-            Action::make('print')->label(__('طباعة'))->icon(Heroicon::OutlinedPrinter)->color('gray')
-                ->alpineClickHandler('window.print()'),
+            ...\App\Filament\Support\DocumentActions::make('journal_entry'),
             EditAction::make(),
         ];
     }

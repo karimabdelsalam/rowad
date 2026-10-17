@@ -9,4 +9,8 @@
         <button type="button" wire:click="$set('from', '{{ now()->subYear()->startOfYear()->toDateString() }}'); $set('until', '{{ now()->subYear()->endOfYear()->toDateString() }}')">{{ __('السنة الماضية') }}</button>
     </div>
 </div>
-<div class="rowad-acc-print-head"><h1>{{ $title }}</h1><p>{{ \App\Support\Branding::name() }} · {{ $period }}</p></div>
+{{-- printed / PDF only: the office letterhead and the report's title and period, as on every printed document --}}
+<div class="rowad-acc-print-head">
+    {!! app(\App\Services\Documents\DocumentData::class)->letterhead()['header'] !!}
+    <div class="rowad-acc-print-title"><span>REPORT</span><h1>{{ $title }}</h1><p>{{ $period }} · {{ __('تاريخ الإصدار') }} {{ now()->format('Y-m-d H:i') }}</p></div>
+</div>

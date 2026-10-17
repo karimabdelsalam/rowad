@@ -13,6 +13,7 @@ class ViewPaymentVoucher extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            ...\App\Filament\Support\DocumentActions::make('payment_voucher'),
             EditAction::make(),
         ];
     }

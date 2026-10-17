@@ -87,6 +87,7 @@ class RentContractResource extends PortalResource
                     ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
                     ->url(fn ($record) => route('documents.print', ['type' => 'rent_contract', 'id' => $record->getKey()]))
                     ->openUrlInNewTab(),
+                \App\Filament\Support\DocumentActions::pdf('rent_contract', portal: true),
 ViewAction::make()->label(__('التفاصيل'))->modalWidth('5xl')]);
     }
 

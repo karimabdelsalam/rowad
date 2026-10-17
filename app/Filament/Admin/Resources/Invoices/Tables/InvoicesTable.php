@@ -63,6 +63,7 @@ class InvoicesTable
                     ->icon(Heroicon::OutlinedPrinter)
                     ->url(fn (Invoice $record) => route('documents.print', ['type' => 'invoice', 'id' => $record->getKey()]))
                     ->openUrlInNewTab(),
+                \App\Filament\Support\DocumentActions::pdf('invoice'),
                 ViewAction::make(),
             ]);
     }

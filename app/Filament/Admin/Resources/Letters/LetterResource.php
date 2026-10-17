@@ -126,6 +126,7 @@ class LetterResource extends Resource
                     ->icon(Heroicon::OutlinedPrinter)
                     ->url(fn (Letter $record) => route('documents.print', ['type' => 'letter', 'id' => $record->getKey()]))
                     ->openUrlInNewTab(),
+                \App\Filament\Support\DocumentActions::pdf('letter'),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

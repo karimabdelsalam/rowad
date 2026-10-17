@@ -36,6 +36,7 @@ class ViewOwnerPayout extends ViewRecord
         $prepared = $payout->status === OwnerPayoutStatus::Prepared;
 
         return [
+            ...\App\Filament\Support\DocumentActions::make('owner_payout'),
             Action::make('bankFile')->label(__('ملف التحويل البنكي'))->icon(Heroicon::OutlinedArrowDownTray)
                 ->visible($payout->status !== OwnerPayoutStatus::Cancelled)
                 ->action(fn () => response()->download(app(OwnerPayouts::class)->bankFile($payout), $payout->number.'.xlsx')->deleteFileAfterSend()),

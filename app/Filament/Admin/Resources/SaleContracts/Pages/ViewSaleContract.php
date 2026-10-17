@@ -15,12 +15,7 @@ class ViewSaleContract extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('print')
-                ->label(__('طباعة العقد'))
-                ->icon(Heroicon::OutlinedPrinter)
-                ->color('gray')
-                ->url(fn () => route('documents.print', ['type' => 'sale_contract', 'id' => $this->record->getKey()]))
-                ->openUrlInNewTab(),
+            ...\App\Filament\Support\DocumentActions::make('sale_contract', __('طباعة العقد')),
             EditAction::make(),
         ];
     }

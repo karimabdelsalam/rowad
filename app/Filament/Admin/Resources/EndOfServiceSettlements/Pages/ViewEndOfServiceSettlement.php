@@ -41,8 +41,7 @@ class ViewEndOfServiceSettlement extends ViewRecord
                     Notification::make()->success()->title(__('صدر سند الصرف :n', ['n' => $voucher->number]))->send();
                     $this->redirect(EndOfServiceSettlementResource::getUrl('view', ['record' => $s]));
                 }),
-            Action::make('print')->label(__('طباعة'))->icon(Heroicon::OutlinedPrinter)->color('gray')
-                ->url(fn () => route('documents.print', ['type' => 'end_of_service', 'id' => $this->getRecord()->getKey()]), shouldOpenInNewTab: true),
+            ...\App\Filament\Support\DocumentActions::make('end_of_service'),
             DeleteAction::make()->visible(fn () => $this->getRecord()->status !== 'paid'),
         ];
     }

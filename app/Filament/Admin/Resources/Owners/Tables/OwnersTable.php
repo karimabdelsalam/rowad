@@ -45,6 +45,7 @@ class OwnersTable
                         ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
                         ->url(fn ($record) => route('documents.print', ['type' => 'owner_statement', 'id' => $record->getKey()]))
                         ->openUrlInNewTab(),
+                    \App\Filament\Support\DocumentActions::pdf('owner_statement')->label(__('كشف الحساب PDF')),
                     self::portalAccountAction('owners'),
                     self::loginAsAction('owners', 'owner'),
                 ]),

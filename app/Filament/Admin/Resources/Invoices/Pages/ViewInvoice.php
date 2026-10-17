@@ -21,10 +21,7 @@ class ViewInvoice extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('print')
-                ->label(__('طباعة'))
-                ->icon(Heroicon::OutlinedPrinter)
-                ->url(fn (Invoice $record) => route('documents.print', ['type' => 'invoice', 'id' => $record->id]), shouldOpenInNewTab: true),
+            ...\App\Filament\Support\DocumentActions::make('invoice'),
             Action::make('zatcaSubmit')
                 ->label(__('إرسال إلى زاتكا'))
                 ->icon(Heroicon::OutlinedPaperAirplane)

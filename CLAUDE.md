@@ -18,6 +18,11 @@ print documents, login, emails), take a screenshot (Playwright/Chromium against 
 demo office) and send it to the owner in the chat with SendUserFile while working.
 Script: `scripts/screenshots.mjs`, demo data: `php artisan rowad:demo`.
 
+## Rule #3: Apply every note system-wide
+When the owner comments on one screen or document, apply the same fix everywhere it applies
+(every panel, portal, document, report and print), not only where it was noticed. Nothing should
+be left for the owner to discover by chance.
+
 ## Project layout
 - `main` branch — the new Laravel 13 multi-tenant SaaS (Aqar Nova) at the repository root.
 - `old` branch — the legacy PHP system (Smarty, ezSQL) upgraded to PHP 8.4, kept as reference only.

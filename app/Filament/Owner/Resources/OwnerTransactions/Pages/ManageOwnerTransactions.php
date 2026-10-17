@@ -17,6 +17,9 @@ class ManageOwnerTransactions extends ManageRecords
                 ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
                 ->url(fn () => route('documents.print', ['type' => 'owner_statement', 'id' => \App\Support\Portal::owner()->getKey()]))
                 ->openUrlInNewTab(),
+            \Filament\Actions\Action::make('pdf')->label('PDF')->icon(\Filament\Support\Icons\Heroicon::OutlinedArrowDownTray)->color('gray')
+                ->url(fn () => route('documents.print', ['type' => 'owner_statement', 'id' => \App\Support\Portal::owner()->getKey(), 'pdf' => 1]))
+                ->openUrlInNewTab(),
         ];
     }
 }

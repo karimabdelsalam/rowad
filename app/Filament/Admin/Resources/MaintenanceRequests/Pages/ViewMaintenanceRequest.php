@@ -19,6 +19,7 @@ class ViewMaintenanceRequest extends ViewRecord
             MaintenanceActions::schedule(),
             MaintenanceActions::start(),
             MaintenanceActions::complete(),
+            ...\App\Filament\Support\DocumentActions::make('maintenance_request', __('أمر الصيانة')),
             ActionGroup::make([
                 EditAction::make()->modalWidth('2xl')
                     ->visible(fn (MaintenanceRequest $record) => $record->status->isOpen() && MaintenanceActions::can('update')),

@@ -13,6 +13,7 @@ class ViewReceiptVoucher extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            ...\App\Filament\Support\DocumentActions::make('receipt_voucher'),
             EditAction::make(),
         ];
     }

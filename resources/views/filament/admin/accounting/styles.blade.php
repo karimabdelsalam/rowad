@@ -34,11 +34,22 @@
     .rowad-acc-tabs button.is-on { background: #fff; color: var(--rowad-ink); box-shadow: 0 1px 3px rgb(15 23 42 / .1); }
     .rowad-acc-empty { padding: 36px 18px; text-align: center; color: var(--rowad-muted); }
     .rowad-acc-print-head { display: none; }
+    /* the letterhead (same markup as printed documents) */
+    .rowad-acc-print-head .doc-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+    .rowad-acc-print-head .doc-brand { display: flex; align-items: center; gap: 12px; }
+    .rowad-acc-print-head .doc-logo { height: 54px; width: auto; }
+    .rowad-acc-print-head img[src=""] { display: none; }
+    .rowad-acc-print-head .doc-org { font-size: 18px; font-weight: 800; color: var(--rowad-brand); line-height: 1.3; }
+    .rowad-acc-print-head .doc-org-en { font-size: 11px; color: #64748b; letter-spacing: .04em; direction: ltr; text-align: start; }
+    .rowad-acc-print-head .doc-contact { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: #64748b; line-height: 1.6; }
+    .rowad-acc-print-title { margin: 14px 0 12px; }
+    .rowad-acc-print-title span { font-size: 10px; font-weight: 700; letter-spacing: .18em; color: var(--rowad-brand); }
+    .rowad-acc-print-title h1 { margin: 0; font-size: 22px; font-weight: 800; color: var(--rowad-ink); }
+    .rowad-acc-print-title p { margin: 2px 0 0; font-size: 12px; color: #64748b; }
     @media print {
         .fi-sidebar, .fi-topbar-ctn, .rowad-acc-bar, .fi-header-actions-ctn, .rowad-demo-banner, .rowad-credit, .fi-header { display: none !important; }
         .fi-main-ctn, .fi-main { padding: 0 !important; margin: 0 !important; }
         .rowad-acc-print-head { display: block; margin-bottom: 12px; }
-        .rowad-acc-print-head h1 { margin: 0; font-size: 1.2rem; } .rowad-acc-print-head p { margin: 2px 0 0; color: #475569; font-size: .85rem; }
         .rowad-acc-card { box-shadow: none; break-inside: avoid; }
         body { background: #fff !important; }
     }

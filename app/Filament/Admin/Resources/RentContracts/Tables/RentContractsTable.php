@@ -81,6 +81,7 @@ class RentContractsTable
                         ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
                         ->url(fn ($record) => route('documents.print', ['type' => 'rent_contract', 'id' => $record->getKey()]))
                         ->openUrlInNewTab(),
+                    \App\Filament\Support\DocumentActions::pdf('rent_contract'),
                     EditAction::make()->visible(fn (RentContract $record) => $record->status === ContractStatus::Active),
                     Action::make('end')
                         ->label(__('إنهاء العقد'))

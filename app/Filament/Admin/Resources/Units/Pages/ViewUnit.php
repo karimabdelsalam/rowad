@@ -14,12 +14,7 @@ class ViewUnit extends ViewRecord
     {
         return [
             \App\Filament\Admin\Pages\Assistant::askAboutAction('unit'),
-            \Filament\Actions\Action::make('print')
-                ->label(__('طباعة البطاقة'))
-                ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
-                ->color('gray')
-                ->url(fn () => route('documents.print', ['type' => 'unit', 'id' => $this->record->getKey()]))
-                ->openUrlInNewTab(),
+            ...\App\Filament\Support\DocumentActions::make('unit', __('طباعة البطاقة')),
             EditAction::make(),
         ];
     }

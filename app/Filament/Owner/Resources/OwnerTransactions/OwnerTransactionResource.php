@@ -75,6 +75,14 @@ class OwnerTransactionResource extends PortalResource
                     ->url(fn ($record) => $record->paymentVoucher?->party_type === 'owner'
                         ? route('documents.print', ['type' => 'payment_voucher', 'id' => $record->payment_voucher_id])
                         : route('documents.print', ['type' => 'receipt_voucher', 'id' => $record->receipt_voucher_id]), shouldOpenInNewTab: true),
+                \Filament\Actions\Action::make('voucherPdf')
+                    ->label('PDF')
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedArrowDownTray)
+                    ->visible(fn ($record) => ($record->paymentVoucher?->party_type === 'owner' && (int) $record->paymentVoucher->party_id === Portal::owner()->getKey())
+                        || ($record->receiptVoucher?->party_type === 'owner' && (int) $record->receiptVoucher->party_id === Portal::owner()->getKey()))
+                    ->url(fn ($record) => $record->paymentVoucher?->party_type === 'owner'
+                        ? route('documents.print', ['type' => 'payment_voucher', 'id' => $record->payment_voucher_id, 'pdf' => 1])
+                        : route('documents.print', ['type' => 'receipt_voucher', 'id' => $record->receipt_voucher_id, 'pdf' => 1]), shouldOpenInNewTab: true),
             ]);
     }
 

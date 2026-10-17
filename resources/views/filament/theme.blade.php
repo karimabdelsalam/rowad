@@ -3,7 +3,7 @@
     :root {
         --rowad-surface: #f3f6f7; --rowad-card: #ffffff; --rowad-line: #e4e9ec; --rowad-ink: #0f172a; --rowad-muted: #64748b;
         --rowad-brand: #0f766e; --rowad-brand-dark: #0b5d57; --rowad-brand-soft: #e6f4f2; --rowad-accent: #eb6834;
-        --rowad-side: #0d1628; --rowad-side-2: #101b30; --rowad-side-ink: #e2e8f0; --rowad-side-muted: #8a97ad;
+        --rowad-side: #0b2a2e; --rowad-side-2: #0e3a3f; --rowad-side-ink: #d7e6e4; --rowad-side-muted: #7fa3a0;
         --rowad-shadow: 0 1px 2px rgb(15 23 42 / .04), 0 6px 20px rgb(15 23 42 / .06);
         --rowad-radius: 18px; --rowad-brand-line: #ccfbf1; --rowad-brand-light: #14b8a6;
     }
@@ -390,6 +390,11 @@
     .fi-global-search-result-details { display: flex; flex-wrap: wrap; column-gap: 14px; row-gap: 0; margin-top: 2px; }
     .fi-global-search-result-detail { font-size: .76rem; color: var(--rowad-muted); }
     .fi-global-search-result:hover .fi-global-search-result-heading, .fi-global-search-result:focus-within .fi-global-search-result-heading { color: var(--rowad-brand); }
+    /* report PDFs: what is captured drops the filters and actions, and gains the office / period heading */
+    .rowad-pdf-capture .rowad-acc-bar, .rowad-pdf-capture .fi-ta-header-toolbar, .rowad-pdf-capture .fi-ta-filters-above-content-ctn,
+    .rowad-pdf-capture .fi-ta-pagination, .rowad-pdf-capture .fi-ta-actions { display: none !important; }
+    .rowad-pdf-capture .rowad-acc-print-head { display: block !important; margin-bottom: 12px; }
+    .rowad-pdf-capture .rowad-acc-card, .rowad-pdf-capture .fi-ta-ctn { box-shadow: none !important; }
     /* page header as a card: the section's icon, its title and the page actions */
     .fi-main .fi-header { background: var(--rowad-card); border: 1px solid var(--rowad-line); border-radius: 16px; box-shadow: var(--rowad-shadow); padding: 14px 20px !important; align-items: center; }
     .fi-main .fi-header .fi-header-heading { font-size: 1.25rem; display: flex; align-items: center; gap: 12px; }
@@ -598,6 +603,20 @@
         document.addEventListener('DOMContentLoaded', window.rowadPageChrome);
         document.addEventListener('livewire:navigated', window.rowadPageChrome);
         document.addEventListener('livewire:init', () => window.Livewire.hook('commit', ({ succeed }) => succeed(() => requestAnimationFrame(window.rowadPageChrome))));
+
+        // PDF of a report as shown on screen (its filters bar left out), drawn by the browser like the document PDFs
+        window.rowadPagePdf = async (selector, filename, landscape = false) => {
+            if (! window.RowadPdf) {
+                await new Promise((resolve, reject) => document.head.append(Object.assign(document.createElement('script'),
+                    { src: @js(asset('vendor/pdf/rowad-pdf.js')), onload: resolve, onerror: reject })));
+            }
+            document.body.classList.add('rowad-pdf-capture');
+            try {
+                await window.RowadPdf.save(document.querySelector(selector) ?? document.querySelector('.fi-page-content'), filename, { landscape, margin: 8 });
+            } finally {
+                document.body.classList.remove('rowad-pdf-capture');
+            }
+        };
 
         document.addEventListener('alpine:init', () => window.Alpine.data('rowadNavFilter', () => ({
             q: '',

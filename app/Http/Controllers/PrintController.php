@@ -3,12 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserType;
+use App\Filament\Admin\Widgets\PortalLinks;
+use App\Models\EndOfServiceSettlement;
 use App\Models\Invoice;
+use App\Models\JournalEntry;
+use App\Models\Letter;
+use App\Models\MaintenanceRequest;
 use App\Models\Owner;
+use App\Models\OwnerPayout;
 use App\Models\PaymentVoucher;
+use App\Models\PayrollItem;
+use App\Models\PayrollRun;
 use App\Models\ReceiptVoucher;
 use App\Models\RentContract;
 use App\Models\SaleContract;
+use App\Models\Unit;
 use App\Models\User;
 use App\Services\Documents\DocumentData;
 use Illuminate\Database\Eloquent\Model;
@@ -18,18 +27,22 @@ use Illuminate\View\View;
 /** Legacy "printable" actions: HTML documents ready for the browser's print / save-as-PDF. */
 class PrintController
 {
-    private const TYPES = [
+    /** Printable documents: type => [model, permission]. */
+    public const TYPES = [
         'rent_contract' => [RentContract::class, 'rent_contracts.print'],
         'sale_contract' => [SaleContract::class, 'sale_contracts.print'],
         'receipt_voucher' => [ReceiptVoucher::class, 'receipt_vouchers.print'],
         'payment_voucher' => [PaymentVoucher::class, 'payment_vouchers.print'],
         'invoice' => [Invoice::class, 'invoices.print'],
         'owner_statement' => [Owner::class, 'owner_transactions.view_any'],
-        'letter' => [\App\Models\Letter::class, 'letters.print'],
-        'unit' => [\App\Models\Unit::class, 'units.view'],
-        'payslip' => [\App\Models\PayrollItem::class, 'payroll.view'],
-        'payroll' => [\App\Models\PayrollRun::class, 'payroll.view'],
-        'end_of_service' => [\App\Models\EndOfServiceSettlement::class, 'end_of_service.view'],
+        'letter' => [Letter::class, 'letters.print'],
+        'unit' => [Unit::class, 'units.view'],
+        'payslip' => [PayrollItem::class, 'payroll.view'],
+        'payroll' => [PayrollRun::class, 'payroll.view'],
+        'end_of_service' => [EndOfServiceSettlement::class, 'end_of_service.view'],
+        'journal_entry' => [JournalEntry::class, 'journal_entries.view'],
+        'owner_payout' => [OwnerPayout::class, 'owner_payouts.view'],
+        'maintenance_request' => [MaintenanceRequest::class, 'maintenance_requests.view'],
     ];
 
     public function __invoke(Request $request, string $type, int $id, DocumentData $documents): View
@@ -44,20 +57,25 @@ class PrintController
             $record instanceof ReceiptVoucher, $record instanceof PaymentVoucher => $documents->voucher($record),
             $record instanceof Invoice => $documents->invoice($record),
             $record instanceof Owner => $documents->ownerStatement($record, $request->query('from'), $request->query('to')),
-            $record instanceof \App\Models\Letter => $documents->letter($record),
-            $record instanceof \App\Models\Unit => $documents->unitSheet($record),
-            $record instanceof \App\Models\PayrollItem => $documents->payslip($record),
-            $record instanceof \App\Models\PayrollRun => $documents->payroll($record),
-            $record instanceof \App\Models\EndOfServiceSettlement => $documents->endOfService($record),
+            $record instanceof Letter => $documents->letter($record),
+            $record instanceof Unit => $documents->unitSheet($record),
+            $record instanceof PayrollItem => $documents->payslip($record),
+            $record instanceof PayrollRun => $documents->payroll($record),
+            $record instanceof EndOfServiceSettlement => $documents->endOfService($record),
+            $record instanceof JournalEntry => $documents->journalEntry($record),
+            $record instanceof OwnerPayout => $documents->ownerPayout($record),
+            $record instanceof MaintenanceRequest => $documents->maintenanceOrder($record),
         };
 
         $title = match (true) {
             $record instanceof Owner => $record->full_name,
-            $record instanceof \App\Models\Letter => $record->type?->getLabel(),
-            $record instanceof \App\Models\Unit => $record->title,
-            $record instanceof \App\Models\PayrollItem => __('قسيمة راتب').' — '.$record->employee?->full_name,
-            $record instanceof \App\Models\PayrollRun => __('مسيّر رواتب').' '.$record->periodLabel(),
-            $record instanceof \App\Models\EndOfServiceSettlement => __('تسوية نهاية خدمة').' — '.$record->employee?->full_name,
+            $record instanceof Letter => $record->type?->getLabel(),
+            $record instanceof Unit => $record->title,
+            $record instanceof PayrollItem => __('قسيمة راتب').' — '.$record->employee?->full_name,
+            $record instanceof PayrollRun => __('مسيّر رواتب').' '.$record->periodLabel(),
+            $record instanceof EndOfServiceSettlement => __('تسوية نهاية خدمة').' — '.$record->employee?->full_name,
+            $record instanceof JournalEntry => __('قيد :number', ['number' => $record->number]),
+            $record instanceof MaintenanceRequest => __('أمر صيانة').' '.$record->code,
             default => $record->number,
         };
 
@@ -69,7 +87,7 @@ class PrintController
     {
         abort_unless($request->user()?->type === UserType::Staff && $request->user()->is_active, 403);
 
-        return view('print.qr-sheet', \App\Filament\Admin\Widgets\PortalLinks::link($kind));
+        return view('print.qr-sheet', PortalLinks::link($kind));
     }
 
     /** Public check behind the QR printed on contracts. */
@@ -94,15 +112,13 @@ class PrintController
         $client = $user->client;
 
         return match (true) {
-            $record instanceof RentContract, $record instanceof SaleContract =>
-                ($owner && $record->unit->owners()->whereKey($owner->id)->exists())
+            $record instanceof RentContract, $record instanceof SaleContract => ($owner && $record->unit->owners()->whereKey($owner->id)->exists())
                 || ($client && $record->clients()->whereKey($client->id)->exists()),
-            $record instanceof ReceiptVoucher, $record instanceof PaymentVoucher =>
-                ($owner && $record->party_type === 'owner' && (int) $record->party_id === $owner->id)
+            $record instanceof ReceiptVoucher, $record instanceof PaymentVoucher => ($owner && $record->party_type === 'owner' && (int) $record->party_id === $owner->id)
                 || ($client && $record->party_type === 'client' && (int) $record->party_id === $client->id),
             $record instanceof Invoice => $client && (int) $record->client_id === $client->id,
             $record instanceof Owner => $owner && $owner->is($record),
-            $record instanceof \App\Models\Unit => $owner && $record->owners()->whereKey($owner->id)->exists(),
+            $record instanceof Unit => $owner && $record->owners()->whereKey($owner->id)->exists(),
             default => false,
         };
     }

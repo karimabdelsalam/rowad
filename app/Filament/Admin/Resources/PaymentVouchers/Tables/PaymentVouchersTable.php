@@ -51,6 +51,7 @@ class PaymentVouchersTable
                     ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
                     ->url(fn ($record) => route('documents.print', ['type' => 'payment_voucher', 'id' => $record->getKey()]))
                     ->openUrlInNewTab(),
+                \App\Filament\Support\DocumentActions::pdf('payment_voucher'),
 ViewAction::make(), EditAction::make()]);
     }
 }

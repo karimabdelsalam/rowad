@@ -2,25 +2,36 @@
 
 namespace App\Services\Documents;
 
+use App\Filament\Admin\Resources\JournalEntries\JournalEntryResource;
+use App\Models\ContractSignature;
+use App\Models\EndOfServiceSettlement;
 use App\Models\Invoice;
+use App\Models\JournalEntry;
+use App\Models\Letter;
+use App\Models\MaintenanceRequest;
 use App\Models\Owner;
+use App\Models\OwnerPayout;
 use App\Models\OwnerTransaction;
 use App\Models\PaymentVoucher;
+use App\Models\PayrollItem;
+use App\Models\PayrollRun;
+use App\Models\PrintTemplate;
 use App\Models\ReceiptVoucher;
 use App\Models\RentContract;
 use App\Models\SaleContract;
+use App\Models\Unit;
 use App\Support\AmountInWords;
 use App\Support\Hijri;
-use chillerlan\QRCode\QRCode;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
+use chillerlan\QRCode\QRCode;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 /** Variables for each printable document (legacy rent/sell/statementsin/statementsout/invoices printable). */
 class DocumentData
 {
-    public function __construct(private readonly DocumentRenderer $renderer, private readonly LegacyTemplateVariables $legacy)
-    {
-    }
+    public function __construct(private readonly DocumentRenderer $renderer, private readonly LegacyTemplateVariables $legacy) {}
 
     /**
      * Templates imported from the legacy system (legacy_syntax) get the legacy meaning of every name — e.g. {total}
@@ -31,21 +42,27 @@ class DocumentData
      */
     private function document(string $key, array $vars, array $legacy): string
     {
-        $legacySyntax = (bool) \App\Models\PrintTemplate::where('key', $key)->value('legacy_syntax');
+        $legacySyntax = (bool) PrintTemplate::where('key', $key)->value('legacy_syntax');
 
         return $this->renderer->render($key, $legacySyntax ? array_merge($vars, $legacy['vars']) : $vars + $legacy['vars'], $legacy['blocks']);
     }
 
-    public function letter(\App\Models\Letter $letter): string
+    public function letter(Letter $letter): string
     {
         return $this->document($letter->type->templateKey(), ['number' => (string) $letter->id], $this->legacy->letter($letter));
     }
 
     /** Legacy building/printable: a unit's data sheet with the organisation's document header. */
     /** The office header/footer the HR sheets share with the unit sheet. */
+    /** The office letterhead (header, footer, currency) that every generated sheet and report shares. */
+    public function letterhead(): array
+    {
+        return $this->sheetFrame();
+    }
+
     private function sheetFrame(): array
     {
-        $template = \App\Models\PrintTemplate::where('key', 'rent_contract')->first();
+        $template = PrintTemplate::where('key', 'rent_contract')->first();
         $dir = resource_path('print-templates');
         $org = $this->renderer->organisationVariables();
 
@@ -56,34 +73,57 @@ class DocumentData
         ];
     }
 
-    public function payslip(\App\Models\PayrollItem $item): string
+    public function payslip(PayrollItem $item): string
     {
         $item->loadMissing(['employee.bank', 'run', 'paymentVoucher']);
 
         return view('print.payslip', ['item' => $item, 'run' => $item->run, 'employee' => $item->employee] + $this->sheetFrame())->render();
     }
 
-    public function payroll(\App\Models\PayrollRun $run): string
+    public function payroll(PayrollRun $run): string
     {
         $run->loadMissing(['items.employee', 'approver']);
 
         return view('print.payroll', ['run' => $run] + $this->sheetFrame())->render();
     }
 
-    public function endOfService(\App\Models\EndOfServiceSettlement $s): string
+    public function endOfService(EndOfServiceSettlement $s): string
     {
         $s->loadMissing(['employee', 'paymentVoucher']);
 
         return view('print.end-of-service', ['s' => $s, 'employee' => $s->employee] + $this->sheetFrame())->render();
     }
 
-    public function unitSheet(\App\Models\Unit $unit): string
+    public function journalEntry(JournalEntry $entry): string
+    {
+        $lines = $entry->lines()->with(['account', 'owner'])->orderByDesc('debit')->orderBy('id')->get();
+        $entry->loadMissing('creator');
+
+        return view('print.journal-entry', ['entry' => $entry, 'lines' => $lines,
+            'source' => JournalEntryResource::sourceLabel($entry)] + $this->sheetFrame())->render();
+    }
+
+    public function ownerPayout(OwnerPayout $payout): string
+    {
+        $payout->loadMissing(['items.owner', 'bankAccount']);
+
+        return view('print.owner-payout', ['payout' => $payout] + $this->sheetFrame())->render();
+    }
+
+    public function maintenanceOrder(MaintenanceRequest $request): string
+    {
+        $request->loadMissing(['unit.building', 'client']);
+
+        return view('print.maintenance-order', ['request' => $request] + $this->sheetFrame())->render();
+    }
+
+    public function unitSheet(Unit $unit): string
     {
         $unit->loadMissing(['building', 'category', 'city', 'district', 'owners', 'deeds.deedType', 'meters.meterType', 'currentContract']);
         if ($unit->currentContract instanceof RentContract) {
             $unit->currentContract->loadMissing('clients');
         }
-        $template = \App\Models\PrintTemplate::where('key', 'rent_contract')->first();
+        $template = PrintTemplate::where('key', 'rent_contract')->first();
         $dir = resource_path('print-templates');
         $org = $this->renderer->organisationVariables();
 
@@ -128,8 +168,8 @@ class DocumentData
     /** Electronic signatures of one side of the contract, drawn by the parties (see ContractSigning). */
     private function signatures(RentContract $c, string $role): string
     {
-        return $c->signatures()->where('role', $role)->where('status', \App\Models\ContractSignature::SIGNED)->orderBy('id')->get()
-            ->map(fn (\App\Models\ContractSignature $s) => '<div class="esign"><img src="'.e((string) $s->signature).'" alt="">'
+        return $c->signatures()->where('role', $role)->where('status', ContractSignature::SIGNED)->orderBy('id')->get()
+            ->map(fn (ContractSignature $s) => '<div class="esign"><img src="'.e((string) $s->signature).'" alt="">'
                 .'<small>'.e($s->name).' — '.e(__('وُقّع إلكترونيًا :at', ['at' => $s->signed_at->format('Y-m-d H:i')])).'<br>'
                 .e(__('بصمة العقد: :hash', ['hash' => substr((string) $s->document_hash, 0, 16)])).'</small></div>')
             ->join('');
@@ -278,7 +318,7 @@ class DocumentData
 
         return strip_tags($html) === $html
             ? nl2br(e($html), false)
-            : \Illuminate\Support\Str::sanitizeHtml($html);
+            : Str::sanitizeHtml($html);
     }
 
     private function people($people, string $pivot): string
@@ -288,7 +328,7 @@ class DocumentData
 
     private function dayName(?\DateTimeInterface $date): string
     {
-        return $date === null ? '' : \Carbon\Carbon::instance($date)->locale(app()->getLocale())->translatedFormat('l');
+        return $date === null ? '' : Carbon::instance($date)->locale(app()->getLocale())->translatedFormat('l');
     }
 
     private function qr(string $data): string
