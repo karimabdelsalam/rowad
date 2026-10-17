@@ -108,8 +108,22 @@
     .fi-sidebar-item-grouped-border-part { border-color: rgb(255 255 255 / .12) !important; }
     .fi-sidebar-item-badge-ctn .fi-badge { background: var(--rowad-accent) !important; color: #fff !important; border: 0 !important; }
     .fi-sidebar-database-notifications-btn-label { color: var(--rowad-side-ink) !important; }
-    .fi-sidebar::-webkit-scrollbar, .fi-sidebar-nav::-webkit-scrollbar { width: 6px; }
-    .fi-sidebar-nav::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .12); border-radius: 6px; }
+    /* a scrollbar people can see: the menu is long and continues below the fold */
+    .fi-sidebar-nav { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--rowad-brand-light) 75%, #fff) rgb(255 255 255 / .07); }
+    .fi-sidebar::-webkit-scrollbar, .fi-sidebar-nav::-webkit-scrollbar { width: 8px; }
+    .fi-sidebar-nav::-webkit-scrollbar-track { background: rgb(255 255 255 / .07); border-radius: 8px; margin-block: 6px; }
+    .fi-sidebar-nav::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--rowad-brand-light) 75%, #fff); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; min-height: 40px; }
+    .fi-sidebar-nav::-webkit-scrollbar-thumb:hover { background: var(--rowad-brand-light); background-clip: padding-box; }
+    .rowad-nav-more { position: sticky; bottom: -16px; z-index: 2; height: 56px; margin: -56px -10px -16px; padding-bottom: 10px; display: flex; align-items: flex-end; justify-content: center;
+        pointer-events: none; background: linear-gradient(to bottom, transparent, var(--rowad-side-2) 72%); transition: opacity .2s; }
+    .rowad-nav-more button { pointer-events: auto; display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 999px; font-size: .72rem; font-weight: 700;
+        color: #fff; background: rgb(255 255 255 / .12); border: 1px solid rgb(255 255 255 / .2); animation: rowad-nav-bob 1.8s ease-in-out infinite; }
+    .rowad-nav-more button:hover { background: rgb(255 255 255 / .2); }
+    .rowad-nav-more svg { width: 14px; height: 14px; }
+    .rowad-nav-more.is-end { opacity: 0; }
+    .rowad-nav-more.is-end button { pointer-events: none; }
+    @keyframes rowad-nav-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+    @media (prefers-reduced-motion: reduce) { .rowad-nav-more button { animation: none; } }
 
     /* ---------- top bar & page header ---------- */
     .fi-topbar { background: rgb(255 255 255 / .92) !important; backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--rowad-line), 0 6px 18px rgb(15 23 42 / .03) !important; }
@@ -617,6 +631,27 @@
                 document.body.classList.remove('rowad-pdf-capture');
             }
         };
+
+        // "more below" hint at the foot of the sidebar menu, gone once the end of the menu is reached
+        const navMore = () => {
+            const nav = document.querySelector('.fi-sidebar-nav');
+            if (! nav) return;
+            let hint = nav.querySelector(':scope > .rowad-nav-more');
+            if (! hint) {
+                hint = document.createElement('div');
+                hint.className = 'rowad-nav-more';
+                hint.innerHTML = '<button type="button"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg><span></span></button>';
+                hint.querySelector('span').textContent = @js(__('المزيد بالأسفل'));
+                hint.querySelector('button').addEventListener('click', () => nav.scrollBy({ top: nav.clientHeight * 0.7, behavior: 'smooth' }));
+                nav.appendChild(hint);
+                nav.addEventListener('scroll', () => update(), { passive: true });
+                new ResizeObserver(() => update()).observe(nav);
+            }
+            const update = () => hint.classList.toggle('is-end', nav.scrollHeight - nav.scrollTop - nav.clientHeight < 24);
+            update();
+        };
+        document.addEventListener('DOMContentLoaded', navMore);
+        document.addEventListener('livewire:navigated', navMore);
 
         document.addEventListener('alpine:init', () => window.Alpine.data('rowadNavFilter', () => ({
             q: '',
