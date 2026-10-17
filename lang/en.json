@@ -2992,5 +2992,7 @@
     "سُحبت المسودة من إيجار": "The draft was withdrawn from Ejar",
     "مزامنة :d": "synced :d",
     "تاريخ قيد السجل التجاري": "Commercial registration date",
-    "تطلبه منصة إيجار للتحقق من المنشأة المستأجرة.": "Ejar requires it to verify a company tenant."
+    "تطلبه منصة إيجار للتحقق من المنشأة المستأجرة.": "Ejar requires it to verify a company tenant.",
+    "مربوطة بإيجار": "Linked to Ejar",
+    "غير مربوطة": "Not linked"
 }

@@ -123,6 +123,10 @@ class UnitInfolist
                             TextEntry::make('deed_number')->label(__('رقم الصك'))->placeholder('-'),
                             TextEntry::make('plan_number')->label(__('رقم المخطط'))->placeholder('-'),
                             TextEntry::make('plot_number')->label(__('رقم القطعة'))->placeholder('-'),
+                            TextEntry::make('ejar_unit_id')->label(__('منصة إيجار'))->badge()
+                                ->state(fn (Unit $record) => filled($record->ejar_unit_id) ? __('مربوطة بإيجار') : __('غير مربوطة'))
+                                ->color(fn (Unit $record) => filled($record->ejar_unit_id) ? 'success' : 'gray')
+                                ->visible(fn () => \App\Services\Ejar\EjarApi::connected()),
                         ]),
                         RepeatableEntry::make('deeds')->label(__('الصكوك'))->columns(['default' => 2, 'md' => 4])
                             ->visible(fn (Unit $record) => $record->deeds->count() > 1)
