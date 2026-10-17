@@ -918,3 +918,22 @@
   - It is configured by `SITE_WIDGET_SRC`, `SITE_WIDGET_TENANT` and `SITE_WIDGET_ID`; an empty id turns it off.
   - The snippet called `open()` before its deferred script had loaded, which would do nothing.
   - It now opens on the page's load event, as the snippet intends.
+
+## Platform mail and site settings; Ctrl+K screen launcher; visible sidebar scrollbar (2026-10-17)
+- Platform console › إعدادات المنصة › "البريد" holds the mail server and the main sender.
+  - Fields: SMTP host, port, encryption, user and password (encrypted), from address and name, reply-to, and who hears about new offices.
+  - A button saves the settings and sends a test message.
+  - At boot the saved values replace MAIL_* from .env. With nothing saved, .env stays in charge.
+  - Platform emails and every office without its own SMTP go out through it.
+- "موقع عقار نوفا" holds everything the official site shows:
+  - Arabic and English overrides of the hero badge, heading, highlighted words, text and footer blurb (empty keeps the built-in wording).
+  - Page title, description, keywords and share image (a URL, so no storage link is needed on the server).
+  - Social profiles, shown as footer icons.
+  - GA4, Tag Manager and Meta Pixel ids, validated so only an id can be injected.
+  - Extra head code for verification tags, platform admins only.
+  - The chat widget: on or off, auto-open, id, account and script.
+- Top bar:
+  - Ctrl+K (⌘K on Mac) opens a screen launcher built from the panel's own menu, so a user only sees screens they may open.
+  - The launcher is grouped like the sidebar, with icons, arrow keys, Enter and Esc.
+  - The record search moved to its own row under the top bar; "/" focuses it.
+- Sidebar: the scrollbar is bright teal on a faint track. A "المزيد بالأسفل" hint at the foot of the menu fades out at the end.

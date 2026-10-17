@@ -73,6 +73,19 @@ class CommandSearchTest extends TestCase
         $this->assertArrayNotHasKey(__('الصفحات والإجراءات'), $this->search('اضافة وحدة'));
     }
 
+    public function test_ctrl_k_lists_only_the_screens_the_user_may_open(): void
+    {
+        $clerk = User::create(['type' => 'staff', 'name' => 'موظف', 'email' => 'clerk@test.local', 'password' => 'secret-password']);
+        $clerk->givePermissionTo('clients.view_any', 'clients.view');
+        $this->actingAs($clerk);
+
+        $html = $this->get("{$this->host}/admin")->assertOk()->getContent();
+        $this->assertSame(1, preg_match("/rowadScreens\\(JSON\\.parse\\('(.*?)'\\)\\)/s", html_entity_decode($html), $m));
+        $labels = collect(json_decode(json_decode('"'.$m[1].'"'), true))->pluck('label');
+        $this->assertContains(__('العملاء (مستأجرون ومشترون)'), $labels);
+        $this->assertNotContains(__('الوحدات'), $labels);
+    }
+
     public function test_the_panel_shows_the_shortcut_and_the_menu_filter(): void
     {
         $user = User::create(['type' => 'staff', 'name' => 'مدير المكتب', 'email' => 'admin@office.test', 'password' => 'secret-password']);
@@ -80,7 +93,8 @@ class CommandSearchTest extends TestCase
         $this->actingAs($user);
 
         $this->withHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')->get("{$this->host}/admin")->assertOk()
-            ->assertSee('Ctrl K')->assertSee('x-mousetrap.global.mod-k', false)
+            ->assertSee('Ctrl K')->assertSee('rowadScreens', false)->assertSee('x-on:keydown.window.ctrl.k.prevent.stop="toggle()"', false)
+            ->assertSee(__('انتقل إلى شاشة…'))->assertSee(__('ابحث في السجلات: عميل، مالك، وحدة، عقد، سند…'))
             ->assertSee('rowad-nav-filter', false)->assertSee('rowad-top-title', false)
             ->assertSee('rowad-top-user', false)->assertSee(__('مدير'));
         $this->withHeader('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')->get("{$this->host}/admin")->assertSee('⌘K');

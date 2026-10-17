@@ -3061,5 +3061,13 @@
     "البريد لا يُرسل فعليًا (سجل فقط). اضبط خادم SMTP ليصل البريد للمستخدمين.": "Mail is not actually sent (log only). Set up an SMTP server so mail reaches users.",
     "حدد بريد الإرسال الرئيسي.": "Set the main from address.",
     "يُرسل البريد عبر :mailer من :from": "Mail is sent via :mailer from :from",
-    "حساباتنا على التواصل الاجتماعي": "Our social media accounts"
+    "حساباتنا على التواصل الاجتماعي": "Our social media accounts",
+    "انتقل إلى شاشة…": "Go to a screen…",
+    "الانتقال إلى شاشة": "Go to a screen",
+    "اكتب اسم الشاشة أو القسم…": "Type a screen or section name…",
+    "لا توجد شاشة بهذا الاسم.": "No screen by that name.",
+    "للتنقل": "to move",
+    "للفتح": "to open",
+    "للإغلاق": "to close",
+    "للبحث في السجلات": "to search records"
 }

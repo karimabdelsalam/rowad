@@ -1,8 +1,8 @@
 <?php
 
-// The top search box is a command palette (Ctrl+K): pages, "new …" actions and records.
+// The search row under the top bar ("/"): records, plus pages and "new …" actions. Ctrl+K is the screen launcher.
 return [
     'field' => [
-        'placeholder' => 'Search pages and records…',
+        'placeholder' => 'Search records: client, owner, unit, contract, voucher…',
     ],
 ];

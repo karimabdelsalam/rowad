@@ -63,11 +63,12 @@ trait ConfiguresPanel
             ])
             // the top search box is a command palette: Ctrl+K / ⌘K, pages and "new …" actions besides records
             ->globalSearch(CommandSearch::class)
-            ->globalSearchKeyBindings(['mod+k'])
-            ->globalSearchFieldSuffix(fn () => str_contains((string) request()->userAgent(), 'Mac') ? '⌘K' : 'Ctrl K')
+            // records search sits on its own row under the top bar ("/"); Ctrl+K opens the screen launcher
+            ->globalSearchFieldSuffix('/')
             // app shell: page title in the topbar, a menu filter, full screen, who is signed in beside the avatar
             ->renderHook(PanelsRenderHook::TOPBAR_LOGO_AFTER, fn () => view('filament.topbar-title'))
             ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('filament.sidebar-filter'))
+            ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => auth()->check() ? view('filament.screen-palette') : '')
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_AFTER, fn () => view('filament.topbar-tools'))
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.topbar-user'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('filament.locale-switch'))
