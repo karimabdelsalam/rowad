@@ -183,11 +183,43 @@
     </footer>
     @yield('scripts')
     @if (! \App\Services\Licensing\LicenseClient::selfHosted() && ($widget = \App\Support\PlatformSettings::widget()))
-        {{-- Aref (Planova) chat widget on the official site only (settings: platform console › موقع عقار نوفا) --}}
-        <script src="{{ $widget['src'] }}" data-planova-tenant="{{ $widget['tenant'] }}" data-planova-widget="{{ $widget['id'] }}" data-planova-launcher="none" defer></script>
-        @if ($widget['open'])
-            <script>window.addEventListener('load', () => window.PlanovaWidget?.open());</script>
-        @endif
+        {{-- Aref (Planova) chat widget on the official site only (settings: platform console › موقع عقار نوفا).
+             Its own round button opens and closes the chat; restyled below in the site's colours and font. --}}
+        <script src="{{ $widget['src'] }}" data-planova-tenant="{{ $widget['tenant'] }}" data-planova-widget="{{ $widget['id'] }}" defer></script>
+        <script>
+            window.addEventListener('load', () => {
+                const host = [...document.body.children].find((el) => el.shadowRoot?.querySelector('.panel'));
+                if (! host) return;
+                const style = document.createElement('style');
+                style.textContent = `
+                    *{font-family:'Cairo',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif!important}
+                    .launcher{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 0 0;background:linear-gradient(135deg,#14b8a6,#0f766e);border:2px solid #fff;box-shadow:0 10px 28px rgb(15 118 110 / .45),0 2px 6px rgb(15 23 42 / .2);transition:transform .15s}
+                    .launcher:hover{transform:scale(1.06)}
+                    .launcher svg{width:26px;height:26px}
+                    .panel{border-radius:18px;box-shadow:0 18px 50px rgb(15 23 42 / .28);border:1px solid #e2e8f0}
+                    .head{background:linear-gradient(135deg,#115e59,#0f766e);padding:14px 16px;font-size:15px;font-weight:700}
+                    .list,.intro{background:#f8fafc}
+                    .ai{background:#0f766e;color:#fff}
+                    .visitor{background:#e2e8f0;color:#0f172a}
+                    .msg,.ai,.human,.visitor{border-radius:14px;line-height:1.6}
+                    input{border-radius:10px!important}
+                    input:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgb(15 118 110 / .15)}
+                    button.send,.intro .start{background:#0f766e!important;border-radius:10px!important;font-weight:700}
+                    button.send:hover,.intro .start:hover{background:#115e59!important}
+                    .intro h3{color:#0f172a}
+                `;
+                host.shadowRoot.appendChild(style);
+                const button = host.shadowRoot.querySelector('.launcher');
+                if (button) {
+                    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>';
+                    button.setAttribute('aria-label', @js(__('تحدث معنا')));
+                    button.title = @js(__('تحدث معنا'));
+                }
+                @if ($widget['open'])
+                    window.PlanovaWidget?.open();
+                @endif
+            });
+        </script>
     @endif
 </body>
 </html>

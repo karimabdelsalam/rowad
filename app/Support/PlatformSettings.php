@@ -62,7 +62,7 @@ final class PlatformSettings
         'site_head_code' => null,       // verification tags etc., platform admins only
         'widget_enabled' => null,       // null: on when an id is configured
         'widget_src' => null, 'widget_tenant' => null, 'widget_id' => null,
-        'widget_auto_open' => true,
+        'widget_auto_open' => false,    // the visitor opens it from its button
     ];
 
     /** Social profiles shown in the site footer, in this order. */

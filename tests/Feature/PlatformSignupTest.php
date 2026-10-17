@@ -59,8 +59,9 @@ class PlatformSignupTest extends TestCase
     {
         foreach (['/', '/signup', '/terms'] as $path) {
             $this->get('http://localhost'.$path)->assertOk()
-                ->assertSee('src="https://app.aref.ai/widget.js" data-planova-tenant="14" data-planova-widget="9c8eb906a784c4e1" data-planova-launcher="none" defer', false)
-                ->assertSee('window.PlanovaWidget?.open()', false);
+                ->assertSee('src="https://app.aref.ai/widget.js" data-planova-tenant="14" data-planova-widget="9c8eb906a784c4e1" defer', false)
+                ->assertDontSee('data-planova-launcher="none"', false)          // its own button opens and closes it
+                ->assertDontSee('window.PlanovaWidget?.open()', false);          // never opens by itself unless asked
         }
 
         config(['rowad.site_widget.widget' => '']);
