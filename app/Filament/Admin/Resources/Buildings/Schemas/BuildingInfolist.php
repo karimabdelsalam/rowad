@@ -73,6 +73,10 @@ class BuildingInfolist
                     TextEntry::make('category.title')->label(__('التصنيف'))->badge()->color('gray')->placeholder('-'),
                     TextEntry::make('number')->label(__('رقم العقار'))->placeholder('-'),
                     TextEntry::make('floors')->label(__('الأدوار'))->numeric()->placeholder('-'),
+                    TextEntry::make('ejar_property_id')->label(__('منصة إيجار'))->badge()
+                        ->state(fn (\App\Models\Building $record) => filled($record->ejar_property_id) ? __('مسجل في إيجار') : __('غير مسجل'))
+                        ->color(fn (\App\Models\Building $record) => filled($record->ejar_property_id) ? 'success' : 'gray')
+                        ->visible(fn () => \App\Services\Ejar\EjarApi::connected()),
                     TextEntry::make('area')->label(__('المساحة (م²)'))->numeric(2)->placeholder('-'),
                     TextEntry::make('plan_number')->label(__('رقم المخطط'))->placeholder('-'),
                     TextEntry::make('plot_number')->label(__('رقم القطعة'))->placeholder('-'),

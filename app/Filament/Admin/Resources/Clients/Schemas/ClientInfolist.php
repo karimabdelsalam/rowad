@@ -36,7 +36,8 @@ class ClientInfolist
                 return [
                     'kicker' => ($r->kind?->getLabel() ?? __('عميل')).($r->category ? ' · '.$r->category->title : ''),
                     'title' => $r->displayName(),
-                    'sub' => [$r->kind === ClientKind::Company ? $r->full_name : null, $r->id_type?->getLabel().($r->id_number ? ' '.$r->id_number : ''), $r->mobile],
+                    'sub' => [$r->kind === ClientKind::Company ? $r->full_name : null, $r->id_type?->getLabel().($r->id_number ? ' '.$r->id_number : ''), $r->mobile,
+                        str_contains((string) $r->ejar_verification, 'succeed') ? '✓ '.__('متحقق في إيجار') : null],
                     'facts' => [
                         Parts::fact('عقود سارية', $r->rentContracts()->where('status', ContractStatus::Active)->count() + $r->saleContracts()->where('status', ContractStatus::Active)->count()),
                         Parts::fact('المستحق عليه', Parts::amount($outstanding), $outstanding > 0 ? 'warning' : 'success'),

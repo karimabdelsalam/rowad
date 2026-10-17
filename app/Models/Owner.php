@@ -25,6 +25,7 @@ class Owner extends Model implements HasMedia
     {
         return [
             'id_type' => IdType::class,
+            'ejar_verified_at' => 'datetime',
             'id_issue_date' => 'date',
             'birth_date' => 'date',
         ];

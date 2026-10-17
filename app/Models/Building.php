@@ -23,6 +23,7 @@ class Building extends Model implements HasMedia
             'area' => 'decimal:2',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
+            'ejar_profile' => 'array',
         ];
     }
 

@@ -35,7 +35,7 @@ class EjarApi
     /** Checks the credentials: Ejar answers 200 to a valid key pair, 401/403 otherwise. */
     public function ping(): void
     {
-        $this->send('get', '/contracts', ['page' => 1]);
+        $this->send('get', '/contracts', query: ['page' => 1]);
     }
 
     // ---------------------------------------------------------------- contracts
@@ -87,7 +87,7 @@ class EjarApi
     /** @return array{id: ?string, state: ?string} */
     public function status(string $contractNumber, ?int $version = null): array
     {
-        $contract = $this->send('get', '/contracts', ['filters' => array_filter(['contract_number' => $contractNumber, 'contract_version' => $version])])['data']['contract'] ?? [];
+        $contract = $this->send('get', '/contracts', query: ['filters' => array_filter(['contract_number' => $contractNumber, 'contract_version' => $version])])['data']['contract'] ?? [];
 
         return ['id' => $contract['id'] ?? null, 'state' => $contract['state'] ?? null];
     }
@@ -101,29 +101,84 @@ class EjarApi
 
     // ---------------------------------------------------------------- entities, properties, units
 
-    /** A person as Ejar knows them (verifies the ID before a contract uses it). */
+    /**
+     * Contracts already on Ejar for a lessor and/or tenant ID (50 a page) — to link a contract documented outside
+     * the system. @return list<array{id: ?string, contract_number: ?string, version: ?int, contract_start_date: ?string, contract_end_date: ?string, property_name: ?string, unit_number: ?string}>
+     */
+    public function contracts(array $filters, int $page = 1): array
+    {
+        $json = $this->send('get', '/contracts', query: array_filter(['filters' => array_filter($filters), 'page' => $page > 1 ? $page : null]));
+
+        return array_values(array_map(fn ($c) => [
+            'id' => isset($c['id']) ? (string) $c['id'] : (isset($c['attributes']['id']) ? (string) $c['attributes']['id'] : null),
+            'contract_number' => $c['attributes']['contract_number'] ?? null,
+            'version' => isset($c['attributes']['version']) ? (int) $c['attributes']['version'] : null,
+            'contract_start_date' => $c['attributes']['contract_start_date'] ?? null,
+            'contract_end_date' => $c['attributes']['contract_end_date'] ?? null,
+            'property_name' => data_get($c, 'relationships.contract_portfolio_property.property_name'),
+            'unit_number' => data_get($c, 'relationships.contract_portfolio_units.0.unit_number'),
+        ], array_values(array_filter((array) ($json['data'] ?? []), 'is_array'))));
+    }
+
+    /** A person as Ejar knows them (verifies the ID before a contract uses it); 'id' is Ejar's entity id. */
     public function individual(string $idNumber, string $idType): array
     {
-        return $this->send('get', '/individual_entities', ['filters' => ['id_number' => $idNumber, 'entity_type' => self::ID_TYPES[$idType] ?? $idType]])['data'] ?? [];
+        return self::entity($this->send('get', '/individual_entities', query: ['filters' => ['id_number' => $idNumber, 'entity_type' => self::ID_TYPES[$idType] ?? $idType]])['data'] ?? []);
     }
 
     public function organization(string $crNumber, string $registrationDate): array
     {
-        return $this->send('get', '/organization_entities', ['filters' => ['cr_number' => $crNumber, 'registration_date' => $registrationDate]])['data'] ?? [];
+        return self::entity($this->send('get', '/organization_entities', query: ['filters' => ['cr_number' => $crNumber, 'registration_date' => $registrationDate]])['data'] ?? []);
     }
 
-    /** Properties registered in Ejar under an ownership document (deed number + issue date, Gregorian). @return list<array> */
+    /**
+     * Properties registered in Ejar under an ownership document (deed number + issue date, Gregorian). The
+     * specification lists this as GET with a JSON body (its example uses POST, which creates a property), so
+     * the filter goes both in the body and in the query string. @return list<array>
+     */
     public function properties(string $documentNumber, string $issuedDate): array
     {
-        return array_values(array_map(fn ($p) => ($p['attributes'] ?? []) + ['id' => $p['id'] ?? ($p['attributes']['id'] ?? null)],
-            $this->send('get', '/properties', ['data' => ['document_number' => $documentNumber, 'issued_date' => $issuedDate]])['data'] ?? []));
+        $filter = ['data' => ['document_number' => $documentNumber, 'issued_date' => $issuedDate]];
+
+        return array_values(array_map(fn ($p) => self::entity($p), $this->send('get', '/properties', $filter, $filter)['data'] ?? []));
     }
 
     /** @return list<array> */
     public function units(string $propertyId, ?string $unitNumber = null): array
     {
-        return array_values(array_map(fn ($u) => ($u['attributes'] ?? []) + ['id' => $u['id'] ?? ($u['attributes']['id'] ?? null)],
-            $this->send('get', "/properties/{$propertyId}/units", array_filter(['data' => $unitNumber ? ['unit_number' => $unitNumber] : null]))['data'] ?? []));
+        $filter = ['data' => $unitNumber ? ['unit_number' => $unitNumber] : new \stdClass];
+
+        return array_values(array_map(fn ($u) => self::entity($u), $this->send('get', "/properties/{$propertyId}/units", $filter, $unitNumber ? $filter : [])['data'] ?? []));
+    }
+
+    /**
+     * Registers a property (with its ownership document and owner) in the office's Ejar portfolio.
+     *
+     * @param  array{ownership_document: array, owners: array, property: array}  $payload
+     * @return string the new Ejar property id
+     */
+    public function createProperty(array $payload): string
+    {
+        $id = self::entity($this->send('post', '/properties', ['data' => $payload])['data'] ?? [])['id'] ?? null;
+
+        return filled($id) ? (string) $id : throw new EjarException(__('لم تُرجع منصة إيجار رقم العقار بعد تسجيله.'));
+    }
+
+    /** Adds a unit under an Ejar property. @return string the new Ejar unit id */
+    public function createUnit(string $propertyId, array $attributes): string
+    {
+        $id = self::entity($this->send('post', "/properties/{$propertyId}/units", ['data' => ['type' => 'portfolio_units', 'attributes' => $attributes]])['data'] ?? [])['id'] ?? null;
+
+        return filled($id) ? (string) $id : throw new EjarException(__('لم تُرجع منصة إيجار رقم الوحدة بعد تسجيلها.'));
+    }
+
+    /** A JSON:API resource flattened to its attributes, with its id wherever Ejar put it. */
+    private static function entity(array $resource): array
+    {
+        $attributes = (array) ($resource['attributes'] ?? []);
+        $id = $resource['id'] ?? $attributes['id'] ?? null;
+
+        return $attributes + array_diff_key($resource, ['attributes' => 1, 'relationships' => 1, 'type' => 1]) + ['id' => $id !== null ? (string) $id : null];
     }
 
     // ---------------------------------------------------------------- transport
@@ -142,8 +197,12 @@ class EjarApi
         return rtrim((string) $this->baseUrl, '/').$path;
     }
 
-    /** @return array<string, mixed> */
-    private function send(string $method, string $path, array $payload = []): array
+    /**
+     * @param  array<string, mixed>  $payload  JSON body
+     * @param  array<string, mixed>  $query  query string (filters, page)
+     * @return array<string, mixed>
+     */
+    private function send(string $method, string $path, array $payload = [], array $query = []): array
     {
         if (blank($this->key) || blank($this->secret)) {
             throw new EjarException(__('أدخل مفتاح وسر الربط مع إيجار من صفحة "منصة إيجار" أولًا.'));
@@ -151,7 +210,7 @@ class EjarApi
         try {
             $request = $this->request();
             $response = match ($method) {
-                'get' => $request->get($this->url($path), $payload),
+                'get' => ($payload !== [] ? $request->withBody(json_encode($payload, JSON_UNESCAPED_UNICODE), 'application/json; charset=utf-8') : $request)->get($this->url($path), $query),
                 'delete' => $request->delete($this->url($path)),
                 default => $request->withBody(json_encode($payload, JSON_UNESCAPED_UNICODE), 'application/json; charset=utf-8')->post($this->url($path)),
             };

@@ -44,13 +44,16 @@ final class EjarRegistration
             $problems[] = __('اربط حساب المكتب بمنصة إيجار من صفحة "منصة إيجار" في الإعدادات.');
         }
         if ($contract->usage === UnitUsage::Commercial) {
-            $problems[] = __('الربط الحالي مع إيجار يدعم العقود السكنية فقط. وثّق العقد التجاري من المنصة مباشرة.');
+            $problems[] = __('واجهة إيجار للأنظمة الخارجية تدعم العقود السكنية فقط حاليًا. وثّق العقد التجاري من منصة إيجار مباشرة.');
         }
         if (in_array($contract->ejar_status, [EjarStatus::Documented, EjarStatus::NotRequired], true)) {
             $problems[] = __('العقد موثق أو لا يلزم توثيقه.');
         }
         if ($contract->start_date === null || $contract->end_date === null || $contract->end_date->lte($contract->start_date)) {
             $problems[] = __('حدد تاريخي بداية ونهاية صحيحين للعقد.');
+        } elseif ($contract->start_date->lte(today()) && blank($contract->ejar_contract_id)) {
+            // ECRS: "contract_start_date … must be in the future"
+            $problems[] = __('إيجار يقبل عبر الربط العقود التي تبدأ بعد اليوم فقط. لعقد بدأ بالفعل استخدم "ربط بعقد موجود في إيجار" أو وثّقه من المنصة.');
         }
         if (blank($contract->unit?->ejar_property_id) || blank($contract->unit?->ejar_unit_id)) {
             $problems[] = __('اربط الوحدة بعقارها في إيجار أولًا (زر "ربط بإيجار" في صفحة الوحدة).');

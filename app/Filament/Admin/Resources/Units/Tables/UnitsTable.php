@@ -110,6 +110,7 @@ class UnitsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    \App\Filament\Admin\Resources\Units\EjarRegisterAction::bulk(),
                     DeleteBulkAction::make(),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),

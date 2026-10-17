@@ -14,6 +14,7 @@ class ViewClient extends ViewRecord
     {
         return [
             \App\Filament\Admin\Pages\Assistant::askAboutAction('client'),
+            \App\Filament\Support\EjarVerifyAction::make(),
             EditAction::make(),
         ];
     }

@@ -28,7 +28,8 @@ class OwnerInfolist
                 return [
                     'kicker' => __('مالك'),
                     'title' => $r->full_name,
-                    'sub' => [$r->id_type?->getLabel().($r->id_number ? ' '.$r->id_number : ''), $r->mobile, $r->nationality],
+                    'sub' => [$r->id_type?->getLabel().($r->id_number ? ' '.$r->id_number : ''), $r->mobile, $r->nationality,
+                        str_contains((string) $r->ejar_verification, 'succeed') ? '✓ '.__('متحقق في إيجار') : null],
                     'facts' => [
                         Parts::fact('الوحدات', $r->units->count()),
                         Parts::fact('مؤجرة', $r->units->where('status', UnitStatus::Rented)->count(), 'success'),

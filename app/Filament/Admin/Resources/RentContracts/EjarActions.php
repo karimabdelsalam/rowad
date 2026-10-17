@@ -29,7 +29,7 @@ final class EjarActions
 
     public static function group(): ActionGroup
     {
-        return ActionGroup::make([self::send(), self::refresh(), self::download(), self::withdraw(), self::sheet(), self::record(), self::notRequired(), self::open()])
+        return ActionGroup::make([self::send(), self::linkExisting(), self::refresh(), self::download(), self::withdraw(), self::sheet(), self::record(), self::notRequired(), self::open()])
             ->label(__('منصة إيجار'))->icon(Heroicon::OutlinedBuildingLibrary)->button()->color('gray');
     }
 
@@ -57,6 +57,60 @@ final class EjarActions
                         ->body(implode("\n", array_slice([$e->getMessage(), ...$e->messages], 0, 6))."\n".__('صحّح البيانات ثم اضغط "استكمال الإرسال"؛ يُكمل النظام من حيث توقف.'))->persistent()->send();
                 }
             });
+    }
+
+    /** A contract already documented on Ejar (outside the system): find it by the parties' IDs and follow it from here. */
+    public static function linkExisting(): Action
+    {
+        return Action::make('ejarLinkExisting')
+            ->label(__('ربط بعقد موجود في إيجار'))
+            ->icon(Heroicon::OutlinedLink)
+            ->visible(fn (RentContract $record) => self::can() && EjarApi::connected() && blank($record->ejar_contract_id) && $record->ejar_status !== EjarStatus::NotRequired)
+            ->modalHeading(__('ربط العقد بعقد موجود في إيجار'))
+            ->modalDescription(__('للعقود الموثقة في إيجار من قبل: ابحث بهوية المستأجر و/أو المؤجر واختر العقد، ثم يتابعه النظام من هنا.'))
+            ->modalSubmitActionLabel(__('ربط'))
+            ->fillForm(function (RentContract $record) {
+                $record->loadMissing(['clients', 'unit.owners']);
+
+                return ['tenant_id_number' => $record->clients->first()?->id_number, 'lessor_id_number' => $record->unit?->owners->first()?->id_number];
+            })
+            ->schema([
+                TextInput::make('tenant_id_number')->label(__('هوية المستأجر'))->maxLength(20)->live(onBlur: true)->extraInputAttributes(['dir' => 'ltr']),
+                TextInput::make('lessor_id_number')->label(__('هوية المؤجر'))->maxLength(20)->live(onBlur: true)->extraInputAttributes(['dir' => 'ltr']),
+                Select::make('ejar_contract')->label(__('العقد في إيجار'))->required()->native(false)
+                    ->options(fn (Get $get) => self::existing($get('tenant_id_number'), $get('lessor_id_number')))
+                    ->placeholder(__('أدخل هوية المستأجر أو المؤجر لعرض العقود')),
+            ])
+            ->action(function (RentContract $record, array $data) {
+                [$id, $number, $version] = array_pad(explode('|', (string) $data['ejar_contract']), 3, null);
+                $record->forceFill(['ejar_contract_id' => $id, 'ejar_number' => $number, 'ejar_version' => $version !== null && $version !== '' ? (int) $version : null,
+                    'ejar_status' => EjarStatus::AwaitingParties, 'ejar_progress' => ['linked' => now()->toIso8601String()], 'ejar_error' => null])->save();
+                try {
+                    $state = EjarRegistration::make()->refresh($record);
+                    Notification::make()->success()->title(__('رُبط العقد بعقد إيجار :number', ['number' => $number]))
+                        ->body(__('الحالة في إيجار: :state', ['state' => $state ?? '—']))->send();
+                } catch (EjarException $e) {
+                    Notification::make()->warning()->title(__('رُبط العقد، وتعذّر جلب حالته الآن'))->body($e->getMessage())->send();
+                }
+            });
+    }
+
+    /** @return array<string, string> "id|number|version" => label */
+    private static function existing(?string $tenant, ?string $lessor): array
+    {
+        if (blank($tenant) && blank($lessor)) {
+            return [];
+        }
+        try {
+            $contracts = \Illuminate\Support\Facades\Cache::remember('ejar:'.tenant()?->getTenantKey().':contracts:'.md5($tenant.'|'.$lessor), 300,
+                fn () => (new EjarApi)->contracts(['tenant_id_number' => $tenant, 'lessor_id_number' => $lessor]));
+        } catch (EjarException) {
+            return [];
+        }
+
+        return collect($contracts)->filter(fn ($c) => filled($c['id']))->mapWithKeys(fn ($c) => [
+            $c['id'].'|'.$c['contract_number'].'|'.$c['version'] => trim(($c['contract_number'] ?? '—').' · '.($c['contract_start_date'] ?? '').' ← '.($c['contract_end_date'] ?? '').' · '.($c['property_name'] ?? '').' '.($c['unit_number'] ?? ''), ' ·'),
+        ])->all();
     }
 
     public static function refresh(): Action

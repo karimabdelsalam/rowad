@@ -937,3 +937,33 @@
   - The launcher is grouped like the sidebar, with icons, arrow keys, Enter and Esc.
   - The record search moved to its own row under the top bar; "/" focuses it.
 - Sidebar: the scrollbar is bright teal on a faint track. A "المزيد بالأسفل" hint at the foot of the menu fades out at the end.
+
+## Ejar: properties and units registered from the system; parties verified; existing contracts linked (2026-10-17)
+- "تسجيل في إيجار" on a unit page registers the property and the unit in the office's Ejar portfolio.
+  - It uses `POST /properties` and `POST /properties/{id}/units`, then links the unit, so contracts can be sent right after.
+  - The three-step form (deed, property, unit) is prefilled from what the system already has.
+  - Prefilled data: deed number and date (Hijri converted to Gregorian), issuer, building name and number, city, district, street, floors, area, rooms, furnishing and meter numbers.
+  - The office adds what Ejar needs and we never kept: region, building number, postal code, additional number, property type and usage, facilities, unit type, direction, finishing, amenities and dimensions.
+  - That is saved as an Ejar profile on the building (or on the unit when it has no building), so the next unit of the building needs only its own details.
+  - A building is one Ejar property; the property id is put on every unit of the building.
+  - Each finished step is saved. If Ejar refuses the unit, the retry only creates the unit; the property is not created twice.
+- The property owner is referenced by their Ejar entity id.
+  - It is looked up from the owner's ID (or CR number plus registration date) and kept on the owner.
+  - One owner is sent as an object, as in the specification's example; several owners go as a list.
+- Non-electronic ownership documents need a scan. The specification only says "[Attachment]", so scans are sent as base64 data URIs.
+- Ejar's value lists live in `config/ejar.php`: regions, document, property and unit types, usages, furnishing, directions, finishing, facilities and amenities.
+  - The specification gives one example value per field; the rest follow Ejar's naming.
+  - A value Ejar names differently can be corrected there after the first real registration.
+- "تسجيل في إيجار" on the units table registers the selected units of buildings already on Ejar in one go.
+  - It uses each unit's saved (or default) details.
+  - Units without an area, or whose property is not on Ejar yet, are skipped and reported.
+- "التحقق في إيجار" on owner and client pages asks Ejar who an ID belongs to.
+  - It uses individual or organization entities and shows Ejar's name, warning when it differs from ours.
+  - It keeps the Ejar entity id, and the page header shows "✓ متحقق في إيجار".
+- "ربط بعقد موجود في إيجار" on a contract finds a contract already documented on Ejar, by the tenant's and/or lessor's ID (`GET /contracts` filters).
+  - It links the contract and fetches its state, and Ejar's PDF when it is registered.
+- Rules from the specification enforced before sending:
+  - The start date must be after today; for a contract that has already started, the office links it instead.
+  - The external-system API supports residential contracts only. That is Ejar's limit, and the message says so.
+- The "list properties" call is documented as GET with a JSON body, but its example uses POST, which creates a property.
+  - The filter is therefore sent both as the GET body and in the query string.

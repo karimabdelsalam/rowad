@@ -35,6 +35,8 @@ class Unit extends Model implements HasMedia
     {
         return [
             'offer_type' => OfferType::class,
+            'ejar_profile' => 'array',
+            'ejar_property' => 'array',
             'status' => UnitStatus::class,
             'is_active' => 'boolean',
             'is_furnished' => 'boolean',

@@ -15,7 +15,11 @@ class ViewUnit extends ViewRecord
         return [
             \App\Filament\Admin\Pages\Assistant::askAboutAction('unit'),
             ...\App\Filament\Support\DocumentActions::make('unit', __('طباعة البطاقة')),
-            \App\Filament\Admin\Resources\Units\EjarLinkAction::make(),
+            \Filament\Actions\ActionGroup::make([
+                \App\Filament\Admin\Resources\Units\EjarRegisterAction::make(),
+                \App\Filament\Admin\Resources\Units\EjarLinkAction::make(),
+            ])->label(__('منصة إيجار'))->icon(\Filament\Support\Icons\Heroicon::OutlinedBuildingLibrary)->button()->color('gray')
+                ->visible(fn () => \App\Services\Ejar\EjarApi::connected()),
             EditAction::make(),
         ];
     }

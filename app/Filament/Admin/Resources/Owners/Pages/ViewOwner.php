@@ -14,6 +14,7 @@ class ViewOwner extends ViewRecord
     {
         return [
             \App\Filament\Admin\Pages\Assistant::askAboutAction('owner'),
+            \App\Filament\Support\EjarVerifyAction::make(),
             EditAction::make(),
         ];
     }
