@@ -62,7 +62,6 @@ final class PlatformSettings
         'site_head_code' => null,       // verification tags etc., platform admins only
         'widget_enabled' => null,       // null: on when an id is configured
         'widget_src' => null, 'widget_tenant' => null, 'widget_id' => null,
-        'widget_auto_open' => false,    // the visitor opens it from its button
     ];
 
     /** Social profiles shown in the site footer, in this order. */
@@ -204,7 +203,7 @@ final class PlatformSettings
             ->filter(fn ($url) => filled($url) && preg_match('#^https?://#i', $url))->all();
     }
 
-    /** @return array{src: string, tenant: string, id: string, open: bool}|null the chat widget, or null when off */
+    /** @return array{src: string, tenant: string, id: string}|null the chat widget (always starts closed; the visitor opens it) the chat widget, or null when off */
     public static function widget(): ?array
     {
         $id = (string) (self::get('widget_id') ?: config('rowad.site_widget.widget'));
@@ -217,7 +216,6 @@ final class PlatformSettings
             'src' => (string) (self::get('widget_src') ?: config('rowad.site_widget.src')),
             'tenant' => (string) (self::get('widget_tenant') ?: config('rowad.site_widget.tenant')),
             'id' => $id,
-            'open' => filter_var(self::get('widget_auto_open'), FILTER_VALIDATE_BOOLEAN),
         ];
     }
 

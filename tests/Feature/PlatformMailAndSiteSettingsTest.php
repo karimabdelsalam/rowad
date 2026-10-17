@@ -94,7 +94,7 @@ class PlatformMailAndSiteSettingsTest extends TestCase
                 'social_x' => 'https://x.com/aqarnova', 'social_instagram' => 'https://instagram.com/aqarnova',
                 'analytics_ga4' => 'G-ABC123', 'analytics_meta_pixel' => '123456789012345',
                 'site_head_code' => '<meta name="google-site-verification" content="verify-me">',
-                'widget_enabled' => true, 'widget_auto_open' => false, 'widget_id' => 'w-777', 'widget_tenant' => '22',
+                'widget_enabled' => true, 'widget_id' => 'w-777', 'widget_tenant' => '22',
             ])
             ->call('save')->assertHasNoFormErrors();
 

@@ -195,9 +195,10 @@
                 const style = document.createElement('style');
                 style.textContent = `
                     *{font-family:'Cairo',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif!important}
-                    .launcher{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 0 0;background:linear-gradient(135deg,#14b8a6,#0f766e);border:2px solid #fff;box-shadow:0 10px 28px rgb(15 118 110 / .45),0 2px 6px rgb(15 23 42 / .2);transition:transform .15s}
+                    .launcher{width:auto;height:54px;display:inline-flex;align-items:center;gap:8px;padding:0 20px 0 16px;border-radius:999px!important;font-size:15px;font-weight:700;white-space:nowrap;margin:0 auto 0 0;background:linear-gradient(135deg,#14b8a6,#0f766e);border:2px solid #fff;box-shadow:0 10px 28px rgb(15 118 110 / .45),0 2px 6px rgb(15 23 42 / .2);transition:transform .15s}
                     .launcher:hover{transform:scale(1.06)}
-                    .launcher svg{width:26px;height:26px}
+                    .launcher svg{width:24px;height:24px;flex:none}
+                    .launcher span{line-height:1}
                     .panel{border-radius:18px;box-shadow:0 18px 50px rgb(15 23 42 / .28);border:1px solid #e2e8f0}
                     .head{background:linear-gradient(135deg,#115e59,#0f766e);padding:14px 16px;font-size:15px;font-weight:700}
                     .list,.intro{background:#f8fafc}
@@ -213,13 +214,11 @@
                 host.shadowRoot.appendChild(style);
                 const button = host.shadowRoot.querySelector('.launcher');
                 if (button) {
-                    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>';
+                    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg><span>' + @js(__('تحدث معنا')) + '</span>';
+                    button.dir = document.documentElement.dir || 'rtl';
                     button.setAttribute('aria-label', @js(__('تحدث معنا')));
                     button.title = @js(__('تحدث معنا'));
                 }
-                @if ($widget['open'])
-                    window.PlanovaWidget?.open();
-                @endif
             });
         </script>
     @endif

@@ -57,11 +57,16 @@ class PlatformSignupTest extends TestCase
 
     public function test_the_official_site_carries_the_chat_widget(): void
     {
+        // an "open by itself" switch saved by an earlier version must not open the chat any more
+        \App\Models\Setting::on(config('tenancy.database.central_connection'))->create(['key' => 'widget_auto_open', 'group' => 'platform', 'value' => true]);
+        \App\Support\PlatformSettings::flush();
+
         foreach (['/', '/signup', '/terms'] as $path) {
             $this->get('http://localhost'.$path)->assertOk()
                 ->assertSee('src="https://app.aref.ai/widget.js" data-planova-tenant="14" data-planova-widget="9c8eb906a784c4e1" defer', false)
                 ->assertDontSee('data-planova-launcher="none"', false)          // its own button opens and closes it
-                ->assertDontSee('window.PlanovaWidget?.open()', false);          // never opens by itself unless asked
+                ->assertDontSee('PlanovaWidget?.open()', false)                  // never opens by itself, whatever was saved before
+                ->assertSee(__('تحدث معنا'));                                    // the button says what it is
         }
 
         config(['rowad.site_widget.widget' => '']);

@@ -168,7 +168,6 @@ class PlatformSettingsPage extends Page
                     ]),
                     Section::make(__('المحادثة المباشرة (ويدجت عارف)'))->columns(3)->compact()->collapsible()->schema([
                         Toggle::make('widget_enabled')->label(__('تفعيل الويدجت'))->inline(false),
-                        Toggle::make('widget_auto_open')->label(__('تفتح تلقائيًا عند دخول الزائر'))->inline(false),
                         TextInput::make('widget_id')->label(__('معرّف الويدجت'))->extraInputAttributes(['dir' => 'ltr'])->placeholder(config('rowad.site_widget.widget')),
                         TextInput::make('widget_tenant')->label(__('رقم الحساب'))->extraInputAttributes(['dir' => 'ltr'])->placeholder(config('rowad.site_widget.tenant')),
                         TextInput::make('widget_src')->label(__('رابط السكربت'))->url()->extraInputAttributes(['dir' => 'ltr'])->columnSpan(2)->placeholder(config('rowad.site_widget.src')),
