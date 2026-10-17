@@ -151,7 +151,7 @@ final class EjarRegisterAction
                 TextInput::make('units_per_floor')->label(__('الوحدات في الدور'))->required()->integer()->minValue(1)->maxValue(200),
                 DatePicker::make('established_date')->label(__('تاريخ الإنشاء'))->maxDate(today()),
             ]),
-            Fieldset::make(__('العنوان الوطني'))->columns(['default' => 1, 'md' => 4])->schema([
+            Fieldset::make(__('العنوان الوطني'))->columns(1)->schema([Grid::make(['default' => 1, 'md' => 4])->schema([
                 Select::make('region')->label(__('المنطقة'))->required()->native(false)->searchable()->options(self::options('regions')),
                 TextInput::make('city')->label(__('المدينة'))->required()->maxLength(80),
                 TextInput::make('district')->label(__('الحي'))->required()->maxLength(80),
@@ -160,10 +160,10 @@ final class EjarRegisterAction
                 TextInput::make('postal_code')->label(__('الرمز البريدي'))->required()->regex('/^\d{5}$/')->length(5)->extraInputAttributes(['dir' => 'ltr', 'inputmode' => 'numeric']),
                 TextInput::make('additional_number')->label(__('الرقم الإضافي'))->required()->regex('/^\d{4}$/')->length(4)->extraInputAttributes(['dir' => 'ltr', 'inputmode' => 'numeric']),
                 Text::make(__('من شهادة العنوان الوطني (سبل) للعقار.')),
-            ]),
-            Fieldset::make(__('المرافق'))->columns(['default' => 2, 'md' => 6])->schema(
+            ])]),
+            Fieldset::make(__('المرافق'))->columns(1)->schema([Grid::make(['default' => 2, 'md' => 6])->schema(
                 collect(config('ejar.facilities'))->map(fn ($label, $key) => TextInput::make("facilities.{$key}")->label(__($label))->integer()->minValue(0)->maxValue(999)->default(0))->values()->all()
-            ),
+            )]),
         ];
     }
 
@@ -186,20 +186,20 @@ final class EjarRegisterAction
                 Toggle::make('include_mezzanine')->label(__('بها ميزانين'))->inline(false),
                 DatePicker::make('established_date')->label(__('تاريخ الإنشاء'))->maxDate(today()),
             ]),
-            Fieldset::make(__('العدادات'))->columns(['default' => 1, 'md' => 3])->schema([
+            Fieldset::make(__('العدادات'))->columns(1)->schema([Grid::make(['default' => 1, 'md' => 3])->schema([
                 TextInput::make('electricity_meter')->label(__('رقم عداد الكهرباء'))->maxLength(40)->extraInputAttributes(['dir' => 'ltr']),
                 TextInput::make('water_meter')->label(__('رقم عداد المياه'))->maxLength(40)->extraInputAttributes(['dir' => 'ltr']),
                 TextInput::make('gas_meter')->label(__('رقم عداد الغاز'))->maxLength(40)->extraInputAttributes(['dir' => 'ltr']),
-            ]),
-            Fieldset::make(__('مكونات الوحدة'))->columns(['default' => 2, 'md' => 6])->schema([
+            ])]),
+            Fieldset::make(__('مكونات الوحدة'))->columns(1)->schema([Grid::make(['default' => 2, 'md' => 6])->schema([
                 ...collect(config('ejar.amenities'))->map(fn ($label, $key) => TextInput::make("amenities.{$key}")->label(__($label))->integer()->minValue(0)->maxValue(99)->default(0))->values()->all(),
                 ...collect(config('ejar.fixtures'))->map(fn ($label, $key) => Toggle::make("fixtures.{$key}")->label(__($label))->inline(false))->values()->all(),
-            ]),
-            Fieldset::make(__('الأبعاد (اختياري، بالمتر)'))->columns(3)->schema([
+            ])]),
+            Fieldset::make(__('الأبعاد (اختياري، بالمتر)'))->columns(1)->schema([Grid::make(3)->schema([
                 TextInput::make('dimensions.length')->label(__('الطول'))->numeric()->minValue(0),
                 TextInput::make('dimensions.width')->label(__('العرض'))->numeric()->minValue(0),
                 TextInput::make('dimensions.height')->label(__('الارتفاع'))->numeric()->minValue(0),
-            ]),
+            ])]),
         ];
     }
 
