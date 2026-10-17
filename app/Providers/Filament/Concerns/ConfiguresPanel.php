@@ -114,7 +114,7 @@ trait ConfiguresPanel
             $panel->renderHook(PanelsRenderHook::BODY_START, fn () => Demo::active() ? view('filament.demo-banner') : '');
             // a notice from the platform to every office (maintenance tonight, new feature…), set in the platform console
             $panel->renderHook(PanelsRenderHook::PAGE_START, fn () => ($a = PlatformSettings::announcement()) ? view('filament.platform-announcement', $a) : '');
-            $panel->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.assistant-shortcut'));
+            $panel->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('filament.assistant-shortcut') : '');
 
             // Persistent so Livewire update requests are also resolved to the office's database.
             $panel->middleware([

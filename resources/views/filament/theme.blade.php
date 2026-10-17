@@ -620,11 +620,19 @@
     .rowad-plan-notice--info { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
     .rowad-plan-notice__icon { width: 20px; height: 20px; flex: none; }
     .rowad-plan-notice a { margin-inline-start: auto; text-decoration: underline; font-weight: 700; }
-    .rowad-ai-shortcut { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700; color: #fff;
-        background: linear-gradient(135deg, var(--rowad-brand-light), var(--rowad-brand)); box-shadow: 0 4px 12px color-mix(in oklab, var(--rowad-brand) 30%, transparent); margin-inline-end: 6px; }
-    .rowad-ai-shortcut:hover { filter: brightness(1.08); }
-    .rowad-ai-shortcut svg { width: 18px; height: 18px; }
-    @media (max-width: 640px) { .rowad-ai-shortcut span { display: none; } .rowad-ai-shortcut { padding: 8px; } }
+    /* the assistant: a small floating button at the bottom left, its label slides out on hover */
+    .rowad-ai-shortcut { position: fixed; left: 20px; bottom: 20px; z-index: 40; display: inline-flex; align-items: center; gap: 0; height: 52px; min-width: 52px; padding: 0 15px;
+        border-radius: 999px; color: #fff; font-size: .88rem; font-weight: 700; white-space: nowrap; overflow: hidden; direction: rtl;
+        background: linear-gradient(135deg, var(--rowad-brand-light), var(--rowad-brand)); border: 2px solid #fff;
+        box-shadow: 0 10px 28px color-mix(in oklab, var(--rowad-brand) 40%, transparent), 0 2px 6px rgb(15 23 42 / .15); transition: gap .2s, padding .2s, filter .15s; }
+    [dir="ltr"] .rowad-ai-shortcut { direction: ltr; }
+    .rowad-ai-shortcut svg { width: 22px; height: 22px; flex: none; }
+    .rowad-ai-shortcut span { max-width: 0; opacity: 0; transition: max-width .25s ease, opacity .2s; }
+    .rowad-ai-shortcut:hover, .rowad-ai-shortcut:focus-visible { gap: 8px; padding-inline: 16px 18px; filter: brightness(1.05); }
+    .rowad-ai-shortcut:hover span, .rowad-ai-shortcut:focus-visible span { max-width: 12rem; opacity: 1; }
+    @media (max-width: 48rem) { .rowad-ai-shortcut { left: 14px; bottom: calc(84px + env(safe-area-inset-bottom)); height: 48px; min-width: 48px; padding: 0 13px; } }
+    @media print { .rowad-ai-shortcut { display: none !important; } }
+    body.rowad-pdf-capture .rowad-ai-shortcut { display: none !important; }
 </style>
 <script>
     (() => {
