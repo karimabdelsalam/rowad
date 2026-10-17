@@ -53,11 +53,13 @@ return new class extends Migration
         });
 
         // the account a voucher that isn't tied to rent, owners or payroll goes to (default: other income / general expenses)
-        foreach (['receipt_vouchers', 'payment_vouchers'] as $vouchers) {
-            Schema::table($vouchers, function (Blueprint $table) {
-                $table->foreignId('account_id')->nullable()->after('transaction_type_id')->constrained()->nullOnDelete();
-            });
-        }
+        // (position after each table's own type column — SQLite ignores after(), MySQL needs it to exist)
+        Schema::table('receipt_vouchers', function (Blueprint $table) {
+            $table->foreignId('account_id')->nullable()->after('transaction_type_id')->constrained()->nullOnDelete();
+        });
+        Schema::table('payment_vouchers', function (Blueprint $table) {
+            $table->foreignId('account_id')->nullable()->after('expense_type_id')->constrained()->nullOnDelete();
+        });
 
         $now = now();
         $ids = [];
