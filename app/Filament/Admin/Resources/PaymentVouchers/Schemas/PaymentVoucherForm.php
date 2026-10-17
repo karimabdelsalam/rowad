@@ -46,6 +46,11 @@ class PaymentVoucherForm
             ]),
             self::paymentSection([
                 Select::make('expense_type_id')->relationship('expenseType', 'title'),
+                Select::make('account_id')->label(__('حساب المصروف'))
+                    ->options(fn () => \App\Filament\Admin\Resources\Accounts\AccountResource::options([\App\Enums\AccountType::Expense, \App\Enums\AccountType::Asset, \App\Enums\AccountType::Liability, \App\Enums\AccountType::Equity]))
+                    ->searchable()->placeholder(__('تلقائي'))
+                    ->helperText(__('لمصروفات المؤسسة نفسها؛ يُترك تلقائيًا ليُقيد في المصروفات العامة'))
+                    ->visible(fn () => \App\Filament\Admin\Resources\Accounts\AccountResource::canViewAny()),
             ]),
         ]);
     }

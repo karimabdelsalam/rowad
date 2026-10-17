@@ -31,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // vouchers and the owner ledger post their journal entries automatically
+        \App\Services\Accounting\Journal::observe();
+
         // the shared public demo: any real change by a visitor marks it for the rebuild after they leave
         \Illuminate\Support\Facades\Event::listen(['eloquent.created: *', 'eloquent.updated: *', 'eloquent.deleted: *'], function (string $event, array $payload) {
             $model = $payload[0] ?? null;
@@ -80,6 +83,7 @@ class AppServiceProvider extends ServiceProvider
         // Stable aliases stored in *_type columns (vouchers.party, installments.contract,
         // media, activity log, permissions) so class renames never break stored data.
         Relation::enforceMorphMap([
+            'account' => Models\Account::class,
             'activity' => \Spatie\Activitylog\Models\Activity::class,
             'bank_account' => Models\BankAccount::class,
             'bank_transaction' => Models\BankTransaction::class,
@@ -112,6 +116,8 @@ class AppServiceProvider extends ServiceProvider
             'installment' => Models\Installment::class,
             'installment_payment' => Models\InstallmentPayment::class,
             'invoice' => Models\Invoice::class,
+            'journal_entry' => Models\JournalEntry::class,
+            'journal_line' => Models\JournalLine::class,
             'letter' => Models\Letter::class,
             'login_activity' => Models\LoginActivity::class,
             'maintenance_request' => Models\MaintenanceRequest::class,

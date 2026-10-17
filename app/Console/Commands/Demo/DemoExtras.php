@@ -63,7 +63,7 @@ final class DemoExtras
     public function seed(): void
     {
         foreach (['photos', 'deeds', 'customFields', 'contractTerms', 'directory', 'licences', 'staff', 'payroll',
-            'invoices', 'onlinePayments', 'ownerPayout', 'communication', 'website', 'branches'] as $step) {
+            'invoices', 'onlinePayments', 'officeCommission', 'ownerPayout', 'officeExpenses', 'communication', 'website', 'branches'] as $step) {
             try {
                 DB::transaction(fn () => $this->{$step}());
             } catch (\Throwable $e) {
@@ -192,8 +192,12 @@ final class DemoExtras
             'days' => 2, 'status' => 'approved', 'reason' => 'تقرير طبي', 'approved_by' => $this->admin->id, 'approved_at' => now()->subDays(12), 'created_by' => $this->admin->id]);
         LeaveRequest::create(['employee_id' => $staff[3]->id, 'type' => 'annual', 'start_date' => now()->addDays(14)->toDateString(), 'end_date' => now()->addDays(20)->toDateString(),
             'days' => 7, 'status' => 'pending', 'reason' => 'سفر عائلي', 'created_by' => $this->admin->id]);
-        EmployeeAdvance::create(['employee_id' => $staff[2]->id, 'amount' => 6000, 'installment_amount' => 1000, 'remaining' => 6000,
+        $advance = EmployeeAdvance::create(['employee_id' => $staff[2]->id, 'amount' => 6000, 'installment_amount' => 1000, 'remaining' => 6000,
             'issued_at' => now()->subMonths(2)->startOfMonth()->toDateString(), 'notes' => 'سلفة على الراتب تُسدد على 6 أشهر', 'created_by' => $this->admin->id]);
+        $voucher = app(\App\Services\Finance\VoucherService::class)->createPayment(['party_type' => 'employee', 'party_id' => $staff[2]->id,
+            'party_name' => $staff[2]->full_name, 'amount' => 6000, 'payment_method' => 'transfer', 'bank_account_id' => $this->bank->id,
+            'issued_at' => $advance->issued_at, 'reason' => 'سلفة للموظف '.$staff[2]->full_name], notify: false);
+        $advance->forceFill(['payment_voucher_id' => $voucher->id])->save();
         EmployeePenalty::create(['employee_id' => $staff[3]->id, 'amount' => 150, 'reason' => 'late', 'reason_text' => 'تأخر متكرر عن الدوام',
             'for_month' => (int) now()->subMonth()->month, 'for_year' => (int) now()->subMonth()->year, 'issued_at' => now()->subMonth()->startOfMonth()->addDays(20)->toDateString()]);
     }
@@ -293,6 +297,48 @@ final class DemoExtras
     }
 
     /** Two branches: Al Olaya (head office) and Al Narjis, each with its own buildings, units and vouchers. */
+    /**
+     * The office's management commission: 10% of every rent collected, taken from the owner's share (before the payout
+     * nets it), and a sale brokered last month — so the books have revenue to show.
+     */
+    private function officeCommission(): void
+    {
+        $type = \App\Models\Lookups\TransactionType::query()->where('code', 'commission')->value('id');
+        $collected = Installment::query()->where('is_collected', true)->whereNotNull('receipt_voucher_id')->with('unit.owners')->get();
+        foreach ($collected as $installment) {
+            foreach ($installment->unit->owners as $owner) {
+                $share = ((float) $installment->amount - (float) $installment->buyer_commission) * (float) $owner->pivot->share_percent / 100;
+                \App\Models\OwnerTransaction::create(['owner_id' => $owner->id, 'unit_id' => $installment->unit_id, 'installment_id' => $installment->id,
+                    'contract_type' => $installment->contract_type, 'contract_id' => $installment->contract_id, 'source' => 'rent',
+                    'due_date' => $installment->due_date, 'transaction_type_id' => $type, 'direction' => 'credit', 'amount' => round($share * 0.10, 2)]);
+            }
+        }
+        app(\App\Services\Finance\VoucherService::class)->createReceipt(['issued_at' => now()->subMonth()->startOfMonth()->addDays(11)->toDateString(),
+            'amount' => 57500, 'vat_amount' => 7500, 'payment_method' => 'transfer', 'bank_account_id' => $this->bank->id, 'party_name' => 'سلمان بن فهد الشمري',
+            'reason' => 'عمولة السعي في بيع فيلا حي الملقا (2.5%) شاملة الضريبة',
+            'account_id' => \App\Models\Account::query()->where('system_key', 'sale_commission')->value('id')]);
+    }
+
+    /** The office's own running costs for the last months, each on its expense account, so the books show a profit and loss. */
+    private function officeExpenses(): void
+    {
+        $account = fn (string $code) => \App\Models\Account::query()->where('code', $code)->value('id');
+        $vouchers = app(\App\Services\Finance\VoucherService::class);
+        foreach (range(3, 1) as $monthsAgo) {
+            $day = now()->subMonths($monthsAgo)->startOfMonth();
+            foreach ([
+                ['52', 4500, 'إيجار مقر المؤسسة', 'مؤسسة الأفق للعقارات', 'transfer'],
+                ['52', 640 + $monthsAgo * 35, 'فاتورة الكهرباء والإنترنت', 'الشركة السعودية للكهرباء', 'transfer'],
+                ['54', 1200, 'إعلانات ممولة للوحدات المتاحة', 'منصة إعلانات عقارية', 'card'],
+                ['53', 180 + $monthsAgo * 20, 'ضيافة وقرطاسية', 'مكتبة جرير', 'cash'],
+            ] as $i => [$code, $amount, $reason, $party, $method]) {
+                $vouchers->createPayment(['issued_at' => $day->copy()->addDays(2 + $i * 3)->toDateString(), 'amount' => $amount, 'payment_method' => $method,
+                    'bank_account_id' => $method === 'cash' ? null : $this->bank->id, 'party_name' => $party, 'reason' => $reason, 'account_id' => $account($code)],
+                    withVat: $code !== '52' || $i === 1, notify: false);
+            }
+        }
+    }
+
     private function branches(): void
     {
         $city = $this->towers[0]->city_id;

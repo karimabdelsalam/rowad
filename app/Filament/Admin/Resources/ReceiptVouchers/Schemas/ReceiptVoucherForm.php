@@ -39,6 +39,11 @@ class ReceiptVoucherForm
             ]),
             self::paymentSection([
                 Select::make('transaction_type_id')->relationship('transactionType', 'title'),
+                Select::make('account_id')->label(__('حساب الإيراد'))
+                    ->options(fn () => \App\Filament\Admin\Resources\Accounts\AccountResource::options([\App\Enums\AccountType::Revenue, \App\Enums\AccountType::Liability, \App\Enums\AccountType::Equity]))
+                    ->searchable()->placeholder(__('تلقائي'))
+                    ->helperText(__('لسند لا يخص الإيجارات أو الملاك؛ يُترك تلقائيًا ليُقيد في الإيرادات الأخرى'))
+                    ->visible(fn () => \App\Filament\Admin\Resources\Accounts\AccountResource::canViewAny()),
             ]),
         ]);
     }

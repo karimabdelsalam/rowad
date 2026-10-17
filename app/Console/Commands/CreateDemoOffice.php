@@ -15,7 +15,6 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\Contracts\ContractService;
 use App\Services\Finance\VoucherService;
-use App\Services\Installments\InstallmentCollector;
 use App\Services\Platform\OfficeProvisioner;
 use App\Services\Portal\PortalAccounts;
 use App\Support\Settings;
@@ -162,13 +161,12 @@ class CreateDemoOffice extends Command
 
         // rented units with history: contracts started months ago, past installments collected
         $contracts = app(ContractService::class);
-        $collector = app(InstallmentCollector::class);
         foreach ([[5, 0, 5], [6, 1, 3], [7, 4, 8], [1, 2, 10], [4, 3, 7]] as [$unitIndex, $clientIndex, $monthsAgo]) {
             $start = now()->subMonths($monthsAgo)->startOfMonth();
             $contract = $contracts->createRent([
                 'unit_id' => $units[$unitIndex]->id, 'calendar' => 'gregorian', 'contract_date' => $start, 'start_date' => $start,
                 'end_date' => $start->copy()->addYear()->subDay(), 'period_unit' => 'year', 'period_count' => 1, 'payment_cycle' => 'month',
-                'rent_amount' => round($units[$unitIndex]->rent_amount / 12, 2), 'commission' => 500,
+                'rent_amount' => round($units[$unitIndex]->rent_amount / 12, 2), 'commission' => 500, 'commission_cycle' => 'once',
             ], [$clients[$clientIndex]->id => 100]);
             $today = now();
             foreach ($contract->installments()->whereDate('due_date', '<', now()->subMonth())->orderBy('due_date')->get() as $installment) {
@@ -179,7 +177,9 @@ class CreateDemoOffice extends Command
             }
             Date::setTestNow($today);
         }
-        $collector->collect($units[5]->installments()->where('is_collected', false)->orderBy('due_date')->first());
+        $next = $units[5]->installments()->where('is_collected', false)->orderBy('due_date')->first();
+        app(VoucherService::class)->createReceipt(['issued_at' => today(), 'amount' => $next->amount, 'payment_method' => 'cash', 'party_type' => 'client',
+            'party_id' => $clients[0]->id, 'unit_id' => $units[5]->id, 'reason' => 'سداد إيجار'], [$next->id]);
 
         // Ejar: most contracts documented, one waiting for the tenant's approval, one not started (its tenant lacks a birth date)
         foreach ([5 => 'documented', 6 => 'documented', 1 => 'documented', 7 => 'awaiting_parties'] as $unitIndex => $status) {
@@ -197,7 +197,9 @@ class CreateDemoOffice extends Command
             'payment_type' => 'installment', 'payment_plan' => ['first_payment' => 250000, 'count' => 8, 'cycle' => 'quarter', 'start_date' => $sold->toDateString()],
         ], [$clients[4]->id => 100]);
         foreach ($sale->installments()->whereDate('due_date', '<', now())->get() as $installment) {
-            $collector->collect($installment);
+            // every collection has its receipt, so the money shows in the books
+            app(VoucherService::class)->createReceipt(['issued_at' => $installment->due_date, 'amount' => $installment->amount, 'payment_method' => 'transfer',
+                'bank_account_id' => $bank->id, 'party_type' => 'client', 'party_id' => $clients[4]->id, 'unit_id' => $land->id, 'reason' => 'قسط بيع أرض'], [$installment->id]);
         }
 
         // shared office files (file cloud)
@@ -281,6 +283,7 @@ class CreateDemoOffice extends Command
             'message' => 'السلام عليكم، هل الشقة متاحة للمعاينة يوم الخميس؟']);
         // every other section: staff and payroll, invoices, online payments, payouts, terms, licences, branches, more photos…
         (new Demo\DemoExtras($units, $owners, $clients, $towers, $bank, $admin, $palette))->seed();
+        app(\App\Services\Accounting\Journal::class)->rebuild(); // every voucher and ledger entry in the journal, whatever way it was seeded
         Date::setTestNow();
     }
 

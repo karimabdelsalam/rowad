@@ -25,6 +25,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make(fn () => __('العقارات')),
                 NavigationGroup::make(fn () => __('العقود')),
                 NavigationGroup::make(fn () => __('المالية')),
+                NavigationGroup::make(fn () => __('المحاسبة'))->collapsed(),
                 NavigationGroup::make(fn () => __('العملاء والملاك')),
                 NavigationGroup::make(fn () => __('التقارير')),
                 NavigationGroup::make(fn () => __('التشغيل')),

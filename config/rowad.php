@@ -36,6 +36,9 @@ return [
         'payment_vouchers' => [...$crud, 'print'],
         'invoices' => ['view_any', 'view', 'create', 'print', 'credit_note'],
         'bank_accounts' => [...$crud, 'set_default'],
+        'accounts' => $crud,
+        'journal_entries' => $crud,
+        'accounting' => ['trial_balance', 'ledger', 'statements', 'rebuild'],
         'reports' => ['income', 'expenses', 'profits', 'banking', 'taxes', 'corporate_taxes', 'units', 'unit', 'renter', 'rent'],
         'tasks' => $crud,
         'support_tickets' => ['view_any', 'view', 'reply', 'delete'],
@@ -61,7 +64,7 @@ return [
         'accountant' => [
             'payroll.*', 'employee_advances.*', 'end_of_service.*', 'leave_requests.view_any', 'leave_requests.view', 'employees.view_any', 'employees.view',
             'installments.*', 'online_payments.*', 'owner_transactions.*', 'owner_payouts.*', 'receipt_vouchers.*', 'payment_vouchers.*', 'invoices.*',
-            'bank_accounts.*', 'reports.*', 'units.view_any', 'units.view', 'owners.view_any', 'owners.view',
+            'bank_accounts.*', 'reports.*', 'accounts.*', 'journal_entries.*', 'accounting.*', 'units.view_any', 'units.view', 'owners.view_any', 'owners.view',
             'clients.view_any', 'clients.view', 'rent_contracts.view_any', 'rent_contracts.view',
             'sale_contracts.view_any', 'sale_contracts.view', 'tasks.view_any',
             'maintenance_requests.view_any', 'maintenance_requests.view', 'maintenance_requests.complete',

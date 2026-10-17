@@ -14,6 +14,7 @@ class DocumentNumberGenerator
         'invoice' => 'INV',
         'maintenance' => 'MNT',
         'owner_payout' => 'OP',
+        'journal_entry' => 'JE',
     ];
 
     /** Next number like "RV-2026-00042"; atomic under concurrent requests. */

@@ -788,3 +788,46 @@
 - Calculator and dark-mode buttons from the reference were left out: the panels are designed for the
   light surface (dark mode is off), and a calculator adds little next to the amounts the system works
   out itself.
+
+## Accounting: chart of accounts, journal, trial balance and statements (2026-10-16)
+
+- Double entry in every office's database: `accounts` (the chart), `journal_entries` and `journal_lines`.
+  Money columns are decimal(14,2).
+- Starting chart for a real-estate office:
+  - Assets: cash, banks (one sub-account per bank account, created automatically), tenants
+    receivable, employee advances, input VAT.
+  - Liabilities: owners' funds held in trust, output VAT, other taxes, salaries, GOSI.
+  - Equity, revenue (rental / sale commissions, management fees, other income) and expenses.
+  - The office can add and rename accounts. System accounts and accounts with entries can't be
+    deleted; a sub-account's number starts with its heading's number.
+- Cash basis, posted automatically. Each document re-posts its entry when it, or something linked to
+  it, changes, after its transaction commits. A deleted document loses its entry; the entry keeps its
+  number across re-posts.
+  - Receipt: cash/bank against output VAT, the tenant's / buyer's commission, re-billed expenses, and
+    the rest to the owners' trust account. A receipt unrelated to rent or owners goes to the account
+    chosen on it (default: other income).
+  - Payment: cash/bank against expenses charged to owners (trust account) or to the tenant
+    (receivable), payouts to owners, employee advances, salaries, input VAT, and the rest to the
+    account chosen on it (default: general expenses).
+    - Salaries post the full cost: salaries are debited with net pay + advances recovered + GOSI.
+      Advances are cleared, and GOSI (both shares) becomes a liability.
+  - Owner ledger: commission and management fees move from the trust account to revenue; taxes on
+    owners go to taxes payable; the office's income tax is an expense.
+  - Bank account: its opening balance against capital.
+  - Rent and sale money is the owners', so it never shows as office revenue; only commissions and
+    fees do.
+  - Invoices aren't posted: they document a sale, and the money is posted when its receipt is issued.
+  - An installment collected without a receipt moves no money in the books.
+- Manual entries (opening balances, accruals, corrections) must balance, use postable accounts and
+  have at least two lines. Only manual entries can be edited or deleted; automatic ones follow their
+  document.
+- Reports, all with a period, printable and limited to the current branch when one is selected:
+  - Trial balance: opening / period / closing, headings rolled up; it flags an imbalance.
+  - Account ledger: running balance; a heading includes its sub-accounts.
+  - Income statement, and balance sheet: unclosed profit is shown under equity.
+- `rowad:accounting:rebuild {office?}` re-posts every document (manual entries are kept). The
+  migration runs it once, so offices with history get their books on upgrade; the demo rebuilds after
+  seeding.
+- Permissions: `accounts.*`, `journal_entries.*`, and `accounting.trial_balance | ledger | statements |
+  rebuild`. Admins and accountants have them; agents don't.
+- Not done yet: closing a year into retained earnings, locking closed periods, and cost centres.

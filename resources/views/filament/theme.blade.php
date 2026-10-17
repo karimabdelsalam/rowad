@@ -357,7 +357,9 @@
         .rowad-top-title__crumbs:empty + .rowad-top-title__name { font-size: 1.12rem; }
         body.rowad-has-top-title .fi-main .fi-header .fi-breadcrumbs { display: none; }
     }
-    .fi-topbar-end { gap: 4px; }
+    .fi-topbar-end { gap: 4px; flex: none; }
+    .rowad-top-title { flex: 1 1 auto; overflow: hidden; }
+    .rowad-ai-shortcut, .rowad-quick__btn, .rowad-top-user__text b { white-space: nowrap; }
     .fi-topbar-end > .fi-user-menu { order: 1; margin-inline-start: 8px; padding-inline-start: 12px; border-inline-start: 1px solid var(--rowad-line); }
     .fi-topbar-end > .rowad-top-user { order: 2; }
     .fi-topbar .fi-user-menu-trigger .fi-avatar { width: 2.5rem; height: 2.5rem; }
