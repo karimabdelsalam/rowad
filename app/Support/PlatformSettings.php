@@ -34,10 +34,43 @@ final class PlatformSettings
         'openai_model' => null,
         'gemini_api_key' => null,      // encrypted; null: GEMINI_API_KEY
         'gemini_model' => null,
+        // platform mail server: system emails (signup, welcome, alerts, password resets) and every office
+        // without its own SMTP. null: MAIL_* from .env
+        'mail_mailer' => null,          // smtp, sendmail, log
+        'mail_host' => null,
+        'mail_port' => null,
+        'mail_encryption' => null,      // tls, ssl, none
+        'mail_username' => null,
+        'mail_password' => null,        // encrypted
+        'mail_from_address' => null,
+        'mail_from_name' => null,
+        'mail_reply_to' => null,
+        'signup_alert_emails' => [],    // new-office alerts; empty: the contact email
+        // the official site (aqarnova.com): texts override the built-in ones per language, empty = built-in
+        'site_hero_badge_ar' => null, 'site_hero_badge_en' => null,
+        'site_hero_title_ar' => null, 'site_hero_title_en' => null,
+        'site_hero_highlight_ar' => null, 'site_hero_highlight_en' => null,
+        'site_hero_lead_ar' => null, 'site_hero_lead_en' => null,
+        'site_footer_about_ar' => null, 'site_footer_about_en' => null,
+        'site_seo_title_ar' => null, 'site_seo_title_en' => null,
+        'site_seo_description_ar' => null, 'site_seo_description_en' => null,
+        'site_seo_keywords' => null,
+        'site_og_image' => null,
+        'social_x' => null, 'social_instagram' => null, 'social_linkedin' => null, 'social_facebook' => null,
+        'social_tiktok' => null, 'social_youtube' => null, 'social_snapchat' => null,
+        'analytics_ga4' => null, 'analytics_gtm' => null, 'analytics_meta_pixel' => null,
+        'site_head_code' => null,       // verification tags etc., platform admins only
+        'widget_enabled' => null,       // null: on when an id is configured
+        'widget_src' => null, 'widget_tenant' => null, 'widget_id' => null,
+        'widget_auto_open' => true,
     ];
 
+    /** Social profiles shown in the site footer, in this order. */
+    public const SOCIAL = ['x' => 'X (Twitter)', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'facebook' => 'Facebook',
+        'tiktok' => 'TikTok', 'youtube' => 'YouTube', 'snapchat' => 'Snapchat'];
+
     /** Kept out of the generic form and saved only through their own setters. */
-    public const SECRETS = ['ai_api_key', 'openai_api_key', 'gemini_api_key'];
+    public const SECRETS = ['ai_api_key', 'openai_api_key', 'gemini_api_key', 'mail_password'];
 
     /** provider => [stored key setting, stored model setting, .env key config, .env model config] */
     public const AI_PROVIDERS = [
@@ -132,6 +165,68 @@ final class PlatformSettings
         $setting->value = filled($key) ? \Illuminate\Support\Facades\Crypt::encryptString(trim($key)) : null;
         $setting->save();
         self::$cache = null;
+    }
+
+    /** A stored secret, decrypted; null when unset or unreadable (APP_KEY changed). */
+    public static function secret(string $key): ?string
+    {
+        $stored = self::all()[$key] ?? null;
+        if (blank($stored)) {
+            return null;
+        }
+        try {
+            return \Illuminate\Support\Facades\Crypt::decryptString((string) $stored);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return null;
+        }
+    }
+
+    public static function setSecret(string $key, ?string $value): void
+    {
+        $setting = self::query()->firstOrNew(['key' => $key], ['group' => 'platform']);
+        $setting->value = filled($value) ? \Illuminate\Support\Facades\Crypt::encryptString(trim($value)) : null;
+        $setting->save();
+        self::$cache = null;
+    }
+
+    /** A site text in the visitor's language, or null to keep the built-in wording. */
+    public static function text(string $key): ?string
+    {
+        $value = self::get($key.'_'.(app()->getLocale() === 'en' ? 'en' : 'ar'));
+
+        return filled($value) ? (string) $value : null;
+    }
+
+    /** @return array<string, string> network => profile URL, only those filled in */
+    public static function socialLinks(): array
+    {
+        return collect(array_keys(self::SOCIAL))->mapWithKeys(fn ($network) => [$network => (string) self::get('social_'.$network)])
+            ->filter(fn ($url) => filled($url) && preg_match('#^https?://#i', $url))->all();
+    }
+
+    /** @return array{src: string, tenant: string, id: string, open: bool}|null the chat widget, or null when off */
+    public static function widget(): ?array
+    {
+        $id = (string) (self::get('widget_id') ?: config('rowad.site_widget.widget'));
+        $enabled = self::get('widget_enabled');
+        if (blank($id) || ($enabled !== null && ! filter_var($enabled, FILTER_VALIDATE_BOOLEAN))) {
+            return null;
+        }
+
+        return [
+            'src' => (string) (self::get('widget_src') ?: config('rowad.site_widget.src')),
+            'tenant' => (string) (self::get('widget_tenant') ?: config('rowad.site_widget.tenant')),
+            'id' => $id,
+            'open' => filter_var(self::get('widget_auto_open'), FILTER_VALIDATE_BOOLEAN),
+        ];
+    }
+
+    /** @return list<string> who hears about new offices: the configured list, else the contact email */
+    public static function signupAlertEmails(): array
+    {
+        $list = array_values(array_filter(array_map('trim', (array) self::get('signup_alert_emails')), fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL)));
+
+        return $list !== [] ? $list : array_values(array_filter([self::contact('email')]));
     }
 
     public static function flush(): void

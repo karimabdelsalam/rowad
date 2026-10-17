@@ -211,9 +211,9 @@
     <section class="hero">
         <div class="container hero-grid">
             <div class="hero__copy">
-                <span class="eyebrow"><i></i>{{ __('منصة سعودية سحابية لإدارة الأملاك — عربي أولًا') }}</span>
-                <h1>{{ __('أدر عقاراتك وعقودك وتحصيلك') }} <span class="hl">{{ __('من مكان واحد') }}</span></h1>
-                <p class="lead">{{ __('عقار نوفا يجمع الوحدات والعقود والدفعات وحسابات الملاك والفوترة الإلكترونية في نظام واحد سهل، مع بوابة للملاك وأخرى للمستأجرين وموقع خاص لمؤسستك.') }}</p>
+                <span class="eyebrow"><i></i>{{ \App\Support\PlatformSettings::text('site_hero_badge') ?? __('منصة سعودية سحابية لإدارة الأملاك — عربي أولًا') }}</span>
+                <h1>{{ \App\Support\PlatformSettings::text('site_hero_title') ?? __('أدر عقاراتك وعقودك وتحصيلك') }} <span class="hl">{{ \App\Support\PlatformSettings::text('site_hero_highlight') ?? __('من مكان واحد') }}</span></h1>
+                <p class="lead">{{ \App\Support\PlatformSettings::text('site_hero_lead') ?? __('عقار نوفا يجمع الوحدات والعقود والدفعات وحسابات الملاك والفوترة الإلكترونية في نظام واحد سهل، مع بوابة للملاك وأخرى للمستأجرين وموقع خاص لمؤسستك.') }}</p>
                 <div class="cta">
                     <a class="btn btn-hero btn-lg" href="{{ route('central.signup', [], false) }}">{{ __('ابدأ تجربتك المجانية') }}</a>
                     @if ($demoUrl)

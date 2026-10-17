@@ -125,7 +125,7 @@ class SignupController
         try {
             Mail::to($data['admin_email'], $data['admin_name'])->locale(app()->getLocale())
                 ->queue(new OfficeWelcome($office, $data['admin_name']));
-            if ($alerts = PlatformSettings::contact('email')) {
+            if ($alerts = PlatformSettings::signupAlertEmails()) {
                 Mail::to($alerts)->queue(new NewOfficeAlert([
                     'name' => $tenant->name,
                     'subdomain' => $data['subdomain'],

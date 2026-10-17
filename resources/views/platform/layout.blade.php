@@ -7,20 +7,28 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', __('عقار نوفا — نظام إدارة الأملاك للمنشآت العقارية'))</title>
-    @php($description = __('نظام سحابي متكامل لإدارة العقارات والعقود والتحصيل وحسابات الملاك، مع بوابات للملاك والمستأجرين وموقع خاص لكل مؤسسة.'))
+    @php
+        $siteTitle = \App\Support\PlatformSettings::text('site_seo_title') ?? __('عقار نوفا — نظام إدارة الأملاك للمنشآت العقارية');
+        $description = \App\Support\PlatformSettings::text('site_seo_description') ?? __('نظام سحابي متكامل لإدارة العقارات والعقود والتحصيل وحسابات الملاك، مع بوابات للملاك والمستأجرين وموقع خاص لكل مؤسسة.');
+        $analytics = ['ga4' => \App\Support\PlatformSettings::get('analytics_ga4'), 'gtm' => \App\Support\PlatformSettings::get('analytics_gtm'), 'pixel' => \App\Support\PlatformSettings::get('analytics_meta_pixel')];
+    @endphp
+    <title>@yield('title', $siteTitle)</title>
     <meta name="description" content="{{ $description }}">
+    @if (filled($keywords = \App\Support\PlatformSettings::get('site_seo_keywords')))
+        <meta name="keywords" content="{{ $keywords }}">
+    @endif
     <link rel="canonical" href="{{ url()->current() }}">
     <link rel="alternate" hreflang="ar" href="{{ url()->current() }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="{{ __('عقار نوفا') }}">
-    <meta property="og:title" content="@yield('title', __('عقار نوفا — نظام إدارة الأملاك للمنشآت العقارية'))">
+    <meta property="og:title" content="@yield('title', $siteTitle)">
     <meta property="og:description" content="{{ $description }}">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image" content="{{ asset('images/platform/dashboard.jpg') }}">
+    <meta property="og:image" content="{{ \App\Support\PlatformSettings::get('site_og_image') ?: asset('images/platform/dashboard.jpg') }}">
     <meta property="og:locale" content="{{ app()->getLocale() === 'ar' ? 'ar_SA' : 'en_US' }}">
     <meta name="twitter:card" content="summary_large_image">
     @include('partials.favicons')
+    @include('platform.partials.tracking-head')
     <link href="{{ asset('fonts/cairo/cairo.css') }}" rel="stylesheet">
     <style>
         :root {
@@ -89,6 +97,9 @@
         footer.site { background: #0b1324; color: #94a3b8; padding: 56px 0 28px; }
         footer.site .cols { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 32px; }
         footer.site h4 { color: #fff; margin: 0 0 12px; font-size: 1rem; }
+        footer.site .social { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        footer.site .social a { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #cbd5e1; background: rgb(255 255 255 / .06); border: 1px solid rgb(255 255 255 / .1); transition: .15s; }
+        footer.site .social a:hover { color: #fff; background: var(--brand); border-color: var(--brand); }
         footer.site a:hover { color: #fff; }
         footer.site ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
         .powered-by a { color: #5eead4; font-weight: 700; }
@@ -107,6 +118,7 @@
     </style>
 </head>
 <body>
+    @include('platform.partials.tracking-body')
     <header class="top">
         <div class="container bar">
             <a href="{{ route('central.home', [], false) }}" class="brand" aria-label="{{ __('عقار نوفا') }}">
@@ -134,7 +146,8 @@
             <div class="cols">
                 <div>
                     <a href="{{ route('central.home', [], false) }}" class="brand" style="color:#fff"><img class="brand-logo" src="{{ asset('images/brand/mark.svg') }}" alt="" width="46" height="34"><span>@if (app()->getLocale() === 'ar')عقار <span class="nova">نوفا</span>@else Aqar <span class="nova">Nova</span>@endif</span></a>
-                    <p style="max-width:420px">{{ __('نظام سحابي لإدارة الأملاك صُمم للمنشآت العقارية في السعودية: العقود والتحصيل وحسابات الملاك والفوترة الإلكترونية في مكان واحد.') }}</p>
+                    <p style="max-width:420px">{{ \App\Support\PlatformSettings::text('site_footer_about') ?? __('نظام سحابي لإدارة الأملاك صُمم للمنشآت العقارية في السعودية: العقود والتحصيل وحسابات الملاك والفوترة الإلكترونية في مكان واحد.') }}</p>
+                    @include('platform.partials.social')
                 </div>
                 <div>
                     <h4>{{ __('المنصة') }}</h4>
@@ -169,10 +182,12 @@
         </div>
     </footer>
     @yield('scripts')
-    @if (! \App\Services\Licensing\LicenseClient::selfHosted() && filled(config('rowad.site_widget.widget')))
-        {{-- Aref (Planova) chat widget on the official site only; opens itself once the script has loaded --}}
-        <script src="{{ config('rowad.site_widget.src') }}" data-planova-tenant="{{ config('rowad.site_widget.tenant') }}" data-planova-widget="{{ config('rowad.site_widget.widget') }}" data-planova-launcher="none" defer></script>
-        <script>window.addEventListener('load', () => window.PlanovaWidget?.open());</script>
+    @if (! \App\Services\Licensing\LicenseClient::selfHosted() && ($widget = \App\Support\PlatformSettings::widget()))
+        {{-- Aref (Planova) chat widget on the official site only (settings: platform console › موقع عقار نوفا) --}}
+        <script src="{{ $widget['src'] }}" data-planova-tenant="{{ $widget['tenant'] }}" data-planova-widget="{{ $widget['id'] }}" data-planova-launcher="none" defer></script>
+        @if ($widget['open'])
+            <script>window.addEventListener('load', () => window.PlanovaWidget?.open());</script>
+        @endif
     @endif
 </body>
 </html>

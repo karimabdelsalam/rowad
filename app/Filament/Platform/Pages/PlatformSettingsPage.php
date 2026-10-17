@@ -60,7 +60,8 @@ class PlatformSettingsPage extends Page
     {
         // the AI key never goes back to the browser: the field stays empty and shows whether one is saved
         $this->form->fill(array_merge(array_diff_key(PlatformSettings::DEFAULTS, array_flip(PlatformSettings::SECRETS)), PlatformSettings::editable(),
-            ['ai_provider' => PlatformSettings::aiProvider()])); // the provider in effect, also when it only comes from .env
+            ['ai_provider' => PlatformSettings::aiProvider(), // the provider in effect, also when it only comes from .env
+                'widget_enabled' => PlatformSettings::get('widget_enabled') ?? filled(config('rowad.site_widget.widget'))]));
     }
 
     public function form(Schema $schema): Schema
@@ -94,6 +95,84 @@ class PlatformSettingsPage extends Page
                     TextInput::make('contact_email')->label(__('البريد الإلكتروني'))->email()->placeholder(config('rowad.contact.email') ?: 'info@aqarnova.com')->extraInputAttributes(['dir' => 'ltr']),
                     TextInput::make('contact_phone')->label(__('الهاتف'))->tel()->placeholder(config('rowad.contact.phone') ?: '+966 5X XXX XXXX')->extraInputAttributes(['dir' => 'ltr']),
                     TextInput::make('contact_whatsapp')->label(__('واتساب (أرقام دولية)'))->placeholder(config('rowad.contact.whatsapp') ?: '9665XXXXXXXX')->extraInputAttributes(['dir' => 'ltr']),
+                ]),
+                Tab::make(__('البريد'))->icon(Heroicon::OutlinedEnvelope)->schema([
+                    Text::make(fn () => $this->mailStatus()),
+                    Section::make(__('خادم البريد'))->columns(3)->compact()
+                        ->description(__('يُرسل منه بريد المنصة (التسجيل، الترحيب، التنبيهات، استعادة كلمة المرور) وبريد كل مؤسسة لم تضبط خادمها الخاص.'))
+                        ->schema([
+                            Select::make('mail_mailer')->label(__('طريقة الإرسال'))->live()->placeholder(__('حسب إعدادات السيرفر (.env)'))
+                                ->options(['smtp' => 'SMTP', 'sendmail' => 'Sendmail', 'log' => __('سجل فقط (بدون إرسال — للتجربة)')]),
+                            TextInput::make('mail_host')->label(__('الخادم (Host)'))->placeholder('smtp.example.com')->extraInputAttributes(['dir' => 'ltr'])->maxLength(190)
+                                ->required(fn (Get $get) => $get('mail_mailer') === 'smtp')->visible(fn (Get $get) => $get('mail_mailer') === 'smtp'),
+                            TextInput::make('mail_port')->label(__('المنفذ (Port)'))->integer()->minValue(1)->maxValue(65535)->placeholder('587')
+                                ->visible(fn (Get $get) => $get('mail_mailer') === 'smtp'),
+                            Select::make('mail_encryption')->label(__('التشفير'))->options(['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => __('بدون')])->default('tls')
+                                ->visible(fn (Get $get) => $get('mail_mailer') === 'smtp'),
+                            TextInput::make('mail_username')->label(__('اسم المستخدم'))->extraInputAttributes(['dir' => 'ltr'])->maxLength(190)->autocomplete('off')
+                                ->visible(fn (Get $get) => $get('mail_mailer') === 'smtp'),
+                            TextInput::make('mail_password')->label(__('كلمة المرور'))->password()->revealable()->autocomplete('new-password')->maxLength(300)
+                                ->placeholder(fn () => filled(PlatformSettings::secret('mail_password')) ? __('محفوظة — اتركها فارغة للإبقاء عليها') : null)
+                                ->helperText(__('تُحفظ مشفّرة ولا تُعرض مرة أخرى.'))
+                                ->visible(fn (Get $get) => $get('mail_mailer') === 'smtp'),
+                        ]),
+                    Section::make(__('المُرسِل الرئيسي'))->columns(3)->compact()->schema([
+                        TextInput::make('mail_from_address')->label(__('بريد الإرسال'))->email()->extraInputAttributes(['dir' => 'ltr'])
+                            ->placeholder(config('mail.from.address') ?: 'no-reply@aqarnova.com'),
+                        TextInput::make('mail_from_name')->label(__('اسم المُرسِل'))->maxLength(120)->placeholder(__('عقار نوفا')),
+                        TextInput::make('mail_reply_to')->label(__('الرد على (Reply-To)'))->email()->extraInputAttributes(['dir' => 'ltr'])
+                            ->placeholder('support@aqarnova.com'),
+                        TagsInput::make('signup_alert_emails')->label(__('تنبيهات تسجيل المؤسسات الجديدة إلى'))->columnSpanFull()
+                            ->placeholder('team@aqarnova.com')->splitKeys(['Enter', ',', ' '])->nestedRecursiveRules(['email'])
+                            ->helperText(__('فارغ: يُرسل إلى بريد التواصل.')),
+                    ]),
+                    Actions::make([
+                        Action::make('testMail')->label(__('حفظ وإرسال رسالة تجربة'))->icon(Heroicon::OutlinedPaperAirplane)->color('gray')
+                            ->schema([TextInput::make('to')->label(__('إلى'))->email()->required()->default(fn () => auth()->user()?->email)])
+                            ->action(fn (array $data) => $this->testMail($data['to'])),
+                    ]),
+                ]),
+                Tab::make(__('موقع عقار نوفا'))->icon(Heroicon::OutlinedWindow)->schema([
+                    Text::make(__('النصوص تحل محل النص الافتراضي في الموقع الرسمي باللغة المقابلة؛ الحقل الفارغ يُبقي النص الافتراضي.')),
+                    Section::make(__('واجهة الصفحة الرئيسية'))->columns(2)->compact()->collapsible()->schema([
+                        TextInput::make('site_hero_badge_ar')->label(__('الشارة أعلى العنوان (عربي)'))->maxLength(120)->placeholder(__('منصة سعودية سحابية لإدارة الأملاك — عربي أولًا')),
+                        TextInput::make('site_hero_badge_en')->label(__('الشارة أعلى العنوان (إنجليزي)'))->maxLength(120)->extraInputAttributes(['dir' => 'ltr']),
+                        TextInput::make('site_hero_title_ar')->label(__('العنوان الرئيسي (عربي)'))->maxLength(120)->placeholder(__('أدر عقاراتك وعقودك وتحصيلك')),
+                        TextInput::make('site_hero_title_en')->label(__('العنوان الرئيسي (إنجليزي)'))->maxLength(120)->extraInputAttributes(['dir' => 'ltr']),
+                        TextInput::make('site_hero_highlight_ar')->label(__('الجزء الملوّن من العنوان (عربي)'))->maxLength(60)->placeholder(__('من مكان واحد')),
+                        TextInput::make('site_hero_highlight_en')->label(__('الجزء الملوّن من العنوان (إنجليزي)'))->maxLength(60)->extraInputAttributes(['dir' => 'ltr']),
+                        Textarea::make('site_hero_lead_ar')->label(__('الوصف تحت العنوان (عربي)'))->rows(3)->maxLength(400),
+                        Textarea::make('site_hero_lead_en')->label(__('الوصف تحت العنوان (إنجليزي)'))->rows(3)->maxLength(400)->extraInputAttributes(['dir' => 'ltr']),
+                        Textarea::make('site_footer_about_ar')->label(__('نبذة التذييل (عربي)'))->rows(2)->maxLength(300),
+                        Textarea::make('site_footer_about_en')->label(__('نبذة التذييل (إنجليزي)'))->rows(2)->maxLength(300)->extraInputAttributes(['dir' => 'ltr']),
+                    ]),
+                    Section::make(__('محركات البحث والمشاركة'))->columns(2)->compact()->collapsible()->schema([
+                        TextInput::make('site_seo_title_ar')->label(__('عنوان الصفحة (عربي)'))->maxLength(70)->placeholder(__('عقار نوفا — نظام إدارة الأملاك للمنشآت العقارية')),
+                        TextInput::make('site_seo_title_en')->label(__('عنوان الصفحة (إنجليزي)'))->maxLength(70)->extraInputAttributes(['dir' => 'ltr']),
+                        Textarea::make('site_seo_description_ar')->label(__('الوصف لمحركات البحث (عربي)'))->rows(2)->maxLength(170),
+                        Textarea::make('site_seo_description_en')->label(__('الوصف لمحركات البحث (إنجليزي)'))->rows(2)->maxLength(170)->extraInputAttributes(['dir' => 'ltr']),
+                        TextInput::make('site_seo_keywords')->label(__('الكلمات المفتاحية'))->maxLength(300)->placeholder(__('إدارة أملاك، نظام عقاري، إيجار')),
+                        TextInput::make('site_og_image')->label(__('صورة المشاركة (رابط)'))->url()->maxLength(500)->extraInputAttributes(['dir' => 'ltr'])
+                            ->placeholder(asset('images/platform/dashboard.jpg'))->helperText(__('تظهر عند مشاركة الرابط في واتساب وتويتر ولينكدإن (1200×630 مقترح).')),
+                    ]),
+                    Section::make(__('حسابات التواصل الاجتماعي'))->columns(3)->compact()->collapsible()
+                        ->description(__('تظهر أيقوناتها في تذييل الموقع.'))
+                        ->schema(collect(PlatformSettings::SOCIAL)->map(fn ($label, $network) => TextInput::make('social_'.$network)->label($label)->url()->maxLength(300)
+                            ->extraInputAttributes(['dir' => 'ltr'])->placeholder('https://'))->values()->all()),
+                    Section::make(__('التحليلات والتتبع'))->columns(3)->compact()->collapsible()->schema([
+                        TextInput::make('analytics_ga4')->label('Google Analytics 4')->placeholder('G-XXXXXXXXXX')->regex('/^G-[A-Z0-9]+$/i')->extraInputAttributes(['dir' => 'ltr']),
+                        TextInput::make('analytics_gtm')->label('Google Tag Manager')->placeholder('GTM-XXXXXXX')->regex('/^GTM-[A-Z0-9]+$/i')->extraInputAttributes(['dir' => 'ltr']),
+                        TextInput::make('analytics_meta_pixel')->label('Meta Pixel')->placeholder('123456789012345')->regex('/^\d{6,20}$/')->extraInputAttributes(['dir' => 'ltr']),
+                        Textarea::make('site_head_code')->label(__('أكواد إضافية في رأس الصفحة'))->rows(3)->columnSpanFull()->maxLength(5000)->extraInputAttributes(['dir' => 'ltr'])
+                            ->helperText(__('مثل وسوم التحقق من Google Search Console أو Bing. تُضاف كما هي إلى صفحات الموقع الرسمي فقط.')),
+                    ]),
+                    Section::make(__('المحادثة المباشرة (ويدجت عارف)'))->columns(3)->compact()->collapsible()->schema([
+                        Toggle::make('widget_enabled')->label(__('تفعيل الويدجت'))->inline(false),
+                        Toggle::make('widget_auto_open')->label(__('تفتح تلقائيًا عند دخول الزائر'))->inline(false),
+                        TextInput::make('widget_id')->label(__('معرّف الويدجت'))->extraInputAttributes(['dir' => 'ltr'])->placeholder(config('rowad.site_widget.widget')),
+                        TextInput::make('widget_tenant')->label(__('رقم الحساب'))->extraInputAttributes(['dir' => 'ltr'])->placeholder(config('rowad.site_widget.tenant')),
+                        TextInput::make('widget_src')->label(__('رابط السكربت'))->url()->extraInputAttributes(['dir' => 'ltr'])->columnSpan(2)->placeholder(config('rowad.site_widget.src')),
+                    ]),
                 ]),
                 Tab::make(__('إشعار للمؤسسات'))->icon(Heroicon::OutlinedMegaphone)->columns(2)->schema([
                     Toggle::make('announcement_enabled')->label(__('عرض الإشعار في كل لوحات المؤسسات'))->live()->columnSpanFull(),
@@ -142,7 +221,12 @@ class PlatformSettingsPage extends Page
             $this->data[$key] = null;
             $this->data[$key.'_clear'] = false;
         }
+        if (filled($state['mail_password'] ?? null)) {
+            PlatformSettings::setSecret('mail_password', $state['mail_password']);
+        }
+        $this->data['mail_password'] = null;
         PlatformSettings::save($state); // secrets are skipped here
+        \App\Support\PlatformMail::apply();
         if ($notify) {
             Notification::make()->title(__('تم الحفظ'))->success()->send();
         }
@@ -160,6 +244,31 @@ class PlatformSettingsPage extends Page
             Notification::make()->danger()->title(__('فشل الاتصال'))
                 ->body($e->getMessage().' '.__('تأكد من المفتاح واسم النموذج.'))->persistent()->send();
         }
+    }
+
+    /** Save, then send a short message through the configured server so a wrong setting shows up now. */
+    public function testMail(string $to): void
+    {
+        $this->save(notify: false);
+        try {
+            \Illuminate\Support\Facades\Mail::raw(__('رسالة تجربة من لوحة تحكم عقار نوفا: إعدادات البريد تعمل.'), fn ($message) => $message->to($to)->subject(__('رسالة تجربة — عقار نوفا')));
+            Notification::make()->success()->title(__('أُرسلت رسالة التجربة إلى :to', ['to' => $to]))
+                ->body(config('mail.default') === 'log' ? __('طريقة الإرسال "سجل فقط": الرسالة في سجل النظام ولم تُرسل فعليًا.') : null)->send();
+        } catch (\Throwable $e) {
+            Notification::make()->danger()->title(__('تعذّر الإرسال'))->body(\Illuminate\Support\Str::limit($e->getMessage(), 300))->persistent()->send();
+        }
+    }
+
+    private function mailStatus(): \Illuminate\Support\HtmlString
+    {
+        $from = config('mail.from.address');
+        [$tone, $text] = match (true) {
+            config('mail.default') === 'log' => ['warn', __('البريد لا يُرسل فعليًا (سجل فقط). اضبط خادم SMTP ليصل البريد للمستخدمين.')],
+            blank($from) || str_ends_with((string) $from, 'example.com') => ['warn', __('حدد بريد الإرسال الرئيسي.')],
+            default => ['ok', __('يُرسل البريد عبر :mailer من :from', ['mailer' => strtoupper((string) config('mail.default')), 'from' => "\u{2066}".$from."\u{2069}"])],
+        };
+
+        return new \Illuminate\Support\HtmlString('<p class="rowad-ai-status is-'.$tone.'">'.e($text).'</p>');
     }
 
     /** Models suggested per provider (any other model ID the provider supports can be typed). */

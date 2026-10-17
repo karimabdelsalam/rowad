@@ -31,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // the mail server and sender saved in the platform console replace MAIL_* from .env
+        $this->app->booted(fn () => \App\Support\PlatformMail::apply());
+
         // vouchers and the owner ledger post their journal entries automatically
         \App\Services\Accounting\Journal::observe();
 
