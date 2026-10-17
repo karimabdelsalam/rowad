@@ -864,3 +864,42 @@
 - The accounting reports print and save with the same letterhead, title and period.
 - The QR sheets and the portals (owner statement, vouchers, contracts, units) have PDF next to Print.
 
+
+## Ejar API: each office registers contracts with its own Ejar account (2026-10-17)
+- Built on Ejar's External Contract Registration Service (ECRS): JSON over HTTPS with Basic authentication.
+  - Each brokerage office receives its own API key and secret from Ejar.
+  - The key and secret are kept in that office's settings; the secret is encrypted at rest.
+  - The platform holds no shared Ejar account.
+- Settings › "منصة إيجار" connects the office.
+  - The key pair is checked against Ejar before it is saved.
+  - The page has a connection test and a disconnect button.
+  - It shows contract counts by Ejar status, contracts whose sending stopped, and the latest synced contracts.
+  - The public demo office cannot connect; its "ejar" settings group is locked.
+- A unit is linked to Ejar once, from its page with "ربط بإيجار".
+  - The office enters the deed number and its Gregorian issue date (a Hijri deed date is converted).
+  - Ejar's matching properties and units are offered; the unit with the same number comes first.
+  - The Ejar property and unit ids are stored on the unit.
+- "إرسال إلى إيجار" on a contract runs the specification's order: create the draft, set the unit, add the
+  parties, add the unit services, then submit.
+  - Lessors are the unit's owners; an owner registered with a commercial register is sent as an organization.
+  - Tenants are the contract's clients; companies are sent as organizations (CR number plus the new CR registration date field).
+  - Utility services come from the unit's electricity, water and gas meters, paid by the tenant on the meter.
+  - The contract's opening meter readings are sent with them.
+  - Each finished step is remembered on the contract (ejar_progress).
+  - After a rejection, Ejar's own Arabic message is shown and stored, and the office fixes the record.
+  - Sending again continues from the failed step, so Ejar never gets a second draft for the same contract.
+- After submission the contract is "بانتظار موافقة الأطراف".
+  - `rowad:ejar:sync` runs hourly and asks Ejar for the state of each such contract.
+  - A registered or active state marks the contract documented and attaches Ejar's PDF.
+  - An archived or rejected state returns the contract to "غير موثق" with the reason, ready to send afresh.
+  - "تحديث الحالة من إيجار" does the same on demand.
+- "سحب المسودة من إيجار" archives an unsubmitted draft (DELETE on the contract).
+- Only residential contracts are sent for now, as in the specification's examples.
+  - Commercial contracts and offices without a connection keep the existing data sheet and the manual documentation record.
+- Creating a property or unit on Ejar from the system (POST /properties) is not built yet.
+  - It needs the deed scans and many property details the office keeps on Ejar itself.
+  - Offices register the property on Ejar once, then link it here.
+- Ejar's exact state names were not listed in the specification.
+  - Treated as documented: registered, active, approved, documented, renewed.
+  - Treated as closed: archived, rejected, cancelled, terminated, expired.
+  - Anything else counts as still awaiting the parties.

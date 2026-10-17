@@ -32,6 +32,8 @@ class ClientForm
                     ->schema([
                         TextInput::make('company_name')->maxLength(190),
                         TextInput::make('company_registration_number')->maxLength(50),
+                        \Filament\Forms\Components\DatePicker::make('company_registration_date')->label(__('تاريخ قيد السجل التجاري'))->maxDate(today())
+                            ->helperText(__('تطلبه منصة إيجار للتحقق من المنشأة المستأجرة.')),
                         TextInput::make('company_mobile')->tel()->maxLength(30),
                         TextInput::make('vat_number')->maxLength(30),
                         Textarea::make('billing_info')->rows(2)->columnSpanFull(),

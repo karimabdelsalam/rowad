@@ -132,6 +132,12 @@ class RentContractInfolist
                 ->visible(fn (RentContract $record) => filled($record->ejar_number)),
             TextEntry::make('ejar_documented_at')->label(__('تاريخ التوثيق'))->date('Y-m-d')
                 ->visible(fn (RentContract $record) => $record->ejar_documented_at !== null),
+            TextEntry::make('ejar_state')->label(__('الحالة في إيجار'))
+                ->state(fn (RentContract $record) => $record->ejar_state.($record->ejar_synced_at ? ' · '.__('مزامنة :d', ['d' => $record->ejar_synced_at->format('Y-m-d H:i')]) : ''))
+                ->visible(fn (RentContract $record) => filled($record->ejar_state)),
+            TextEntry::make('ejar_error')->label(__('توقف الإرسال إلى إيجار'))->columnSpanFull()->color('danger')->icon(Heroicon::OutlinedExclamationTriangle)
+                ->extraAttributes(['style' => 'white-space:pre-line'])
+                ->visible(fn (RentContract $record) => filled($record->ejar_error)),
             TextEntry::make('ejar_notes')->label(__('ملاحظة'))->columnSpanFull()
                 ->visible(fn (RentContract $record) => filled($record->ejar_notes) && $record->ejar_status === EjarStatus::NotRequired),
             TextEntry::make('ejar_pdf')->label(__('العقد الموثق'))->columnSpanFull()->color('primary')->icon(Heroicon::OutlinedDocumentArrowDown)

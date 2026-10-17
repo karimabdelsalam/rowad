@@ -21,7 +21,7 @@ final class Demo
     public const AI_PER_HOUR = 10;
 
     /** Settings that connect the office to outside services; a visitor's values would reach real providers. */
-    public const LOCKED_SETTING_GROUPS = ['mail', 'sms', 'payments', 'whatsapp'];
+    public const LOCKED_SETTING_GROUPS = ['mail', 'sms', 'payments', 'whatsapp', 'ejar'];
 
     /** Write each time stamp at most this often, so browsing and saving do not write on every request. */
     private const SEEN_EVERY_SECONDS = 60;

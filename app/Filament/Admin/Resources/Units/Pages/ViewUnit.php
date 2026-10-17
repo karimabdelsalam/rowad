@@ -15,6 +15,7 @@ class ViewUnit extends ViewRecord
         return [
             \App\Filament\Admin\Pages\Assistant::askAboutAction('unit'),
             ...\App\Filament\Support\DocumentActions::make('unit', __('طباعة البطاقة')),
+            \App\Filament\Admin\Resources\Units\EjarLinkAction::make(),
             EditAction::make(),
         ];
     }

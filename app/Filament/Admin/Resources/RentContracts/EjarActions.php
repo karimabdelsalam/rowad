@@ -4,6 +4,9 @@ namespace App\Filament\Admin\Resources\RentContracts;
 
 use App\Enums\EjarStatus;
 use App\Models\RentContract;
+use App\Services\Ejar\EjarApi;
+use App\Services\Ejar\EjarException;
+use App\Services\Ejar\EjarRegistration;
 use App\Services\Ejar\EjarSheet;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -16,9 +19,9 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * Ejar documentation from the contract page: the data sheet to copy into the platform, then the Ejar
- * contract number, date and PDF once the parties approve. (Direct API submission needs an Ejar
- * integration agreement; the sheet and the tracking are what every office can use today.)
+ * Ejar documentation from the contract page. An office connected to Ejar (its own ECRS key) sends the
+ * contract straight to the platform, follows the parties' approval and pulls Ejar's PDF; every office can
+ * still copy the data sheet into Ejar by hand and record the Ejar number, date and PDF itself.
  */
 final class EjarActions
 {
@@ -26,8 +29,94 @@ final class EjarActions
 
     public static function group(): ActionGroup
     {
-        return ActionGroup::make([self::sheet(), self::record(), self::notRequired(), self::open()])
+        return ActionGroup::make([self::send(), self::refresh(), self::download(), self::withdraw(), self::sheet(), self::record(), self::notRequired(), self::open()])
             ->label(__('منصة إيجار'))->icon(Heroicon::OutlinedBuildingLibrary)->button()->color('gray');
+    }
+
+    public static function send(): Action
+    {
+        return Action::make('ejarSend')
+            ->label(fn (RentContract $record) => filled($record->ejar_progress) ? __('استكمال الإرسال إلى إيجار') : __('إرسال إلى إيجار'))
+            ->icon(Heroicon::OutlinedPaperAirplane)
+            ->color('primary')
+            ->visible(fn (RentContract $record) => self::can() && EjarApi::connected() && in_array($record->ejar_status, [EjarStatus::Pending, null], true))
+            ->modalHeading(fn (RentContract $record) => __('إرسال العقد :number إلى منصة إيجار', ['number' => $record->number]))
+            ->modalDescription(fn (RentContract $record) => ($problems = EjarRegistration::problems($record)) === []
+                ? __('سيُنشأ العقد في إيجار بحساب المكتب، ويُضاف العقار والمؤجرون والمستأجرون وعدادات الخدمات، ثم يُرسل ليوافق عليه الأطراف من تطبيق إيجار.')
+                : __('أكمل ما يلي قبل الإرسال:')."\n• ".implode("\n• ", array_slice($problems, 0, 8)))
+            ->modalSubmitAction(fn (Action $action, RentContract $record) => $action->disabled(EjarRegistration::problems($record) !== []))
+            ->modalSubmitActionLabel(__('إرسال الآن'))
+            ->action(function (RentContract $record) {
+                try {
+                    EjarRegistration::make()->register($record);
+                    Notification::make()->success()->title(__('أُرسل العقد إلى إيجار'))
+                        ->body(__('رقم العقد في إيجار :number. بانتظار موافقة الأطراف من تطبيق إيجار.', ['number' => $record->ejar_number ?: '—']))->persistent()->send();
+                } catch (EjarException $e) {
+                    Notification::make()->danger()->title(__('توقف الإرسال إلى إيجار'))
+                        ->body(implode("\n", array_slice([$e->getMessage(), ...$e->messages], 0, 6))."\n".__('صحّح البيانات ثم اضغط "استكمال الإرسال"؛ يُكمل النظام من حيث توقف.'))->persistent()->send();
+                }
+            });
+    }
+
+    public static function refresh(): Action
+    {
+        return Action::make('ejarRefresh')
+            ->label(__('تحديث الحالة من إيجار'))
+            ->icon(Heroicon::OutlinedArrowPath)
+            ->visible(fn (RentContract $record) => EjarApi::connected() && filled($record->ejar_number) && filled($record->ejar_contract_id))
+            ->action(function (RentContract $record) {
+                try {
+                    $state = EjarRegistration::make()->refresh($record);
+                    Notification::make()->success()->title(__('الحالة في إيجار: :state', ['state' => $state ?? '—']))
+                        ->body($record->ejar_status->getLabel())->send();
+                } catch (EjarException $e) {
+                    Notification::make()->danger()->title($e->getMessage())->body(implode("\n", $e->messages))->send();
+                }
+            });
+    }
+
+    public static function download(): Action
+    {
+        return Action::make('ejarPdf')
+            ->label(__('نسخة إيجار (PDF)'))
+            ->icon(Heroicon::OutlinedArrowDownTray)
+            ->visible(fn (RentContract $record) => filled($record->ejar_contract_id) && ($record->getFirstMedia('ejar') !== null || EjarApi::connected()))
+            ->action(function (RentContract $record) {
+                try {
+                    if ($record->getFirstMedia('ejar') === null || EjarApi::connected()) {
+                        EjarRegistration::make()->downloadPdf($record);
+                        $record->unsetRelation('media');
+                    }
+                } catch (EjarException $e) {
+                    if ($record->getFirstMedia('ejar') === null) {
+                        Notification::make()->danger()->title($e->getMessage())->body(implode("\n", $e->messages))->send();
+
+                        return null;
+                    }
+                }
+                $media = $record->getFirstMedia('ejar');
+
+                return response()->download($media->getPath(), $media->file_name);
+            });
+    }
+
+    public static function withdraw(): Action
+    {
+        return Action::make('ejarWithdraw')
+            ->label(__('سحب المسودة من إيجار'))
+            ->icon(Heroicon::OutlinedTrash)
+            ->color('danger')
+            ->visible(fn (RentContract $record) => self::can() && EjarApi::connected() && filled($record->ejar_contract_id) && $record->ejar_status !== EjarStatus::Documented)
+            ->requiresConfirmation()
+            ->modalDescription(__('تُؤرشف المسودة في إيجار ولا يمكن إرسالها بعد ذلك. يمكنك إرسال العقد من جديد كمسودة جديدة.'))
+            ->action(function (RentContract $record) {
+                try {
+                    EjarRegistration::make()->archive($record);
+                    Notification::make()->success()->title(__('سُحبت المسودة من إيجار'))->send();
+                } catch (EjarException $e) {
+                    Notification::make()->danger()->title($e->getMessage())->body(implode("\n", $e->messages))->send();
+                }
+            });
     }
 
     public static function sheet(): Action
