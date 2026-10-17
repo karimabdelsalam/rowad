@@ -52,10 +52,10 @@ trait VoucherFormComponents
     {
         return Section::make(__('الطرف'))->columns(3)->schema([
             Select::make('party_type')->label(__('نوع الطرف'))->options(self::partyTypes())->live()->placeholder(__('أخرى (اكتب الاسم)')),
-            Select::make('party_id')
+            \App\Filament\Support\QuickCreate::party(Select::make('party_id')
                 ->label(__('الطرف'))
                 ->options(fn (Get $get) => self::partyOptions($get('party_type')))
-                ->searchable()
+                ->searchable())
                 ->live()
                 ->visible(fn (Get $get) => filled($get('party_type')))
                 ->required(fn (Get $get) => filled($get('party_type'))),

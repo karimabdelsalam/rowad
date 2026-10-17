@@ -22,9 +22,9 @@ class SupportTicketForm
                     ->options(TicketType::class)
                     ->required(),
                 Select::make('owner_id')
-                    ->relationship('owner', 'id'),
+                    ->relationship('owner', 'full_name')->searchable()->preload(),
                 Select::make('client_id')
-                    ->relationship('client', 'id'),
+                    ->relationship('client', 'full_name')->searchable()->preload(),
                 Select::make('unit_id')
                     ->relationship('unit', 'title'),
                 TextInput::make('subject')

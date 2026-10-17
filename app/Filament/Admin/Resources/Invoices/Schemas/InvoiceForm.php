@@ -19,7 +19,7 @@ class InvoiceForm
     {
         return $schema->components([
             Section::make(__('العميل'))->columns(3)->schema([
-                Select::make('client_id')->relationship('client', 'full_name')->searchable()->preload()->live()
+                \App\Filament\Support\QuickCreate::client(Select::make('client_id')->relationship('client', 'full_name')->searchable()->preload())->live()
                     ->afterStateUpdated(function (?string $state, Set $set) {
                         $client = $state ? Client::find($state) : null;
                         $set('customer_name', $client?->displayName());

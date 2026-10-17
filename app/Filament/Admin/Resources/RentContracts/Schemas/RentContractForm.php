@@ -59,12 +59,12 @@ class RentContractForm
                     ->defaultItems(1)
                     ->default([['client_id' => null, 'share_percent' => 100]])
                     ->schema([
-                        Select::make('client_id')
+                        \App\Filament\Support\QuickCreate::client(Select::make('client_id')
                             ->label(__('العميل'))
                             ->options(fn () => Client::query()->orderBy('full_name')->pluck('full_name', 'id'))
                             ->searchable()
                             ->required()
-                            ->distinct(),
+                            ->distinct()),
                         TextInput::make('share_percent')
                             ->label(__('النسبة %'))
                             ->numeric()

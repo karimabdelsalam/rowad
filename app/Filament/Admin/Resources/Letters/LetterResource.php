@@ -64,7 +64,7 @@ class LetterResource extends Resource
             Select::make('unit_id')->label(__('الوحدة'))->relationship('unit', 'title')->searchable()->preload()
                 ->required(fn (Get $get) => $type($get)?->needsTenant() ?? false)
                 ->visible(fn (Get $get) => $type($get)?->needsTenant() ?? false),
-            Select::make('client_id')->label(__('المستأجر'))->relationship('client', 'full_name')->searchable()->preload()
+            \App\Filament\Support\QuickCreate::client(Select::make('client_id')->label(__('المستأجر'))->relationship('client', 'full_name')->searchable()->preload())
                 ->required(fn (Get $get) => $type($get)?->needsTenant() ?? false)
                 ->visible(fn (Get $get) => $type($get)?->needsTenant() ?? false),
 

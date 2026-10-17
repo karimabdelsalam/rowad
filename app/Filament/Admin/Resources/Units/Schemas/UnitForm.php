@@ -66,12 +66,12 @@ class UnitForm
                         ->default([['owner_id' => null, 'share_percent' => 100, 'expenses_percent' => 100]])
                         ->addActionLabel(__('إضافة مالك'))
                         ->schema([
-                            Select::make('owner_id')
+                            \App\Filament\Support\QuickCreate::owner(Select::make('owner_id')
                                 ->label(__('المالك'))
                                 ->options(fn () => Owner::query()->orderBy('full_name')->pluck('full_name', 'id'))
                                 ->searchable()
                                 ->required()
-                                ->distinct(),
+                                ->distinct()),
                             TextInput::make('share_percent')->label(__('نسبة الملكية'))->numeric()->suffix('%')->minValue(0)->maxValue(100)->required(),
                             TextInput::make('expenses_percent')->label(__('نسبة تحمل المصروفات'))->numeric()->suffix('%')->minValue(0)->maxValue(100)->default(100)->required(),
                         ]),

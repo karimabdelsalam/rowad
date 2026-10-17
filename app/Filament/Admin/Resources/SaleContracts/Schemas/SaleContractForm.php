@@ -39,9 +39,9 @@ class SaleContractForm
                     ->columnSpanFull()->columns(2)->minItems(1)
                     ->default([['client_id' => null, 'share_percent' => 100]])
                     ->schema([
-                        Select::make('client_id')->label(__('العميل'))
+                        \App\Filament\Support\QuickCreate::client(Select::make('client_id')->label(__('العميل'))
                             ->options(fn () => Client::query()->orderBy('full_name')->pluck('full_name', 'id'))
-                            ->searchable()->required()->distinct(),
+                            ->searchable()->required()->distinct()),
                         TextInput::make('share_percent')->label(__('النسبة %'))->numeric()->minValue(0.01)->maxValue(100)->default(100)->required(),
                     ]),
             ]),
