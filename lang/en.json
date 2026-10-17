@@ -2994,5 +2994,8 @@
     "تاريخ قيد السجل التجاري": "Commercial registration date",
     "تطلبه منصة إيجار للتحقق من المنشأة المستأجرة.": "Ejar requires it to verify a company tenant.",
     "مربوطة بإيجار": "Linked to Ejar",
-    "غير مربوطة": "Not linked"
+    "غير مربوطة": "Not linked",
+    "غرفة": "Room",
+    "محل": "Shop",
+    "معرض": "Showroom"
 }

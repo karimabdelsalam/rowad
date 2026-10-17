@@ -43,7 +43,8 @@ final class EjarActions
             ->modalHeading(fn (RentContract $record) => __('إرسال العقد :number إلى منصة إيجار', ['number' => $record->number]))
             ->modalDescription(fn (RentContract $record) => ($problems = EjarRegistration::problems($record)) === []
                 ? __('سيُنشأ العقد في إيجار بحساب المكتب، ويُضاف العقار والمؤجرون والمستأجرون وعدادات الخدمات، ثم يُرسل ليوافق عليه الأطراف من تطبيق إيجار.')
-                : __('أكمل ما يلي قبل الإرسال:')."\n• ".implode("\n• ", array_slice($problems, 0, 8)))
+                : new \Illuminate\Support\HtmlString(e(__('أكمل ما يلي قبل الإرسال:')).'<ul style="margin:8px 0 0;padding-inline-start:20px;list-style:disc;display:grid;gap:4px;color:#b45309">'
+                    .collect($problems)->take(8)->map(fn ($p) => '<li>'.e($p).'</li>')->join('').'</ul>'))
             ->modalSubmitAction(fn (Action $action, RentContract $record) => $action->disabled(EjarRegistration::problems($record) !== []))
             ->modalSubmitActionLabel(__('إرسال الآن'))
             ->action(function (RentContract $record) {

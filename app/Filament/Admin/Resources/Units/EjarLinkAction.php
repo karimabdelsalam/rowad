@@ -24,6 +24,10 @@ final class EjarLinkAction
 {
     private static ?string $error = null;
 
+    /** Ejar's unit types, as the office reads them. */
+    private const UNIT_TYPES = ['apartment' => 'شقة', 'villa' => 'فيلا', 'duplex' => 'دوبلكس', 'studio' => 'استوديو', 'floor' => 'دور',
+        'room' => 'غرفة', 'office' => 'مكتب', 'shop' => 'محل', 'showroom' => 'معرض', 'warehouse' => 'مستودع', 'building' => 'عمارة', 'land' => 'أرض'];
+
     public static function make(): Action
     {
         return Action::make('ejarLink')
@@ -85,7 +89,7 @@ final class EjarLinkAction
         return self::remember("units:{$propertyId}", fn () => collect((new EjarApi)->units($propertyId))
             ->filter(fn ($u) => filled($u['id'] ?? null))
             ->sortByDesc(fn ($u) => (string) ($u['unit_number'] ?? '') === (string) $unit->number)
-            ->mapWithKeys(fn ($u) => [(string) $u['id'] => trim(__('وحدة').' '.($u['unit_number'] ?? '').' · '.($u['unit_type'] ?? '').(isset($u['floor_number']) ? ' · '.__('الطابق').' '.$u['floor_number'] : ''), ' ·')])
+            ->mapWithKeys(fn ($u) => [(string) $u['id'] => trim(__('وحدة').' '.($u['unit_number'] ?? '').' · '.(isset(self::UNIT_TYPES[$u['unit_type'] ?? '']) ? __(self::UNIT_TYPES[$u['unit_type']]) : ($u['unit_type'] ?? '')).(isset($u['floor_number']) ? ' · '.__('الطابق').' '.$u['floor_number'] : ''), ' ·')])
             ->all(), __('لا توجد وحدات لهذا العقار في إيجار.'));
     }
 
