@@ -31,6 +31,8 @@ class EjarApiTest extends TestCase
 
     private const BASE = 'https://ejar.sa/api/v1/ecrs';
 
+    private string $host;
+
     private RentContract $contract;
 
     private Client $renter;
@@ -44,7 +46,7 @@ class EjarApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->initializeTenancy();
+        $this->host = 'http://'.$this->initializeTenancy()->domains()->value('domain');
         Settings::set('commercial_register', '1010234567', 'identity');
         Settings::set('fal_license_number', '1100012345', 'identity');
 
@@ -120,7 +122,7 @@ class EjarApiTest extends TestCase
         $this->assertTrue(\App\Services\Ejar\EjarApi::connected());
         $this->assertSame('office-secret', Settings::get('ejar_api_secret'));
         $this->assertNotSame('office-secret', Setting::where('key', 'ejar_api_secret')->value('value'), 'encrypted at rest');
-        $this->get('/admin/ejar')->assertOk()->assertSee(__('مرتبط بمنصة إيجار'));
+        $this->get("{$this->host}/admin/ejar")->assertOk()->assertSee(__('مرتبط بمنصة إيجار'));
 
         Livewire::test(EjarIntegration::class)->callAction('disconnect');
         $this->assertFalse(\App\Services\Ejar\EjarApi::connected());
