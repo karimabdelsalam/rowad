@@ -181,6 +181,36 @@
     .faq details[open] summary::after { content: "−"; }
     .faq p { margin: 12px 0 0; color: var(--muted); }
 
+    /* ---------- contact ---------- */
+    .contact-sec { padding: 0 0 96px; scroll-margin-top: 96px; }
+    .contact-grid { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 28px; align-items: start; }
+    .contact-info { border-radius: 24px; padding: 32px 28px; color: #fff; background: linear-gradient(150deg, #134e4a, #0f766e 60%, #14b8a6); box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .contact-info::after { content: ""; position: absolute; inset-inline-end: -60px; bottom: -60px; width: 200px; height: 200px; border-radius: 50%; background: rgb(255 255 255 / .08); }
+    .contact-info h2 { color: #fff; font-size: clamp(1.5rem, 2.6vw, 2rem); font-weight: 800; margin: 14px 0 10px; }
+    .contact-info p { color: rgb(255 255 255 / .85); margin: 0 0 22px; }
+    .contact-info .eyebrow { color: #ccfbf1; background: rgb(255 255 255 / .1); border-color: rgb(255 255 255 / .18); }
+    .contact-info ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; position: relative; z-index: 1; }
+    .contact-info li a, .contact-info li span.row { display: flex; align-items: center; gap: 12px; color: #fff; font-weight: 700; }
+    .contact-info li .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgb(255 255 255 / .12); flex: none; }
+    .contact-info li .ico svg { width: 20px; height: 20px; }
+    .contact-info li small { display: block; font-weight: 400; color: rgb(255 255 255 / .75); font-size: .8rem; }
+    .contact-form { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 28px; box-shadow: var(--shadow); display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+    .contact-form .full { grid-column: 1 / -1; }
+    .contact-form label { display: grid; gap: 6px; font-size: .88rem; font-weight: 700; color: var(--ink); }
+    .contact-form label > span small { font-weight: 400; color: var(--muted); font-size: .78rem; margin-inline-start: 4px; }
+    .contact-form input, .contact-form select, .contact-form textarea { font: inherit; font-size: .95rem; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px; background: var(--soft); outline: none; transition: border-color .15s, box-shadow .15s, background .15s; width: 100%; }
+    .contact-form textarea { min-height: 130px; resize: vertical; }
+    .contact-form input:focus, .contact-form select:focus, .contact-form textarea:focus { border-color: var(--brand); background: #fff; box-shadow: 0 0 0 4px rgb(15 118 110 / .12); }
+    .contact-form .err { color: #b91c1c; font-size: .8rem; font-weight: 600; }
+    .contact-form .is-bad { border-color: #fca5a5; background: #fef2f2; }
+    .contact-form .hp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; opacity: 0; pointer-events: none; }
+    .contact-form .actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .contact-form .actions small { color: var(--muted); }
+    .contact-done { grid-column: 1 / -1; display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; border-radius: 16px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+    .contact-done svg { width: 24px; height: 24px; flex: none; color: #059669; }
+    .contact-done b { display: block; color: #064e3b; }
+    @media (max-width: 900px) { .contact-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .contact-form { grid-template-columns: 1fr; padding: 20px; } }
     .final { padding: 0 0 88px; }
     .final .box { border-radius: 24px; padding: 56px 32px; text-align: center; color: #fff;
         background: radial-gradient(600px 240px at 20% 0%, rgb(255 255 255 / .14), transparent 60%), linear-gradient(135deg, #0f766e, #134e4a); }
@@ -476,6 +506,59 @@
                 <p>{{ __('أنشئ حساب مؤسستك الآن وابدأ تجربتك المجانية خلال دقيقتين.') }}</p>
                 <a class="btn btn-light btn-lg" href="{{ route('central.signup', [], false) }}">{{ __('ابدأ تجربتك المجانية') }}</a>
             </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact-sec">
+        <div class="container contact-grid">
+            <div class="contact-info">
+                <span class="eyebrow">{{ __('تواصل معنا') }}</span>
+                <h2>{{ __('نسعد بالإجابة على أسئلتك') }}</h2>
+                <p>{{ __('اكتب لنا عن مؤسستك وما تحتاجه، ويتواصل معك فريقنا خلال يوم عمل لعرض النظام أو مساعدتك في البدء ونقل بياناتك.') }}</p>
+                <ul>
+                    @if (filled($mail = \App\Support\PlatformSettings::contact('email')))
+                        <li><a href="mailto:{{ $mail }}"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg></span><span><small>{{ __('البريد الإلكتروني') }}</small><bdi dir="ltr">{{ $mail }}</bdi></span></a></li>
+                    @endif
+                    @if (filled($phone = \App\Support\PlatformSettings::contact('phone')))
+                        <li><a href="tel:{{ preg_replace('/[^0-9+]/', '', $phone) }}"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"/></svg></span><span><small>{{ __('الهاتف') }}</small><bdi dir="ltr">{{ $phone }}</bdi></span></a></li>
+                    @endif
+                    @if (filled($whatsapp = \App\Support\PlatformSettings::contact('whatsapp')))
+                        <li><a href="https://wa.me/{{ preg_replace('/\D/', '', $whatsapp) }}" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.79-1.47-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.21 3.08.15.2 2.1 3.2 5.08 4.48.71.31 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.75-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35M12.04 21.5h-.01a9.45 9.45 0 0 1-4.82-1.32l-.35-.2-3.58.94.96-3.49-.23-.36a9.43 9.43 0 0 1-1.45-5.04c0-5.22 4.25-9.46 9.48-9.46a9.4 9.4 0 0 1 6.7 2.78 9.4 9.4 0 0 1 2.77 6.69c0 5.22-4.25 9.46-9.47 9.46m8.06-17.53A11.33 11.33 0 0 0 12.04.63C5.76.63.65 5.74.65 12.02c0 2 .52 3.96 1.52 5.69L.55 23.6l6.02-1.58a11.36 11.36 0 0 0 5.46 1.39h.01c6.28 0 11.39-5.11 11.39-11.39 0-3.04-1.18-5.9-3.33-8.05"/></svg></span><span><small>{{ __('واتساب') }}</small>{{ __('راسلنا على واتساب') }}</span></a></li>
+                    @endif
+                    <li><span class="row"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></span><span><small>{{ __('أوقات الرد') }}</small>{{ __('من الأحد إلى الخميس، 9 صباحًا – 6 مساءً') }}</span></span></li>
+                </ul>
+            </div>
+
+            <form class="contact-form" method="post" action="{{ route('central.contact', [], false) }}" novalidate>
+                @csrf
+                @if (session('contact_sent'))
+                    <div class="contact-done" role="status">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                        <span><b>{{ __('وصلتنا رسالتك، شكرًا لك') }}</b>{{ __('سيتواصل معك أحد أعضاء فريقنا قريبًا.') }}</span>
+                    </div>
+                @endif
+                <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+                <label><span>{{ __('الاسم') }}</span> <input type="text" name="name" value="{{ old('name') }}" required maxlength="120" autocomplete="name" @class(['is-bad' => $errors->has('name')])>
+                    @error('name')<span class="err">{{ $message }}</span>@enderror</label>
+                <label><span>{{ __('اسم المؤسسة') }} <small>{{ __('(اختياري)') }}</small></span> <input type="text" name="company" value="{{ old('company') }}" maxlength="160" autocomplete="organization"></label>
+                <label><span>{{ __('الجوال') }}</span> <input type="tel" name="phone" value="{{ old('phone') }}" maxlength="30" dir="ltr" placeholder="05X XXX XXXX" autocomplete="tel" @class(['is-bad' => $errors->has('phone')])>
+                    @error('phone')<span class="err">{{ $message }}</span>@enderror</label>
+                <label><span>{{ __('البريد الإلكتروني') }}</span> <input type="email" name="email" value="{{ old('email') }}" maxlength="190" dir="ltr" autocomplete="email" @class(['is-bad' => $errors->has('email')])>
+                    @error('email')<span class="err">{{ $message }}</span>@enderror</label>
+                <label><span>{{ __('المدينة') }} <small>{{ __('(اختياري)') }}</small></span> <input type="text" name="city" value="{{ old('city') }}" maxlength="80"></label>
+                <label><span>{{ __('الموضوع') }}</span>
+                    <select name="topic">
+                        @foreach (\App\Models\ContactMessage::TOPICS as $value => $label)
+                            <option value="{{ $value }}" @selected(old('topic', 'demo') === $value)>{{ __($label) }}</option>
+                        @endforeach
+                    </select></label>
+                <label class="full"><span>{{ __('رسالتك') }}</span> <textarea name="message" required maxlength="3000" placeholder="{{ __('مثال: لدينا 120 وحدة ونستخدم نظامًا قديمًا، ونريد عرضًا ونقل البيانات.') }}" @class(['is-bad' => $errors->has('message')])>{{ old('message') }}</textarea>
+                    @error('message')<span class="err">{{ $message }}</span>@enderror</label>
+                <div class="full actions">
+                    <button type="submit" class="btn btn-primary btn-lg">{{ __('إرسال الرسالة') }}</button>
+                    <small>{{ __('نستخدم بياناتك للرد عليك فقط.') }}</small>
+                </div>
+            </form>
         </div>
     </section>
 @endsection

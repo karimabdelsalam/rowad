@@ -19,6 +19,7 @@ foreach (array_values(config('tenancy.central_domains')) as $i => $domain) {
         Route::get('/signup', [SignupController::class, 'create'])->name('central.signup');
         Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:5,10')->name('central.signup.store');
         Route::get('/signup/done', [SignupController::class, 'done'])->name('central.signup.done');
+        Route::post('/contact', [\App\Http\Controllers\Platform\ContactController::class, 'store'])->middleware('throttle:5,10')->name('central.contact');
         Route::get('/terms', [\App\Http\Controllers\Platform\PagesController::class, 'terms'])->name('central.terms');
         Route::get('/privacy', [\App\Http\Controllers\Platform\PagesController::class, 'privacy'])->name('central.privacy');
         // License server for self-hosted copies (JSON, no session/CSRF).

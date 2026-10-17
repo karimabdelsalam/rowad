@@ -131,6 +131,7 @@
                 <a href="{{ route('central.home', [], false) }}#portals">{{ __('البوابات') }}</a>
                 <a href="{{ route('central.home', [], false) }}#pricing">{{ __('الأسعار') }}</a>
                 <a href="{{ route('central.home', [], false) }}#faq">{{ __('الأسئلة الشائعة') }}</a>
+                <a href="{{ route('central.home', [], false) }}#contact">{{ __('تواصل معنا') }}</a>
             </nav>
             <div class="actions">
                 <a class="lang" href="{{ route('locale.switch', $other, false) }}">{{ $rtl ? 'English' : 'العربية' }}</a>
@@ -161,6 +162,7 @@
                     <h4>{{ __('الدعم') }}</h4>
                     <ul>
                         <li><a href="{{ route('central.home', [], false) }}#faq">{{ __('الأسئلة الشائعة') }}</a></li>
+                        <li><a href="{{ route('central.home', [], false) }}#contact">{{ __('تواصل معنا') }}</a></li>
                         @if (filled($contactEmail = \App\Support\PlatformSettings::contact('email')))
                             <li><a href="mailto:{{ $contactEmail }}" dir="ltr">{{ $contactEmail }}</a></li>
                         @endif
