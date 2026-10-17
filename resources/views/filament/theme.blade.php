@@ -342,7 +342,7 @@
     /* ---------- App shell: full-height navy sidebar, page title in the topbar, command search ---------- */
     @media (min-width: 64rem) {
         .fi-body-has-navigation:not(.fi-body-has-top-navigation) .fi-main-sidebar {
-            top: 0 !important; height: 100dvh !important; margin-top: calc(var(--topbar-height) * -1); z-index: 31;
+            top: 0 !important; height: 100dvh !important; margin-top: calc(var(--rowad-topbar-h, var(--topbar-height)) * -1); z-index: 31;
         }
         .fi-body-has-navigation:not(.fi-body-has-top-navigation):has(.fi-main-sidebar.fi-sidebar-open) .fi-topbar { padding-inline-start: calc(var(--sidebar-width) + 1rem); }
         .fi-body-has-navigation:not(.fi-body-has-top-navigation):has(.fi-main-sidebar:not(.fi-sidebar-open)) .fi-topbar { padding-inline-start: calc(var(--collapsed-sidebar-width) + 1rem); }
@@ -669,6 +669,18 @@
                 document.body.classList.remove('rowad-pdf-capture');
             }
         };
+
+        // the full-height sidebar is pulled up by the top bar's real height (two rows when the record search is shown)
+        const topbarHeight = () => {
+            const bar = document.querySelector('.fi-topbar-ctn');
+            if (! bar || bar.dataset.rowadMeasured) return;
+            bar.dataset.rowadMeasured = '1';
+            const set = () => document.documentElement.style.setProperty('--rowad-topbar-h', bar.offsetHeight + 'px');
+            new ResizeObserver(set).observe(bar);
+            set();
+        };
+        document.addEventListener('DOMContentLoaded', topbarHeight);
+        document.addEventListener('livewire:navigated', topbarHeight);
 
         // "more below" hint at the foot of the sidebar menu, gone once the end of the menu is reached
         const navMore = () => {
