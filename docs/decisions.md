@@ -903,3 +903,18 @@
   - Treated as documented: registered, active, approved, documented, renewed.
   - Treated as closed: archived, rejected, cancelled, terminated, expired.
   - Anything else counts as still awaiting the parties.
+
+## Quick add beside owner and client pickers; chat widget on the official site (2026-10-17)
+- Every owner or client picker has a "+" that adds the person in a small window and selects them at once.
+  - It is on units (owners), rent and sale contracts (tenants and buyers), invoices, letters, and receipt and payment vouchers.
+  - On vouchers it adds an owner or a client, following the party type chosen beside it.
+  - Only the essentials are asked: the four-part name, mobile, ID type and number, nationality and birth date.
+  - Company clients also give the company name (required) and the CR number.
+  - The rest is completed later from the person's own page.
+  - The "+" is shown only to users allowed to add owners or clients.
+- Support tickets now show owner and client names instead of ids.
+- The Aref (Planova) chat widget is on the official platform pages (aqarnova.com).
+  - It is not on office sites and not on self-hosted copies.
+  - It is configured by `SITE_WIDGET_SRC`, `SITE_WIDGET_TENANT` and `SITE_WIDGET_ID`; an empty id turns it off.
+  - The snippet called `open()` before its deferred script had loaded, which would do nothing.
+  - It now opens on the page's load event, as the snippet intends.
