@@ -146,6 +146,14 @@ return [
     // Rebuild it after a visitor changed something and left (idle for App\Support\Demo::IDLE_MINUTES).
     'demo_auto_reset' => (bool) env('DEMO_AUTO_RESET', true),
 
+    // Chat widget (Aref / Planova) on the official platform site (aqarnova.com pages only, never office
+    // sites or self-hosted copies). Empty SITE_WIDGET_ID turns it off.
+    'site_widget' => [
+        'src' => env('SITE_WIDGET_SRC', 'https://app.aref.ai/widget.js'),
+        'tenant' => env('SITE_WIDGET_TENANT', '14'),
+        'widget' => env('SITE_WIDGET_ID', '9c8eb906a784c4e1'),
+    ],
+
     // Licensing. On aqarnova.com (mode "saas") the platform issues licenses and signs tokens with
     // LICENSE_SIGNING_KEY. A copy installed on a customer's server runs with mode "self_hosted":
     // it activates LICENSE_KEY against LICENSE_SERVER and verifies tokens with LICENSE_PUBLIC_KEY.

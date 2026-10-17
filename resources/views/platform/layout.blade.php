@@ -169,5 +169,10 @@
         </div>
     </footer>
     @yield('scripts')
+    @if (! \App\Services\Licensing\LicenseClient::selfHosted() && filled(config('rowad.site_widget.widget')))
+        {{-- Aref (Planova) chat widget on the official site only; opens itself once the script has loaded --}}
+        <script src="{{ config('rowad.site_widget.src') }}" data-planova-tenant="{{ config('rowad.site_widget.tenant') }}" data-planova-widget="{{ config('rowad.site_widget.widget') }}" data-planova-launcher="none" defer></script>
+        <script>window.addEventListener('load', () => window.PlanovaWidget?.open());</script>
+    @endif
 </body>
 </html>

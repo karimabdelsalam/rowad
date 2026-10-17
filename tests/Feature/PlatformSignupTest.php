@@ -55,6 +55,18 @@ class PlatformSignupTest extends TestCase
             ->assertDontSee('/signup?plan='.Plan::where('slug', 'enterprise')->value('id').'"', false);
     }
 
+    public function test_the_official_site_carries_the_chat_widget(): void
+    {
+        foreach (['/', '/signup', '/terms'] as $path) {
+            $this->get('http://localhost'.$path)->assertOk()
+                ->assertSee('src="https://app.aref.ai/widget.js" data-planova-tenant="14" data-planova-widget="9c8eb906a784c4e1" data-planova-launcher="none" defer', false)
+                ->assertSee('window.PlanovaWidget?.open()', false);
+        }
+
+        config(['rowad.site_widget.widget' => '']);
+        $this->get('http://localhost/')->assertOk()->assertDontSee('app.aref.ai', false);
+    }
+
     public function test_signup_creates_a_ready_office_on_a_trial(): void
     {
         \Illuminate\Support\Facades\Mail::fake();
