@@ -35,7 +35,9 @@
         .doc-ids { display: flex; gap: 8px; }
         .doc-ids > div { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; min-width: 110px; }
         .doc-ids span { display: block; font-size: 10px; color: var(--muted); }
-        .doc-ids b { font-size: 13px; direction: ltr; unicode-bidi: plaintext; }
+        .doc-ids b { font-size: 13px; direction: ltr; unicode-bidi: plaintext; white-space: nowrap; }
+        .doc-ids > div { flex: none; }
+        .doc-title > div:first-child { min-width: 0; }
         .doc-lead { color: #334155; margin: 0 0 12px; }
 
         /* sections */
